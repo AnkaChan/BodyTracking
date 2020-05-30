@@ -214,7 +214,7 @@ class SMPLModel(Module):
     return result
 
 
-def test_gpu(gpu_id=[1], modelPath = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SmplshModel.npz'):
+def test_gpu(gpu_id=[1], modelPath = r'SmplshModel_m.npz'):
   if len(gpu_id) > 0 and torch.cuda.is_available():
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id[0])
     device = torch.device('cuda')
