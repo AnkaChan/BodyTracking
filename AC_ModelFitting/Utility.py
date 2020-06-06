@@ -12,7 +12,8 @@ from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     SfMPerspectiveCameras,
 )
-
+import pyigl as igl
+from iglhelpers import *
 def now_str():
     now = datetime.now()
     month = str(now.month)
@@ -177,17 +178,21 @@ def normalizeNormals(normals):
     normals[:, 2] = normals[:, 2] / norm
     return normals
 
-def init_camera_batches(cam_torch, device):
+def init_camera_batches(cam_torch, device, batchSize = 1):
     cams = []
     numCams = cam_torch['R'].shape[0]
-    for i in range(numCams):
-        focal_length = cam_torch['fl'][i:i+1]
-        principal_point = cam_torch['pp'][i:i+1]
-        R = cam_torch['R'][i:i+1]
-        T = cam_torch['T'][i:i+1]
+
+    numBatches = int(numCams / batchSize)
+    for i in range(numBatches):
+        focal_length = cam_torch['fl'][i*batchSize:i*batchSize+batchSize]
+        principal_point = cam_torch['pp'][i*batchSize:i*batchSize+batchSize]
+        R = cam_torch['R'][i*batchSize:i*batchSize+batchSize]
+        T = cam_torch['T'][i*batchSize:i*batchSize+batchSize]
         cameras = SfMPerspectiveCameras(device=device, R=R, T=T, principal_point=principal_point, focal_length=focal_length)
         cams.append(cameras)
     return cams
+
+
 
 def saveVTK(outFile, verts, smplshExampleMesh):
     smplshExampleMesh.points = verts
@@ -199,3 +204,19 @@ def showCudaMemUsage(device):
     torch.cuda.empty_cache()
     memStats = torch.cuda.memory_stats(device=device)
     print('After release: active_bytes.all.current:', memStats['active_bytes.all.current'] / 1000000, 'MB')
+
+
+def getLaplacian(meshFile):
+    V = igl.eigen.MatrixXd()
+    N = igl.eigen.MatrixXd()
+    F = igl.eigen.MatrixXi()
+    igl.readOBJ(meshFile, V, F)
+    # Compute Laplace-Beltrami operator: #V by #V
+    L = igl.eigen.SparseMatrixd()
+
+    igl.cotmatrix(V, F, L)
+
+    LNP = - e2p(L).todense()
+    # LNP = LNP @ LNP
+
+    return LNP
