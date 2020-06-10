@@ -140,7 +140,7 @@ def load_cameras(cam_path, device, actual_img_shape):
     out_for_torch = {'R': R_torch, 'T': T_torch, 'fl': focal_length, 'pp': principal_point}
     return cam_params, out_for_torch
 
-def load_images(img_dir, UndistImgs = False, cropSize = 2160, imgExt = 'png'):
+def load_images(img_dir, UndistImgs = False, cropSize = 2160,  imgExt = 'png'):
     image_refs_out = []
     crops_out = []
     
@@ -163,7 +163,7 @@ def load_images(img_dir, UndistImgs = False, cropSize = 2160, imgExt = 'png'):
         
         image = image_refs_out[i]
         img = image[:, int(cx-w):int(cx+w)]
-        if not cropSize == w:
+        if not cropSize == img.shape[0]:
             img = cv2.resize(img, (cropSize, cropSize))
         img = cv2.flip(img, -1)
         crops_out.append(img)
@@ -206,17 +206,21 @@ def showCudaMemUsage(device):
     print('After release: active_bytes.all.current:', memStats['active_bytes.all.current'] / 1000000, 'MB')
 
 
-def getLaplacian(meshFile):
+def getLaplacian(meshFile, biLaplacian = False):
     V = igl.eigen.MatrixXd()
     N = igl.eigen.MatrixXd()
     F = igl.eigen.MatrixXi()
     igl.readOBJ(meshFile, V, F)
+
+
     # Compute Laplace-Beltrami operator: #V by #V
     L = igl.eigen.SparseMatrixd()
 
     igl.cotmatrix(V, F, L)
 
     LNP = - e2p(L).todense()
-    # LNP = LNP @ LNP
+    if biLaplacian:
+        LNP = LNP @ LNP
 
     return LNP
+
