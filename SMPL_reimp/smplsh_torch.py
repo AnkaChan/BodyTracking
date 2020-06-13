@@ -6,7 +6,7 @@ import os
 
 
 class SMPLModel(Module):
-  def __init__(self, device=None, model_path='./model.pkl'):
+  def __init__(self, device=None, model_path='./model.pkl', personalShape=None):
     
     super(SMPLModel, self).__init__()
     # with open(model_path, 'rb') as f:
@@ -28,6 +28,7 @@ class SMPLModel(Module):
     self.shapedirs = torch.from_numpy(data['ShapeBlendShapes'])
     self.faces = data['Faces']
     self.parent = torch.from_numpy(data['ParentTable']).type(torch.int64)
+    self.personalShape = personalShape
 
     faces = []
     fId = 0
@@ -176,6 +177,9 @@ class SMPLModel(Module):
       lrotmin = torch.reshape(R_cube - I_cube, (-1, 1)).squeeze()
       v_posed = v_shaped + torch.tensordot(self.posedirs, lrotmin, dims=([2], [0]))
 
+    if self.personalShape is not  None:
+      v_posed = v_posed + self.personalShape
+
     results = []
     results.append(
       self.with_zeros(torch.cat((R_cube_big[0], torch.reshape(J[0, :], (3, 1))), dim=1))
@@ -214,7 +218,7 @@ class SMPLModel(Module):
     return result
 
 
-def test_gpu(gpu_id=[1], modelPath = r'SmplshModel_m.npz'):
+def test_gpu(gpu_id=[1], modelPath = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SmplshModel.npz'):
   if len(gpu_id) > 0 and torch.cuda.is_available():
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id[0])
     device = torch.device('cuda')
@@ -226,15 +230,24 @@ def test_gpu(gpu_id=[1], modelPath = r'SmplshModel_m.npz'):
   pose_size = 3 * 52
   beta_size = 10
 
+
+  restposeShape = np.zeros((6750, 3))
+
+  restposeShape[0, :] = [0.100, 0.1100, 0.1100]
+  restposeShape[3513, :] = [-0.100, 0.1100, 0.1100]
+
+  restposeShape = torch.from_numpy(restposeShape) \
+    .type(torch.float64).to(device)
+
   np.random.seed(9608)
   pose = torch.from_numpy((np.random.rand(pose_size) - 0.5) * 0.8)\
           .type(torch.float64).to(device)
   betas = torch.from_numpy((np.random.rand(beta_size) - 0.5) * 0.06) \
           .type(torch.float64).to(device)
   trans = torch.from_numpy(np.zeros(3)).type(torch.float64).to(device)
-  outmesh_path = './smpl_torch.obj'
+  outmesh_path = './smplsh_torch_withPersonalShape.obj'
 
-  model = SMPLModel(device=device, model_path=modelPath)
+  model = SMPLModel(device=device, model_path=modelPath, personalShape=restposeShape)
   result = model(betas, pose, trans)
   model.write_obj(result, outmesh_path)
 
