@@ -6,7 +6,7 @@ import os
 
 
 class SMPLModel(Module):
-  def __init__(self, device=None, model_path='./model.pkl', personalShape=None):
+  def __init__(self, device=None, model_path='./model.pkl', personalShape=None, unitMM=False):
     
     super(SMPLModel, self).__init__()
     # with open(model_path, 'rb') as f:
@@ -29,6 +29,11 @@ class SMPLModel(Module):
     self.faces = data['Faces']
     self.parent = torch.from_numpy(data['ParentTable']).type(torch.int64)
     self.personalShape = personalShape
+
+    if unitMM:
+      self.v_template = self.v_template * 1000
+      self.posedirs = self.posedirs * 1000
+      self.shapedirs = self.shapedirs * 1000
 
     faces = []
     fId = 0
@@ -235,6 +240,7 @@ def test_gpu(gpu_id=[1], modelPath = r'C:\Code\MyRepo\ChbCapture\06_Deformation\
 
   restposeShape[0, :] = [0.100, 0.1100, 0.1100]
   restposeShape[3513, :] = [-0.100, 0.1100, 0.1100]
+  restposeShape = restposeShape * 1000
 
   restposeShape = torch.from_numpy(restposeShape) \
     .type(torch.float64).to(device)
@@ -245,9 +251,9 @@ def test_gpu(gpu_id=[1], modelPath = r'C:\Code\MyRepo\ChbCapture\06_Deformation\
   betas = torch.from_numpy((np.random.rand(beta_size) - 0.5) * 0.06) \
           .type(torch.float64).to(device)
   trans = torch.from_numpy(np.zeros(3)).type(torch.float64).to(device)
-  outmesh_path = './smplsh_torch_withPersonalShape.obj'
+  outmesh_path = './smplsh_torch_withPersonalShapeMM.obj'
 
-  model = SMPLModel(device=device, model_path=modelPath, personalShape=restposeShape)
+  model = SMPLModel(device=device, model_path=modelPath, personalShape=restposeShape, unitMM=True)
   result = model(betas, pose, trans)
   model.write_obj(result, outmesh_path)
 
