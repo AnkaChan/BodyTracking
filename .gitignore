@@ -6,3 +6,5 @@
 *.ckpt*
 events.*
 checkpoint
+*.npy
+*.npz
