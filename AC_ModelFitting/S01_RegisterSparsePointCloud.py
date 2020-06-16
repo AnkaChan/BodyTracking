@@ -11,6 +11,7 @@ import numpy as np
 import pyvista as pv
 import copy
 from Utility import *
+from os.path import join
 
 def barycentric_coordinates_of_projection(p, q, u, v):
     """Given a point, gives projected coords of that point to a triangle
@@ -243,16 +244,23 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
 if __name__ == '__main__':
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.ply'
-    inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.obj'
-    inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
-    outInterpolatedFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\InterpolatedWithSparse.ply'
+    # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.obj'
+    # inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
+    # outInterpolatedFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\InterpolatedWithSparse.ply'
 
+    inMeshFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\FinalMesh.obj'
+    inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
+    outInterpolatedFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
+    outFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel'
     skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
     handIndicesFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\HandIndices.json'
     HeadIndicesFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\HeadIndices.json'
     softConstraintWeight = 100
+    numRealCorners = 1487
     fixHandAndHead = True
+
+    os.makedirs(outFolder, exist_ok=True)
 
     handIndices = json.load(open(handIndicesFile))
     headIndices = json.load(open(HeadIndicesFile))
@@ -262,7 +270,7 @@ if __name__ == '__main__':
 
     deformedSMPLSH = pv.PolyData(inMeshFile)
     deformedSparseMesh = pv.PolyData(inSparseInterpolatedMesh)
-    deformedSparseMesh.points = deformedSparseMesh.points[:1487, :]
+    # deformedSparseMesh.points = deformedSparseMesh.points[:1487, :]
 
     smplshFaces = deformedSMPLSH.faces.reshape((-1, 4))[:, 1:]
     print(smplshFaces.shape)
@@ -291,9 +299,13 @@ if __name__ == '__main__':
         else:
             trianglesId[iC] = -1
 
+    np.save(join(outFolder, 'InterpolationMatrix.npy'), intepolationMatrixNp)
+
     smplshRestPoseVerts = np.array(deformedSMPLSH.points)
 
     # Deform to Sparse Point Cloud
+    # only interpolate the points that is actually a corner
+    constraintIds = constraintIds[np.where(constraintIds<numRealCorners)]
 
     targetPts = deformedSparseMesh.points[constraintIds, :]
     partialInterpolation = intepolationMatrixNp[constraintIds, :]
@@ -341,3 +353,7 @@ if __name__ == '__main__':
 
     deformedSMPLSH.points = interpolatedVerts
     deformedSMPLSH.save(outInterpolatedFile)
+
+    np.save(join(outFolder, 'InterpolationBarys.npy'), barys)
+    np.save(join(outFolder, 'InterpolationTriId.npy'), trianglesId)
+    np.save(join(outFolder, 'InterpolationDisplacement.npy'), displacement)
