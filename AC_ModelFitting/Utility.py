@@ -7,6 +7,8 @@ import numpy as np
 from datetime import datetime
 import cv2
 import torch
+from os.path import join
+from pathlib import Path
 
 from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
@@ -140,10 +142,16 @@ def load_cameras(cam_path, device, actual_img_shape):
     out_for_torch = {'R': R_torch, 'T': T_torch, 'fl': focal_length, 'pp': principal_point}
     return cam_params, out_for_torch
 
-def load_images(img_dir, UndistImgs = False, cropSize = 2160,  imgExt = 'png'):
+def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  imgExt = 'png'):
     image_refs_out = []
     crops_out = []
-    
+    undistImageFolder = join(img_dir, 'Undist')
+
+
+    if UndistImgs:
+        os.makedirs(undistImageFolder, exist_ok=True)
+        camParams = json.load(open(camParamF))['cam_params']
+
     #for img_name in img_names:
     #    path = img_dir + '\\{}'.format(img_name)
     #    print(path)
@@ -151,7 +159,28 @@ def load_images(img_dir, UndistImgs = False, cropSize = 2160,  imgExt = 'png'):
     
     for i, path in enumerate(img_paths):
         # img = cv2.imread(path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
-        img = cv2.imread(path).astype(np.float32) / 255.0
+        img = cv2.imread(path)
+
+        if UndistImgs:
+            # f = inFiles[iCam][iP]
+            fx = camParams[str(i)]['fx']
+            fy = camParams[str(i)]['fy']
+            cx = camParams[str(i)]['cx']
+            cy = camParams[str(i)]['cy']
+            intrinsic_mtx = np.array([
+                [fx, 0.0, cx, ],
+                [0.0, fy, cy],
+                [0.0, 0.0, 1],
+            ])
+
+            undistortParameter = np.array([camParams[str(i)]['k1'], camParams[str(i)]['k2'], camParams[str(i)]['p1'], camParams[str(i)]['p2'],
+                                           camParams[str(i)]['k3'], camParams[str(i)]['k4'], camParams[str(i)]['k5'], camParams[str(i)]['k6']])
+
+            img = cv2.undistort(img, intrinsic_mtx, undistortParameter)
+            outUndistImgFile = join(undistImageFolder, Path(path).stem + '.' + imgExt)
+            cv2.imwrite(outUndistImgFile, img)
+
+        img = img.astype(np.float32) / 255.0
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         image_refs_out.append(img)
 
