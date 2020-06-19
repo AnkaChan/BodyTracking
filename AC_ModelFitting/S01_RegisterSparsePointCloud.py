@@ -303,6 +303,12 @@ if __name__ == '__main__':
 
     smplshRestPoseVerts = np.array(deformedSMPLSH.points)
 
+    registeredCorners = intepolationMatrixNp @ smplshRestPoseVerts
+    registeredCornersMesh = pv.PolyData()
+    registeredCornersMesh.points = registeredCorners
+    registeredCornersMesh.save(join(outFolder, 'registeredCorners.ply'))
+
+
     # Deform to Sparse Point Cloud
     # only interpolate the points that is actually a corner
     constraintIds = constraintIds[np.where(constraintIds<numRealCorners)]
@@ -314,11 +320,11 @@ if __name__ == '__main__':
     interpolatedPtsDisplacement = np.zeros(smplshRestPoseVerts.shape)
     nDimData = smplshRestPoseVerts.shape[0]
 
-    fixHandMat = np.zeros((len(handIndices), smplshRestPoseVerts.shape[0]), dtype=np.float64)
-    for iRow, handVId in enumerate(handIndices):
+    fixHandMat = np.zeros((len(indicesToFix), smplshRestPoseVerts.shape[0]), dtype=np.float64)
+    for iRow, handVId in enumerate(indicesToFix):
         fixHandMat[iRow, handVId] = 1
 
-    handDisplacement = np.zeros((len(handIndices), 3))
+    handDisplacement = np.zeros((len(indicesToFix), 3))
 
     if fixHandAndHead:
         displacement = np.vstack([displacement, handDisplacement])
