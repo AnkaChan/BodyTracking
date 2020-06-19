@@ -2,17 +2,19 @@ from Config import *
 from Utility import *
 from copy import copy
 from tqdm import tqdm
+import shutil
 
 class InputBundle:
     def __init__(s):
         # same over all frames
-        s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-        s.smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
-        s.toSparsePCMat = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
-        s.smplshRegressorMatFile = r'C:\Code\MyRepo\ChbCapture\08_CNNs\Openpose\SMPLSHAlignToAdamWithHeadNoFemurHead\smplshRegressorNoFlatten.npy'
+        s.camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
+        s.smplshExampleMeshFile = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\SMPLSH.obj'
+        s.toSparsePCMat = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
+        s.smplshRegressorMatFile = r'smplshRegressorNoFlatten.npy'
         s.smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
         s.handIndicesFile = r'HandIndices.json'
         s.HeadIndicesFile = r'HeadIndices.json'
+        s.personalShapeFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
 
         # frame specific inputs
         s.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\03067\silhouettes'
@@ -21,12 +23,11 @@ class InputBundle:
 
         s.compressedStorage = True
         s.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03067.npz'
-        s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
         s.outputFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\03067'
-
         # copy all the final result to this folder
         s.finalOutputFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\Final'
 
+from S05_InterpolateWithSparsePointCloud import interpolateWithSparsePointCloudSoftly
 
 def loadCompressedFittingParam(file, readPersonalShape=False):
     fitParam = np.load(file)
@@ -40,7 +41,8 @@ def makeOutputFolder(outputParentFolder, cfg, Prefix = ''):
     expName = Prefix + 'Sig' + str(cfg.sigma) + '_BR' + str(cfg.blurRange) + '_Fpp' + str(
         cfg.faces_per_pixel) \
               + '_NCams' + str(cfg.numCams) + '_ImS' + str(cfg.imgSize) + '_LR' + str(cfg.learningRate) + '_JR' + str(
-        cfg.jointRegularizerWeight) + '_KPW' + str(cfg.kpFixingWeight) + '_SCW' + str(cfg.toSparseCornersFixingWeight)
+        cfg.jointRegularizerWeight) + '_KPW' + str(cfg.kpFixingWeight) + '_SCW' + str(cfg.toSparseCornersFixingWeight) \
+        # + '_It' + str(cfg.numIterations)
 
     outFolderForExperiment = join(outputParentFolder, expName)
     os.makedirs(outFolderForExperiment, exist_ok=True)
@@ -212,7 +214,7 @@ def toSilhouettePoseFitting(inputs, cfg):
     optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
 
     logFile = join(outFolderForExperiment, 'Logs.txt')
-    logger = Logger.configLogger(logFile)
+    logger = Logger.configLogger(logFile, )
 
     loop = tqdm(range(cfg.numIterations))
     fitParamFolder = join(outFolderForExperiment, 'FitParam')
@@ -301,10 +303,10 @@ def toSilhouettePerVertexFitting(inputs, cfg):
     smplshExampleMesh = pv.PolyData(inputs.smplshExampleMeshFile)
     nVerts = smplshExampleMesh.points.shape[0]
 
-    LNP = getLaplacian(inputs.smplshExampleMeshFile)
-    np.save('SmplshRestposeLapMat.npy', LNP)
+    # LNP = getLaplacian(inputs.smplshExampleMeshFile)
+    # np.save('SmplshRestposeLapMat.npy', LNP)
 
-    # LNP = np.load('SmplshRestposeLapMat.npy')
+    LNP = np.load('SmplshRestposeLapMat.npy')
 
     BiLNP = LNP @ LNP
     if cfg.biLaplacian:
@@ -498,8 +500,8 @@ if __name__ == '__main__':
     # low learning rate for pose optimization
     cfgPoseFitting.learningRate = 1e-3
     cfgPoseFitting.batchSize = 4
-    cfgPoseFitting.faces_per_pixel = 6 # for testing
-    # cfgPoseFitting.faces_per_pixel = 15 # for debugging
+    # cfgPoseFitting.faces_per_pixel = 6 # for testing
+    cfgPoseFitting.faces_per_pixel = 15 # for debugging
     # cfgPoseFitting.imgSize = 2160
     cfgPoseFitting.imgSize = 1080
     cfgPoseFitting.terminateLoss = 0.1
@@ -507,39 +509,79 @@ if __name__ == '__main__':
     # cfgPoseFitting.normalSmootherW = 0.1
     cfgPoseFitting.normalSmootherW = 0.0
     cfgPoseFitting.numIterations = 500
+    # cfgPoseFitting.numIterations = 20
     cfgPoseFitting.kpFixingWeight = 0
 
     cfgPerVert = RenderingCfg()
     cfgPerVert.sigma = 1e-7
     cfgPerVert.blurRange = 1e-7
-    # cfg.plotStep = 20
-    cfgPerVert.plotStep = 5
+    cfgPerVert.plotStep = 20
+    # cfgPerVert.plotStep = 5
     cfgPerVert.numCams = 16
     cfgPerVert.learningRate = 0.1
-    # cfg.batchSize = 2
+    # cfgPerVert.batchSize = 2
     cfgPerVert.batchSize = 4
     cfgPerVert.faces_per_pixel = 6
-    # cfg.imgSize = 2160
+    # cfgPerVert.faces_per_pixel = 15
+
+    # cfgPerVert.imgSize = 2160
     cfgPerVert.imgSize = 1080
     device = torch.device("cuda:0")
     cfgPerVert.terminateLoss = 0.1
     cfgPerVert.lpSmootherW = 0.000001
     cfgPerVert.normalSmootherW = 0.0
     cfgPerVert.numIterations = 500
+    # cfgPerVert.numIterations = 20
 
-    inputsPose = copy(inputs)
-    inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    # toSilhouettePoseFitting(inputs, cfgPoseFitting)
-    poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
-    paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
-    paramFiles.sort()
-    finalPoseFile = paramFiles[-1]
+    fileNames = ['03067', '04735', '06550']
 
-    inputsPerVertFitting = copy(inputs)
-    inputsPerVertFitting.imageFolder = join(inputs.imageFolder, 'Undist')
-    inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
-    inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    toSilhouettePerVertexFitting(inputsPerVertFitting, cfgPerVert)
+    for frameName in fileNames:
+        inputs.imageFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting', frameName, 'silhouettes')
+        inputs.sparsePointCloudFile =join(r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied', frameName, 'A000' + frameName + '.obj')
+        # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
+        inputs.outputFolder = join(r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\Output', frameName)
+
+        inputs.initialFittingParamFile = join(r'Z:\shareZ\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams', frameName+'.npz')
+        inputs.KeypointsFile = join(r'Z:\shareZ\2020_06_14_FitToMultipleCams\KepPoints', frameName +'.obj')
+
+        inputsPose = copy(inputs)
+        inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
+        # toSilhouettePoseFitting(inputsPose, cfgPoseFitting)
+        poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
+        paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
+        paramFiles.sort()
+        finalPoseFile = paramFiles[-1]
+
+        inputsPerVertFitting = copy(inputs)
+        inputsPerVertFitting.imageFolder = join(inputs.imageFolder, 'Undist')
+        inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
+        inputsPerVertFitting.initialFittingParamFile = finalPoseFile
+        # toSilhouettePerVertexFitting(inputsPerVertFitting, cfgPerVert)
+        perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder, cfgPerVert, Prefix='XYZRestpose_')
+
+        # copy final data
+        outFolderFinalData = join(inputs.finalOutputFolder, frameName)
+        os.makedirs(outFolderFinalData, exist_ok=True)
+        imageFiles = glob.glob(join(perVertFittingFolder, '*.png'))
+        imageFiles.sort()
+        finalImgFile = imageFiles[-2]
+        shutil.copy(finalImgFile, join(outFolderFinalData, os.path.basename(finalImgFile)))
+
+        fitParamFiles = glob.glob(join(perVertFittingFolder, 'FitParam', '*.npz'))
+        fitParamFiles.sort()
+        finalParamFile = fitParamFiles[-1]
+        shutil.copy(finalParamFile, join(outFolderFinalData, 'FitParam_' + os.path.basename(finalParamFile)))
+
+        meshFiles = glob.glob(join(perVertFittingFolder, 'mesh', '*.vtk'))
+        meshFiles.sort()
+        finalMesh = meshFiles[-1]
+        shutil.copy(finalMesh, join(outFolderFinalData, 'PerVertex_' + os.path.basename(finalMesh)))
+
+        outIntepolatedMesh = join(outFolderFinalData, 'InterpolatedMesh.ply')
+        interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
+            '06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json', laplacianMatFile='SmplshRestposeLapMat.npy')
+
+
 
 
 

@@ -242,6 +242,88 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
     return np.array(closestPts), np.array(barycentrics), np.array(trianglesId)
 
+def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, laplacianMatFile=None, \
+    handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
+    numRealCorners = 1487, fixHandAndHead = True):
+    handIndices = json.load(open(handIndicesFile))
+    headIndices = json.load(open(HeadIndicesFile))
+
+    indicesToFix = copy.copy(handIndices)
+    indicesToFix.extend(headIndices)
+
+    deformedSMPLSH = pv.PolyData(inMeshFile)
+
+    targetMesh = pv.PolyData(inSparseCloud)
+    if laplacianMatFile is None:
+        LNP = getLaplacian(inMeshFile)
+    else:
+        LNP = np.load(laplacianMatFile)
+    # LNP
+    # Define fit cost to dense point cloud
+    skelData = json.load(open(skelDataFile))
+    coarseMeshPts = np.array(skelData['VTemplate'])
+    validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
+
+    obsIds = np.where(targetMesh.points[:, 2] > 0)[0]
+
+    constraintIds = np.intersect1d(obsIds, validVertsOnRestpose)
+    # validTargets = targetVerts[constraintIds, :]
+
+    intepolationMatrixNp = np.load(interpoMatFile)
+
+    smplshRestPoseVerts = np.array(deformedSMPLSH.points)
+
+    # Deform to Sparse Point Cloud
+    # only interpolate the points that is actually a corner
+    constraintIds = constraintIds[np.where(constraintIds < numRealCorners)]
+
+    targetPts = targetMesh.points[constraintIds, :]
+    partialInterpolation = intepolationMatrixNp[constraintIds, :]
+    displacement = targetPts - partialInterpolation @ smplshRestPoseVerts
+
+    interpolatedPtsDisplacement = np.zeros(smplshRestPoseVerts.shape)
+    nDimData = smplshRestPoseVerts.shape[0]
+
+    fixHandMat = np.zeros((len(indicesToFix), smplshRestPoseVerts.shape[0]), dtype=np.float64)
+    for iRow, handVId in enumerate(indicesToFix):
+        fixHandMat[iRow, handVId] = 1
+
+    handDisplacement = np.zeros((len(indicesToFix), 3))
+
+    if fixHandAndHead:
+        displacement = np.vstack([displacement, handDisplacement])
+        partialInterpolation = np.vstack([partialInterpolation, fixHandMat])
+
+    # displacement = 0*displacement + 10
+    # We should interpolate displacement
+    # Change this to soft soft constraint
+    # nConstraints = constraintIds.shape[0]
+    for iDim in range(3):
+        x = displacement[:, iDim]
+        # # Build Constraint
+        D = partialInterpolation
+        # e = np.zeros((nConstraints, 1))
+        # for i, vId in enumerate(constraintIds):
+        #     # D[i, vId] = 1
+        #     e[i, 0] = x[i]
+        #
+        # kMat, KRes = buildKKT(LNP, D, e)
+        kMat = LNP + softConstraintWeight * D.transpose() @ D
+        KRes = softConstraintWeight * D.transpose() @ x
+        xInterpo = np.linalg.solve(kMat, KRes)
+
+        # print("Spatial Laplacian Energy:",  xInterpo[0:nDimX, 0].transpose() @ LNP @  xInterpo[0:nDimX, 0])
+        # wI = xInterpo[0:nDimX, 0]
+        # wI[nConstraints:] = 1
+        # print("Spatial Laplacian Energy with noise:",  wI @ LNP @  wI)
+
+        interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
+
+    interpolatedVerts = smplshRestPoseVerts + interpolatedPtsDisplacement
+
+    deformedSMPLSH.points = interpolatedVerts
+    deformedSMPLSH.save(outInterpolatedFile)
+
 if __name__ == '__main__':
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.ply'
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.obj'
