@@ -1,4 +1,4 @@
-# For texturemap learning
+# 1. For texturemap learning
 #### Use: 200618_26_LearnTexture_AllAtOnce_ContourMasked.ipynb
 
 ## Modify paths where it says '# Paths: modify here'.
@@ -14,7 +14,7 @@ This should get an improvement, such that the gradients will flow.
 
 Other than these, the code should be straightforward. If not, please ask.
 
-# For per-vertex mesh deformation
+# 2. For per-vertex mesh deformation
 #### Use: 16h_DeformMesh_using14gOutput_LoR_Sil.ipynb
 
 ## Modify paths where it says '# Paths: modify here'.
