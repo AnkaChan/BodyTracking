@@ -7,14 +7,13 @@ import shutil
 class InputBundle:
     def __init__(s):
         # same over all frames
-        s.camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
-        s.smplshExampleMeshFile = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\SMPLSH.obj'
-        s.toSparsePCMat = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
-        s.smplshRegressorMatFile = r'smplshRegressorNoFlatten.npy'
+        s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+        s.smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
+        s.toSparsePCMat = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
+        s.smplshRegressorMatFile = r'C:\Code\MyRepo\ChbCapture\08_CNNs\Openpose\SMPLSHAlignToAdamWithHeadNoFemurHead\smplshRegressorNoFlatten.npy'
         s.smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
         s.handIndicesFile = r'HandIndices.json'
         s.HeadIndicesFile = r'HeadIndices.json'
-        s.personalShapeFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
 
         # frame specific inputs
         s.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\03067\silhouettes'
@@ -35,7 +34,11 @@ def loadCompressedFittingParam(file, readPersonalShape=False):
     poseInit = fitParam['pose']
     betaInit = fitParam['beta']
 
-    return transInit, poseInit, betaInit
+    if readPersonalShape:
+        personalShape = fitParam['personalShape']
+        return transInit, poseInit, betaInit, personalShape
+    else:
+        return transInit, poseInit, betaInit
 
 def makeOutputFolder(outputParentFolder, cfg, Prefix = ''):
     expName = Prefix + 'Sig' + str(cfg.sigma) + '_BR' + str(cfg.blurRange) + '_Fpp' + str(
@@ -63,6 +66,22 @@ def renderImages(cams, renderer, mesh):
             images.append(image_cur.cpu().detach().numpy())
         images = np.concatenate(images, axis=0)
     # showCudaMemUsage(device)
+    return images
+
+
+def renderImagesWithBackground(cams, renderer, mesh, backgrounds, device=None):
+    images = []
+    with torch.no_grad():
+        for iCam in range(len(cams)):
+            if device is not None:
+                showCudaMemUsage(device)
+            blend_params = BlendParams(
+                renderer.blend_params.sigma, renderer.blend_params.gamma, background_color=backgrounds[iCam])
+            image_cur = renderer.renderer(mesh, cameras=cams[iCam], blend_params=blend_params)
+
+            images.append(image_cur.cpu().detach().numpy())
+        images = np.concatenate(images, axis=0)
+        # showCudaMemUsage(device)
     return images
 
 
@@ -113,7 +132,7 @@ def visualize2DSilhouetteResults(images, backGroundImages=None, outImgFile=None,
             fig.savefig(outImgFile, dpi=512, transparent=True, bbox_inches='tight', pad_inches=0)
 
 
-def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, sizeInInches=2):
+def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, sizeInInches=2, withAlpha=True):
     lossVal = 0
     numCams = len(images)
     numCols = int(numCams / rows)
@@ -133,6 +152,8 @@ def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, s
                     imgAlpha = img
 
                 imgAlpha = cv2.flip(imgAlpha, -1)
+                if not withAlpha:
+                    imgAlpha = imgAlpha[...,:3]
 
                 axs[iRow, iCol].imshow(imgAlpha, vmin=0.0, vmax=1.0)
                 axs[iRow, iCol].axis('off')
@@ -141,8 +162,6 @@ def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, s
             fig.savefig(outImgFile, dpi=512, transparent=True, bbox_inches='tight', pad_inches=0)
 
 def toSilhouettePoseFitting(inputs, cfg):
-
-
     pose_size = 3 * 52
     beta_size = 10
     OPHeadKeypoints = [0, 15, 16, 17, 18]
