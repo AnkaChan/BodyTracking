@@ -1,0 +1,13 @@
+# Blender MTL File: 'SMPLEditToe_03_feetUV.blend'
+# Material Count: 1
+
+newmtl lambert1
+Ns 179.999996
+Ka 1.000 1.000 1.000  # white
+Kd 1.000 1.000 1.000  # white
+Ks 0.000 0.000 0.000  # black
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd L1_ContourMask_dimmer.png

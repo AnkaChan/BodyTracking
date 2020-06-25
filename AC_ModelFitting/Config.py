@@ -157,3 +157,83 @@ class Renderer:
                     # lights=lights
                 )
             )
+
+class RendererWithTexture:
+    def __init__(s, device, lights= None, cfg=RenderingCfg()):
+        s.cfg = cfg
+        # blend_params = BlendParams(sigma=1e-4, gamma=1e-4)
+        s.blend_params = BlendParams(sigma=cfg.sigma, gamma=1e-4)
+
+        # Place a point light in front of the object. As mentioned above, the front of the cow is facing the
+        # -z direction.
+        if lights is None:
+            s.lights = PointLights(device=device, location=[[0.0, 0.0, -3000.0]])
+        else:
+            s.lights = lights
+        # cameras = OpenGLPerspectiveCameras(device=device)
+        # Create a phong renderer by composing a rasterizer and a shader. The textured phong shader will
+        # interpolate the texture uv coordinates for each vertex, sample from a texture image and
+        # apply the Phong lighting model
+
+        if cfg.blurRange != 0:
+            s.raster_settings = RasterizationSettings(
+                image_size=cfg.imgSize,
+                blur_radius=np.log(1. / cfg.blurRange - 1.) * s.blend_params.sigma,
+                faces_per_pixel=cfg.faces_per_pixel,
+
+                bin_size=0
+            )
+        else:
+            s.raster_settings = RasterizationSettings(
+                image_size=cfg.imgSize,
+                blur_radius=0,
+                faces_per_pixel=cfg.faces_per_pixel,
+                bin_size=0
+            )
+
+        s.rasterizer = MeshRasterizer(
+            cameras=None,
+            raster_settings=s.raster_settings
+        )
+        if cfg.blurRange != 0:
+            s.renderer = MeshRenderer(
+                rasterizer=s.rasterizer,
+                #     shader=SoftPhongShader(
+                #         device=device,
+                #         cameras=cameras,
+                #         lights=lights,
+                #         blend_params=blend_params
+                #     )
+                # shader=SoftSilhouetteShader(
+                #     blend_params=s.blend_params
+                #     # device=device,
+                #     # cameras=cameras,
+                #     # lights=lights
+                # )
+                shader=TexturedSoftPhongShader(
+                    blend_params=s.blend_params,
+                    device=device,
+                    lights=s.lights
+                )
+            )
+        else:
+            s.renderer = MeshRenderer(
+                rasterizer=s.rasterizer,
+                #     shader=SoftPhongShader(
+                #         device=device,
+                #         cameras=cameras,
+                #         lights=lights,
+                #         blend_params=blend_params
+                #     )
+                shader=TexturedSoftPhongShader(
+                    blend_params=s.blend_params,
+                    device=device,
+                    lights=s.lights
+                )
+                # shader=SoftSilhouetteShader(
+                #     blend_params=s.blend_params
+                #     # device=device,
+                #     # cameras=cameras,
+                #     # lights=lights
+                # )
+            )

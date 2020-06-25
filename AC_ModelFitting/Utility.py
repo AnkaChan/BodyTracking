@@ -88,7 +88,7 @@ def reproject(params, vertices, distort=False):
     img_pts = np.array(img_pts)
     return img_pts
 	
-def load_cameras(cam_path, device, actual_img_shape):
+def load_cameras(cam_path, device, actual_img_shape, unitM=False):
     print('actual_img_shape:',actual_img_shape)
     h = actual_img_shape[0]
     w = actual_img_shape[1]
@@ -118,6 +118,9 @@ def load_cameras(cam_path, device, actual_img_shape):
         
         rvec = np.float32(cam_param['rvec'])
         T = np.float32(cam_param['tvec'])
+        if unitM:
+            T = T/1000
+
         R, _ = cv2.Rodrigues(rvec)
         Rs.append(R.T)
         Ts.append(T)
@@ -177,7 +180,7 @@ def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  i
                                            camParams[str(i)]['k3'], camParams[str(i)]['k4'], camParams[str(i)]['k5'], camParams[str(i)]['k6']])
 
             img = cv2.undistort(img, intrinsic_mtx, undistortParameter)
-            outUndistImgFile = join(undistImageFolder, Path(path).stem + '.' + imgExt)
+            outUndistImgFile = join(undistImageFolder, Path(path).stem + '.png')
             cv2.imwrite(outUndistImgFile, img)
 
         img = img.astype(np.float32) / 255.0
