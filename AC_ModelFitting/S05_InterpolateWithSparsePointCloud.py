@@ -242,7 +242,7 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
     return np.array(closestPts), np.array(barycentrics), np.array(trianglesId)
 
-def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, laplacianMatFile=None, \
+def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
     handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
     numRealCorners = 1487, fixHandAndHead = True):
     handIndices = json.load(open(handIndicesFile))

@@ -298,7 +298,7 @@ class SMPLModel(Module):
     T[:, :3, 3] += trans
     
     if returnPoseBlendShape:
-      return T, torch.tensordot(self.posedirs, lrotmin, dims=([2], [0]))
+      return T, torch.tensordot(self.posedirs, lrotmin, dims=([2], [0])), v_shaped
     else:
       return T
 
