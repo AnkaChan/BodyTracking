@@ -1,7 +1,6 @@
 from S07_ToSilhouetteFitting_MultiFrames import *
 
 
-
 if __name__ == '__main__':
     cfg = RenderingCfg()
 
@@ -13,13 +12,13 @@ if __name__ == '__main__':
     cfg.plotStep = 20
     cfg.numCams = 16
     # low learning rate for pose optimization
-    cfg.learningRate = 1e-3
+    cfg.learningRate = 1e-2
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
     cfg.batchSize = 4
-    cfg.faces_per_pixel = 6 # for testing
-    # cfg.faces_per_pixel = 1  # for debugging
+    # cfg.faces_per_pixel = 6 # for testing
+    cfg.faces_per_pixel = 1  # for debugging
     # cfg.imgSize = 2160
     cfg.imgSize = 1080
     cfg.terminateLoss = 0.1
@@ -105,7 +104,7 @@ if __name__ == '__main__':
 
     refImages = renderImagesWithBackground(cams, rendererSynth, smplshMesh, backgrounds)
 
-    visualize2DResults(refImages, outImgFile=join(outFolderForExperiment, 'RefImages.png'), withAlpha=False)
+    visualize2DResults(refImages, outImgFile=join(outFolderForExperiment, 'RefImages.png'), withAlpha=False, sizeInInches=4)
 
     # generate perturbed mesh and visualize it
     np.random.seed(cfg.randSeedPerturb)
@@ -131,7 +130,7 @@ if __name__ == '__main__':
         smplshMeshPerturbed = mesh.update_padded(vertsPerturbed[None])
 
     initialImages = renderImagesWithBackground(cams, rendererSynth, smplshMeshPerturbed, backgrounds)
-    visualize2DResults(initialImages, outImgFile=join(outFolderForExperiment, 'Fit00000_initial.png'), withAlpha=False)
+    visualize2DResults(initialImages, outImgFile=join(outFolderForExperiment, 'Fit_00000_initial.png'), withAlpha=False, sizeInInches=4)
 
     # the optimization loop
     losses = []
@@ -168,7 +167,7 @@ if __name__ == '__main__':
             # there are some NaN pixels, this is a walk around
             images[images != images] = 0
             refImg[refImg != refImg] = 0
-            loss = torch.norm(refImg - images[0, ..., :3], p=1)
+            # loss = torch.norm(refImg - images[0, ..., :3], p=1)
             loss = torch.mean(torch.abs(refImg - images[0, ..., :3]))
 
             loss.backward()
@@ -217,11 +216,11 @@ if __name__ == '__main__':
             outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
             np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
                      beta=betas.cpu().detach().numpy(), personalShape=personalShape.cpu().detach().numpy())
-            visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False)
+            visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=4)
 
             diffImgs = np.stack([np.abs(img - refImg) for img, refImg in zip(images, refImages)])
             outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
-            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False)
+            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=4)
             # saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
             #         smplshExampleMesh)
 

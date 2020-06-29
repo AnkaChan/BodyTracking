@@ -84,6 +84,7 @@ class RenderingCfg:
         s.jointRegularizerWeight = 0.000001
 
         # fix to keypoint
+        s.useKeypoints = False
         s.kpFixingWeight = 1
         # fix the shape of hand and head
         s.vertexFixingWeight = 100

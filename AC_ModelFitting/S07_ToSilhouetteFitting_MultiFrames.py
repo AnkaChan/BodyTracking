@@ -14,6 +14,8 @@ class InputBundle:
         s.smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
         s.handIndicesFile = r'HandIndices.json'
         s.HeadIndicesFile = r'HeadIndices.json'
+        s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+        s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
 
         # frame specific inputs
         s.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\03067\silhouettes'
@@ -378,7 +380,7 @@ def toSilhouettePerVertexFitting(inputs, cfg):
     pose = torch.tensor(poseInit, dtype=torch.float64, requires_grad=cfg.optimizePose, device=device)
     betas = torch.tensor(betaInit, dtype=torch.float64, requires_grad=cfg.optimizePose, device=device)
     trans = torch.tensor(transInit, dtype=torch.float64,
-                         requires_grad=True, device=device)
+                         requires_grad=cfg.optimizePose, device=device)
 
     verts = smplsh(betas, pose, trans).type(torch.float32)
     smplshMesh = Meshes([verts], [smplsh.faces.to(device)])
