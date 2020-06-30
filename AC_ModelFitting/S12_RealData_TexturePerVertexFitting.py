@@ -21,8 +21,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
         LNP = torch.tensor(LNP, dtype=torch.float32, device=device, requires_grad=False)
 
     # normalShift = torch.tensor(np.full((nVerts,1), 0), dtype=torch.float32, requires_grad = True, device=device)
-    initialPersonalShape = np.load(inputs.personalShapeFile) / 1000
-    xyzShift = torch.tensor(initialPersonalShape, dtype=torch.float32, requires_grad=True, device=device)
+
 
     # load cameras
     actual_img_shape = (2160, 4000)
@@ -63,7 +62,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     sparsePC = sparsePC[constraintIds, :]
     # initial to sparse point cloud dis
 
-    sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device)
+    sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device) / 1000
     interpoMat = torch.tensor(interpoMat, dtype=torch.float32, requires_grad=False, device=device)
 
     # load texture
@@ -71,13 +70,15 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
     # load pose
     if inputs.compressedStorage:
-        transInit, poseInit, betaInit = loadCompressedFittingParam(inputs.initialFittingParamFile)
+        transInit, poseInit, betaInit, initialPersonalShape = loadCompressedFittingParam(inputs.initialFittingParamFile, readPersonalShape=True)
         # transInit = transInit
     else:
         transInit = np.load(inputs.initialFittingParamTranslationFile)
         poseInit = np.load(inputs.initialFittingParamPoseFile)
         betaInit = np.load(inputs.initialFittingParamBetasFile)
+        initialPersonalShape = np.load(inputs.personalShapeFile) / 1000
 
+    xyzShift = torch.tensor(initialPersonalShape, dtype=torch.float32, requires_grad=True, device=device)
     smplsh = smplsh_torch.SMPLModel(device, inputs.smplshData, personalShape=xyzShift, unitMM=False)
 
     pose = torch.tensor(poseInit, dtype=torch.float64, requires_grad=cfg.optimizePose, device=device)
@@ -112,8 +113,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     # initial diff image
     diffImageFolder = join(outFolderForExperiment, 'DiffImage')
     os.makedirs(diffImageFolder, exist_ok=True)
-    outFolderDiffImage = join(outFolderForExperiment, 'DiffImage')
-    os.makedirs(diffImageFolder, exist_ok=True)
+
     diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
     # print("Initial loss:", loss)
     visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
@@ -146,8 +146,10 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
         lossVal = 0
         for iCam in range(len(cams)):
+
             verts = smplsh(betas, pose, trans).type(torch.float32)
             smplshMesh = mesh.update_padded(verts[None])
+
             meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
             blend_params = BlendParams(
                 rendererSynth.blend_params.sigma, rendererSynth.blend_params.gamma, background_color=backgrounds[iCam])
@@ -163,22 +165,30 @@ def texturedPerVertexFitting(inputs, cfg, device):
             loss = cfg.jointRegularizerWeight * torch.sum((pose ** 2))
             loss.backward()
 
+        # verts = smplsh(betas, pose, trans).type(torch.float32)
+        # smplshMesh = mesh.update_padded(verts[None])
+        #     loss = cfg.lpSmootherW * mesh_laplacian_smoothing(mesh) + cfg.normalSmootherW * mesh_normal_consistency(mesh)
+        # loss = cfg.normalSmootherW * mesh_normal_consistency(smplshMesh)
+        # normalSmootherVal = loss.item()
+        normalSmootherVal = 0
+        loss = 0
+        loss = loss + cfg.lpSmootherW * xyzShift[:, 0:1].transpose(0, 1) @ LNP @ xyzShift[:, 0:1]
+        loss = loss + cfg.lpSmootherW * xyzShift[:, 1:2].transpose(0, 1) @ LNP @ xyzShift[:, 1:2]
+        loss = loss + cfg.lpSmootherW * xyzShift[:, 2:3].transpose(0, 1) @ LNP @ xyzShift[:, 2:3]
+        lpSmootherVal = loss.item() - normalSmootherVal
+
+        loss.backward()
+        # lossVal += loss.item()
         # to corners loss
-        verts = smplsh(betas, pose, trans).type(torch.float32) * 1000
+        verts = smplsh(betas, pose, trans).type(torch.float32)
         loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
         loss.backward()
-        #     lossVal += loss.item()
         toSparseCloudLoss = loss.item()
 
-        # to keypoint fixing loss
-        # verts = smplsh(betas, pose, trans).type(torch.float32) * 1000
-        # headJoints = smplshRegressorMatHead @ verts
-        # loss = cfg.kpFixingWeight * torch.sum((headJoints - headKps) ** 2)
-        # loss.backward()
-        # headKpFixingLoss = loss.item()
-        headKpFixingLoss = 0
-
-        losses.append(lossVal)
+        # fixing loss
+        loss = torch.sum(xyzShift[indicesToFix, :] ** 2)
+        loss.backward()
+        headKpFixingLoss = loss.item()
 
         optimizer.step()
 
@@ -186,14 +196,11 @@ def texturedPerVertexFitting(inputs, cfg, device):
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
-        infoStr = 'image loss %.6f, toSparseCloudLoss %.6f, headKpFixingLoss %.4f, MemUsed:%.2f' \
-                  % (lossVal, toSparseCloudLoss, headKpFixingLoss, memAllocated)
+        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
+                  % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
-
-        # if lossVal < cfg.terminateLoss:
-        #    break
 
         # Save outputs to create a GIF.
         if (i + 1) % cfg.plotStep == 0:
@@ -213,11 +220,11 @@ def texturedPerVertexFitting(inputs, cfg, device):
                      beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
             visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=5)
 
-            # diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
-            # outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
-            # visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
-            # saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
-            #         smplshExampleMesh)
+            diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
+            outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
+            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
+            saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
+                    smplshExampleMesh)
 
             # make comparison view
             comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5) )
@@ -240,7 +247,7 @@ if __name__ == '__main__':
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
-    cfg.learningRate = 5e-3
+    cfg.learningRate = 1e-4
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
@@ -250,7 +257,9 @@ if __name__ == '__main__':
     # cfg.imgSize = 2160
     cfg.imgSize = 1080
     cfg.terminateLoss = 0.1
-    cfg.lpSmootherW = 1e-10
+    # cfg.lpSmootherW = 1e-10
+    # cfg.lpSmootherW = 1e-4
+    cfg.lpSmootherW = 1e-1
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
     cfg.numIterations = 500
@@ -270,8 +279,8 @@ if __name__ == '__main__':
     inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950\A00006950.obj'
     inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
     inputs.compressedStorage = True
-    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\06950.npz'
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting\06950'
+    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\Param_00959.npz'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPerVertsFitting\06950'
     # copy all the final result to this folder
     # inputs.finalOutputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting'
     # Setup
