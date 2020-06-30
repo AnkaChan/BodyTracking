@@ -100,7 +100,9 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         verts = smplsh(betas, pose, trans).type(torch.float32)
-        smplshMesh = mesh.update_padded(verts[None])
+        smplshMesh = mesh.offset_verts(verts-mesh.verts_packed())
+
+        # smplshMesh = mesh.update_padded(verts[None])
 
     refImages = renderImagesWithBackground(cams, rendererSynth, smplshMesh, backgrounds)
 

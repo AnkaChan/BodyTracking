@@ -157,6 +157,7 @@ def texturedPoseFitting(inputs, cfg, device):
             loss.backward()
             lossVal += loss.item()
 
+
         # joint regularizer
         loss = cfg.jointRegularizerWeight * torch.sum((pose ** 2))
         loss.backward()
