@@ -1,4 +1,5 @@
 from S07_ToSilhouetteFitting_MultiFrames import *
+import time
 
 def texturedPerVertexFitting(inputs, cfg, device):
     outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='Pose_')
@@ -108,7 +109,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     # initial image
     meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
     images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds)
-    visualize2DResults(images, outImgFile=join(outFolderForExperiment, 'Fig_00000_Initial.png'), withAlpha=False, sizeInInches=5)
+    # visualize2DResults(images, outImgFile=join(outFolderForExperiment, 'Fig_00000_Initial.png'), withAlpha=False, sizeInInches=5)
 
     # initial diff image
     diffImageFolder = join(outFolderForExperiment, 'DiffImage')
@@ -116,7 +117,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
     diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
     # print("Initial loss:", loss)
-    visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
+    # visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
 
     # the optimization loop
     if cfg.optimizePose:
@@ -145,6 +146,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
         optimizer.zero_grad()
 
         lossVal = 0
+        timeRender = time.clock()
         for iCam in range(len(cams)):
 
             verts = smplsh(betas, pose, trans).type(torch.float32)
@@ -160,6 +162,9 @@ def texturedPerVertexFitting(inputs, cfg, device):
             loss.backward()
             lossVal += loss.item()
 
+        timeRender = time.clock() - timeRender
+
+        timeRegularizer = time.clock()
         # joint regularizer
         if cfg.optimizePose:
             loss = cfg.jointRegularizerWeight * torch.sum((pose ** 2))
@@ -178,8 +183,11 @@ def texturedPerVertexFitting(inputs, cfg, device):
         lpSmootherVal = loss.item() - normalSmootherVal
 
         loss.backward()
+        timeRegularizer = time.clock() - timeRegularizer
         # lossVal += loss.item()
         # to corners loss
+
+        timeToSparse = time.clock()
         verts = smplsh(betas, pose, trans).type(torch.float32)
         loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
         loss.backward()
@@ -189,51 +197,54 @@ def texturedPerVertexFitting(inputs, cfg, device):
         loss = torch.sum(xyzShift[indicesToFix, :] ** 2)
         loss.backward()
         headKpFixingLoss = loss.item()
+        timeToSparse = time.clock() - timeToSparse
 
+        timeOptStep = time.clock()
         optimizer.step()
+        timeOptStep = time.clock() - timeOptStep
 
         memStats = torch.cuda.memory_stats(device=device)
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
-        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
-                  % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+        infoStr = 'timeRender %.6f, timeRegularizer %.6f, LtimeToSparse %.6f, timeOptStep %.6f, MemUsed:%.2f' \
+                  % (timeRender, timeRegularizer, timeToSparse, timeOptStep, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
 
-        # Save outputs to create a GIF.
-        if (i + 1) % cfg.plotStep == 0:
-            showCudaMemUsage(device)
-            with torch.no_grad():
-                verts = smplsh(betas, pose, trans).type(torch.float32)
-                smplshMesh = mesh.update_padded(verts[None])
-                meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
-
-            plt.close('all')
-
-            outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
-            images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds)
-
-            outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
-            np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
-                     beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
-            visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=5)
-
-            diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
-            outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
-            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
-            saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
-                    smplshExampleMesh)
-
-            # make comparison view
-            comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5) )
-            os.makedirs(comparisonFolderThisIter, exist_ok=True)
-            for iCam in range(images.shape[0]):
-                img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
-                imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
+        # # Save outputs to create a GIF.
+        # if (i + 1) % cfg.plotStep == 0:
+        #     showCudaMemUsage(device)
+        #     with torch.no_grad():
+        #         verts = smplsh(betas, pose, trans).type(torch.float32)
+        #         smplshMesh = mesh.update_padded(verts[None])
+        #         meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
+        #
+        #     plt.close('all')
+        #
+        #     outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
+        #     images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds)
+        #
+        #     outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
+        #     np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
+        #              beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
+        #     visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=5)
+        #
+        #     diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
+        #     outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
+        #     visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
+        #     saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
+        #             smplshExampleMesh)
+        #
+        #     # make comparison view
+        #     comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5) )
+        #     os.makedirs(comparisonFolderThisIter, exist_ok=True)
+        #     for iCam in range(images.shape[0]):
+        #         img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
+        #         cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
+        #         imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
+        #         cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
 #
 if __name__ == '__main__':
     cfg = RenderingCfg()
@@ -243,7 +254,7 @@ if __name__ == '__main__':
     cfg.sigma = 1e-8
     cfg.blurRange = 1e-8
 
-    cfg.plotStep = 5
+    cfg.plotStep = 10000
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
@@ -281,7 +292,7 @@ if __name__ == '__main__':
     inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
     inputs.compressedStorage = True
     inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\Param_00959.npz'
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPerVertsFitting\06950'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPerVertsFitting\06950_TimeTest'
     # copy all the final result to this folder
     # inputs.finalOutputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting'
     # Setup
