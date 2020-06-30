@@ -92,6 +92,7 @@ class RenderingCfg:
 
         # for per vertex adjustment only
         s.optimizePose = False
+        s.bin_size=0
 
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
@@ -119,7 +120,7 @@ class Renderer:
                 image_size=cfg.imgSize,
                 blur_radius=0,
                 faces_per_pixel=cfg.faces_per_pixel,
-                bin_size=0
+                bin_size=cfg.bin_size
             )
 
         s.rasterizer = MeshRasterizer(
@@ -182,14 +183,14 @@ class RendererWithTexture:
                 blur_radius=np.log(1. / cfg.blurRange - 1.) * s.blend_params.sigma,
                 faces_per_pixel=cfg.faces_per_pixel,
 
-                bin_size=0
+                bin_size=cfg.bin_size
             )
         else:
             s.raster_settings = RasterizationSettings(
                 image_size=cfg.imgSize,
                 blur_radius=0,
                 faces_per_pixel=cfg.faces_per_pixel,
-                bin_size=0
+                bin_size=cfg.bin_size
             )
 
         s.rasterizer = MeshRasterizer(

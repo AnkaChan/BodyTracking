@@ -281,6 +281,8 @@ if __name__ == '__main__':
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
     cfg.toSparseCornersFixingWeight = 1
+    cfg.bin_size = None
+
     pose_size = 3 * 52
     beta_size = 10
 
