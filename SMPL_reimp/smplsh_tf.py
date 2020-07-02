@@ -143,7 +143,7 @@ def pack_batch(x, dtype=tf.float64):
   return ret
 
 
-def smplsh_model(model_path, betas, pose, trans, simplify=False):
+def smplsh_model(model_path, betas, pose, trans, personalShape=None, simplify=False, unitMM=False):
   """
   Construct a compute graph that takes in parameters and outputs a tensor as
   model vertices. Face indices are also returned as a numpy ndarray.
@@ -193,6 +193,11 @@ def smplsh_model(model_path, betas, pose, trans, simplify=False):
   facesArr = data['Faces']
   parent = data['ParentTable']
 
+  if unitMM:
+    v_template = v_template * 1000
+    posedirs = posedirs * 1000
+    shapedirs = shapedirs * 1000
+
   faces = []
   fId = 0
   while fId < facesArr.shape[0]:
@@ -208,6 +213,8 @@ def smplsh_model(model_path, betas, pose, trans, simplify=False):
   numJoints = weights.shape[1]
 
   v_shaped = tf.tensordot(shapedirs, betas, axes=[[2], [0]]) + v_template
+
+
   J = tf.matmul(J_regressor, v_shaped)
   pose_cube = tf.reshape(pose, (-1, 1, 3))
   R_cube_big = rodrigues(pose_cube)
@@ -219,6 +226,10 @@ def smplsh_model(model_path, betas, pose, trans, simplify=False):
              tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float64)
     lrotmin = tf.squeeze(tf.reshape((R_cube - I_cube), (-1, 1)))
     v_posed = v_shaped + tf.tensordot(posedirs, lrotmin, axes=[[2], [0]])
+
+  if personalShape is not None:
+    v_posed = v_posed + personalShape
+
   results = []
   results.append(
     with_zeros(tf.concat((R_cube_big[0], tf.reshape(J[0, :], (3, 1))), axis=1))
@@ -361,7 +372,7 @@ def smpl_model_tensor(model_path, betas, pose, trans, simplify=False, dtype=tf.f
   return result, f
 
 if __name__ == '__main__':
-  pose_size = 72
+  pose_size = 3 * 52
   beta_size = 10
 
   #np.random.seed(9608)
@@ -377,9 +388,17 @@ if __name__ == '__main__':
   betas = tf.constant(betas, dtype=tf.float64)
   trans = tf.constant(trans, dtype=tf.float64)
 
-  model_path = r'C:/Data/SMPL_python_v.1.0.0/smpl/models/basicModel_m_lbs_10_207_0_v1.0.0.pkl'
+  restposeShape = np.zeros((6750, 3))
 
-  output, faces = smpl_model(model_path, betas, pose, trans, False)
+  restposeShape[0, :] = [0.100, 0.1100, 0.1100]
+  restposeShape[3513, :] = [-0.100, 0.1100, 0.1100]
+  restposeShape = restposeShape * 1000
+
+  restposeShape = tf.constant(restposeShape, dtype=tf.float64)
+
+  model_path = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SmplshModel.npz'
+
+  output, faces = smplsh_model(model_path, betas, pose, trans, personalShape=restposeShape, simplify=False, unitMM=True)
   sess = tf.Session()
   result = sess.run(output)
 
@@ -388,5 +407,5 @@ if __name__ == '__main__':
     for v in result:
       fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))
 
-    for f in faces + 1:
+    for f in np.array(faces) + 1:
       fp.write('f %d %d %d\n' % (f[0], f[1], f[2]))
