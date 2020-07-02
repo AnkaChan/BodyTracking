@@ -95,6 +95,8 @@ class RenderingCfg:
         s.bin_size=0
         s.cull_backfaces=False
 
+        s.inputImgExt = r'pgm'
+
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg

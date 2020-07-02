@@ -28,13 +28,13 @@ class Config:
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    inImgParantFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Images'
+    inImgParentFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Images'
     camParamFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\CamParams\Lada_19_12_13\cam_params.json'
     completedObjFolder=r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_0_JBiLap_0_Step10_Overlap0\Deformed'
     outFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\ToSparse'
     cfg = Config()
 
-    inImgFolders = glob.glob(join(inImgParantFolder, '*'))
+    inImgFolders = glob.glob(join(inImgParentFolder, '*'))
     inObjFiles = glob.glob(join(completedObjFolder, '*.obj'))
     inImgFolders.sort()
     inObjFiles.sort()
