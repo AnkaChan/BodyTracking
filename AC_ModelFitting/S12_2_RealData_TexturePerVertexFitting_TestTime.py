@@ -147,19 +147,22 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
         lossVal = 0
         timeRender = time.clock()
+        verts = smplsh(betas, pose, trans).type(torch.float32)
+        # smplshMesh = mesh.update_padded(verts[None])
+        smplshMesh = mesh.offset_verts(verts - mesh.verts_packed())
+
+        meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
         for iCam in range(len(cams)):
-
-            verts = smplsh(betas, pose, trans).type(torch.float32)
-            smplshMesh = mesh.update_padded(verts[None])
-
-            meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
             blend_params = BlendParams(
                 rendererSynth.blend_params.sigma, rendererSynth.blend_params.gamma, background_color=backgrounds[iCam])
             images = rendererSynth.renderer(meshes, cameras=cams[iCam], blend_params=blend_params)
-            images[images != images] = 0
+            images[images != images] = 0.5
+            # images[torch.isnan(images)] = 0.5
             # refImg[refImg != refImg] = 0
             loss = torch.mean(torch.abs(imagesBatchRefs[iCam] - images[..., :3]))
-            loss.backward()
+            loss.backward(retain_graph=True)
+            # loss.backward(keep_graph= True)
+
             lossVal += loss.item()
 
         timeRender = time.clock() - timeRender

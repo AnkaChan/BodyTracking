@@ -124,6 +124,9 @@ def texturedPoseFitting(inputs, cfg, device):
     # the optimization loop
     optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
     losses = []
+    toSparseCloudLosses = []
+    headKpFixingLosses = []
+
     logFile = join(outFolderForExperiment, 'Logs.txt')
     logger = Logger.configLogger(logFile, )
 
@@ -144,19 +147,21 @@ def texturedPoseFitting(inputs, cfg, device):
         optimizer.zero_grad()
 
         lossVal = 0
+        verts = smplsh(betas, pose, trans).type(torch.float32)
+        # smplshMesh = mesh.update_padded(verts[None])
+        smplshMesh = mesh.offset_verts(verts - mesh.verts_packed())
+
+        meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
         for iCam in range(len(cams)):
-            verts = smplsh(betas, pose, trans).type(torch.float32)
-            smplshMesh = mesh.update_padded(verts[None])
-            meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
             blend_params = BlendParams(
                 rendererSynth.blend_params.sigma, rendererSynth.blend_params.gamma, background_color=backgrounds[iCam])
             images = rendererSynth.renderer(meshes, cameras=cams[iCam], blend_params=blend_params)
-            images[images != images] = 0
+            images[images != images] = 0.5
+            # images[torch.isnan(images)] = 0.5
             # refImg[refImg != refImg] = 0
             loss = torch.mean(torch.abs(imagesBatchRefs[iCam] - images[..., :3]))
-            loss.backward()
+            loss.backward(retain_graph=True)
             lossVal += loss.item()
-
 
         # joint regularizer
         loss = cfg.jointRegularizerWeight * torch.sum((pose ** 2))
@@ -178,6 +183,8 @@ def texturedPoseFitting(inputs, cfg, device):
         headKpFixingLoss = 0
 
         losses.append(lossVal)
+        toSparseCloudLosses.append(toSparseCloudLoss)
+        headKpFixingLosses.append(headKpFixingLoss)
 
         optimizer.step()
 
@@ -196,6 +203,9 @@ def texturedPoseFitting(inputs, cfg, device):
 
         # Save outputs to create a GIF.
         if (i + 1) % cfg.plotStep == 0:
+            lossesFile = join(outFolderForExperiment, 'Errs.json')
+            json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
+
             showCudaMemUsage(device)
             with torch.no_grad():
                 verts = smplsh(betas, pose, trans).type(torch.float32)
@@ -236,7 +246,7 @@ if __name__ == '__main__':
     cfg.blurRange = 1e-8
 
     # cfg.plotStep = 5
-    cfg.plotStep = 10
+    cfg.plotStep = 50
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
@@ -253,13 +263,14 @@ if __name__ == '__main__':
     cfg.lpSmootherW = 1e-10
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
-    cfg.numIterations = 500
+    cfg.numIterations = 200
     # cfg.numIterations = 20
     cfg.useKeypoints = False
     cfg.kpFixingWeight = 0
     cfg.noiseLevel = 0.1
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
+    cfg.bin_size = 256
     pose_size = 3 * 52
     beta_size = 10
 
@@ -273,7 +284,7 @@ if __name__ == '__main__':
     # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\06950.npz'
     inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\FitParams.npz'
 
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting\06950_WithPS'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting\06950_Accelerated'
     # copy all the final result to this folder
     # inputs.finalOutputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting'
     # Setup
