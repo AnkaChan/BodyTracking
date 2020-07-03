@@ -1,5 +1,5 @@
-# import M01_ReconstructionJointFromRealImagesMultiFolder
-import M03_ToSparseFitting
+import M01_ReconstructionJointFromRealImagesMultiFolder
+# import M03_ToSparseFitting
 
 import glob, os, json
 from os.path import join
@@ -22,16 +22,22 @@ class InputBundle:
 
 class Config:
     def __init__(s):
-        # s.keypointsDetectionCfg = M01_ReconstructionJointFromRealImagesMultiFolder.Config()
-        s.toSparseFittignCfg = M03_ToSparseFitting.Config()
+        s.keypointsDetectionCfg = M01_ReconstructionJointFromRealImagesMultiFolder.Config()
+        # s.toSparseFittignCfg = M03_ToSparseFitting.Config()
         pass
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    inImgParentFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Images'
+    # inImgParentFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Images'
+    # camParamFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\CamParams\Lada_19_12_13\cam_params.json'
+    # completedObjFolder=r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_0_JBiLap_0_Step10_Overlap0\Deformed'
+    # outFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\ToSparse'
+
+    inImgParentFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Images'
     camParamFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\CamParams\Lada_19_12_13\cam_params.json'
-    completedObjFolder=r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_0_JBiLap_0_Step10_Overlap0\Deformed'
-    outFolder = r'F:\WorkingCopy2\2020_06_30_AC_ConsequtiveTexturedFitting\ToSparse'
+    completedObjFolder=r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_0_JBiLap_0_Step120_Overlap0\Deformed'
+    outFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\ToSparse'
+
     cfg = Config()
 
     inImgFolders = glob.glob(join(inImgParentFolder, '*'))
@@ -40,8 +46,8 @@ if __name__ == '__main__':
     inObjFiles.sort()
 
     # # openpose key points detection
-    # for inFolder in inImgFolders:
-    #     M01_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints(inFolder, camParamFile, cfg.keypointsDetectionCfg)
+    for inFolder in inImgFolders:
+        M01_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints(inFolder, camParamFile, cfg.keypointsDetectionCfg)
 
     # complete the sparse point cloud
     # fitParam = np.load(r'..\Data\PersonalModel_Lada\FittingParam.npz')
@@ -52,6 +58,6 @@ if __name__ == '__main__':
         frameName = os.path.basename(inImgFolder)
         outFolderFrame = join(outFolder, join(outFolder, frameName))
         os.makedirs(outFolderFrame, exist_ok=True)
-        M03_ToSparseFitting.toSparseFitting(inImgFolder, objFile, outFolderFrame, inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile,
-                        inputs.betaFile, inputs.personalShapeFile, inputs.OP2AdamJointMatFile, inputs.AdamGoodJointsFile, inputs.smplsh2OPRegressorMatFile,
-                        smplshDataFile=inputs.smplshDataFile)
+        # M03_ToSparseFitting.toSparseFitting(inImgFolder, objFile, outFolderFrame, inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile,
+        #                 inputs.betaFile, inputs.personalShapeFile, inputs.OP2AdamJointMatFile, inputs.AdamGoodJointsFile, inputs.smplsh2OPRegressorMatFile,
+        #                 smplshDataFile=inputs.smplshDataFile)
