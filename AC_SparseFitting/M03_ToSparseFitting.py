@@ -29,6 +29,8 @@ from SkelFit import Data
 
 import json
 
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 class Config:
     def __init__(s):
         s.numComputeClosest = 5
@@ -43,7 +45,7 @@ class Config:
         s.noBodyKeyJoint = True
         s.numBodyJoint = 22 - 9
 
-        s.numIterFitting = 6000
+        s.numIterFitting = 5000
         s.printStep = 500
 
         s.numPtsSmplshMesh = 6750
@@ -65,6 +67,8 @@ class Config:
         s.numRealCorners = 1487
 
         s.skeletonJointsToFix = [10, 11]
+
+        s.terminateLoss = 1.2e-4
 
 
 def barycentric_coordinates_of_projection(p, q, u, v):
@@ -452,11 +456,14 @@ def toSparseFitting(dataFolder, objFile, outFolder, skelDataFile, toSparsePointC
     for i in range(cfg.numIterFitting):
         # sess.run(costICPToSparse)
         sess.run(train_step_ICPToSparse, feed_dict=feedDict)
+
         if not i % cfg.printStep:
             print("Cost:", sess.run(costICPToSparse, feed_dict=feedDict),
                   "keypointFitCost:", sess.run(keypointFitCost, feed_dict=feedDict),
                   'regularizerCostToKp:', sess.run(regularizerCostToKp, feed_dict=feedDict),
                   'LearningRate:', sess.run(rateICPToSparse, feed_dict=feedDict))
+        if  sess.run(costICPToSparse, feed_dict=feedDict) < cfg.terminateLoss:
+            break
 
     transVal = sess.run(smplshtf.trans)
     poseVal = sess.run(smplshtf.pose)
@@ -468,5 +475,40 @@ def toSparseFitting(dataFolder, objFile, outFolder, skelDataFile, toSparsePointC
     outFile = join(outFolder, Path(dataFolder).stem + '.obj')
     Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
 
+if __name__ == '__main__':
+    inImgParentFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Images'
+    camParamFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\CamParams\Lada_19_12_13\cam_params.json'
+    completedObjFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_0_JBiLap_0_Step120_Overlap0\Deformed'
+    outFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\ToSparse'
 
+    cfg = Config()
+    import glob
 
+    class InputBundle:
+        def __init__(s):
+            # person specific
+            s.skelDataFile = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+            s.toSparsePointCloudInterpoMatFile = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+
+            s.betaFile = r'..\Data\PersonalModel_Lada\Beta.npy'
+            s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+
+            s.OP2AdamJointMatFile = r'..\Data\PersonalModel_Lada\OpenposeToSmplsh\OP2AdamJointMat.npy'
+            s.AdamGoodJointsFile = r'..\Data\PersonalModel_Lada\OpenposeToSmplsh\AdamGoodJoints.npy'
+            s.smplsh2OPRegressorMatFile = r'..\Data\PersonalModel_Lada\OpenposeToSmplsh\smplshRegressorNoFlatten.npy'
+            s.smplshDataFile = r'..\SMPL_reimp\SmplshModel_m.npz'
+
+    inputs = InputBundle()
+    inImgFolders = glob.glob(join(inImgParentFolder, '*'))
+    inObjFiles = glob.glob(join(completedObjFolder, '*.obj'))
+    inImgFolders.sort()
+    inObjFiles.sort()
+
+    for iFrame, inImgFolder in tqdm.tqdm(enumerate(inImgFolders[52:])):
+        objFile = inObjFiles[iFrame]
+        frameName = os.path.basename(inImgFolder)
+        outFolderFrame = join(outFolder, join(outFolder, frameName))
+        os.makedirs(outFolderFrame, exist_ok=True)
+        toSparseFitting(inImgFolder, objFile, outFolderFrame, inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile,
+                        inputs.betaFile, inputs.personalShapeFile, inputs.OP2AdamJointMatFile, inputs.AdamGoodJointsFile, inputs.smplsh2OPRegressorMatFile,
+                        smplshDataFile=inputs.smplshDataFile)

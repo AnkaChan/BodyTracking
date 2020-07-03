@@ -306,9 +306,9 @@ def reconstructKeypoints(imgFolder, calibrationDataFile, cfg=Config()):
     os.makedirs(folderProjectedKP, exist_ok=True)
 
     imgs = []
+    datum = op.Datum()
 
     for iCam, imgF in enumerate(undistImgFiles):
-        datum = op.Datum()
 
         imageToProcess = cv2.imread(imgF)
         imgs.append(imageToProcess)
@@ -399,7 +399,7 @@ def reconstructKeypoints(imgFolder, calibrationDataFile, cfg=Config()):
         try:
             keyPoint3D, errs = Triangulation.mulCamsDLT(camPts, selectedCamProjMats)
 
-            print(errs.shape[0], errs)
+            # print(errs.shape[0], errs)
 
             if np.mean(errs) < cfg.reprojectErrThreshold:
                 triangulations.append(keyPoint3D)

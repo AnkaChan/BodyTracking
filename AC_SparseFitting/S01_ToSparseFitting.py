@@ -1,6 +1,6 @@
 import M01_ReconstructionJointFromRealImagesMultiFolder
 # import M03_ToSparseFitting
-
+import tqdm
 import glob, os, json
 from os.path import join
 import numpy as np
@@ -46,7 +46,9 @@ if __name__ == '__main__':
     inObjFiles.sort()
 
     # # openpose key points detection
-    for inFolder in inImgFolders:
+    loop = tqdm.tqdm(inImgFolders[52:])
+    for inFolder in loop:
+        loop.set_description('Detecting key points for frame: ', os.path.basename(inFolder))
         M01_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints(inFolder, camParamFile, cfg.keypointsDetectionCfg)
 
     # complete the sparse point cloud
