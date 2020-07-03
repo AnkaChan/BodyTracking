@@ -126,7 +126,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
     losses = []
     toSparseCloudLosses = []
-    headKpFixingLosses = []
+    lpSmootherLosses = []
 
     logFile = join(outFolderForExperiment, 'Logs.txt')
     logger = Logger.configLogger(logFile, )
@@ -204,7 +204,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
         losses.append(lossVal)
         toSparseCloudLosses.append(toSparseCloudLoss)
-        headKpFixingLosses.append(headKpFixingLoss)
+        lpSmootherLosses.append(lpSmootherVal)
 
         infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
                   % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
@@ -216,8 +216,8 @@ def texturedPerVertexFitting(inputs, cfg, device):
         if (i + 1) % cfg.plotStep == 0:
             showCudaMemUsage(device)
             lossesFile = join(outFolderForExperiment, 'Errs.json')
-            json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
-            
+            json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'LaplacianSmootherLoss':lpSmootherLosses}, open(lossesFile, 'w'))
+
             with torch.no_grad():
                 verts = smplsh(betas, pose, trans).type(torch.float32)
                 smplshMesh = mesh.update_padded(verts[None])
