@@ -34,10 +34,11 @@ def texturedPoseFitting(inputs, cfg, device):
     cp_out, cp_crop_out = load_images(inputs.cleanPlateFolder, cropSize=cfg.imgSize, UndistImgs=False, camParamF=inputs.camParamF,
                                       imgExt='png')
 
-    refImgsFolder = join(outFolderForExperiment, 'RefImages')
-    os.makedirs(refImgsFolder, exist_ok=True)
-    for iCam in range(len(crops_out)):
-        cv2.imwrite(join(refImgsFolder, 'A' + str(iCam).zfill(5) + '.png'), (255*crops_out[iCam]).astype(np.uint8))
+    if cfg.drawInitial:
+        refImgsFolder = join(outFolderForExperiment, 'RefImages')
+        os.makedirs(refImgsFolder, exist_ok=True)
+        for iCam in range(len(crops_out)):
+            cv2.imwrite(join(refImgsFolder, 'A' + str(iCam).zfill(5) + '.png'), (255*crops_out[iCam]).astype(np.uint8))
 
     backgrounds = []
     for iBatch in range(len(cams)):
@@ -108,18 +109,20 @@ def texturedPoseFitting(inputs, cfg, device):
     rendererSynth = RendererWithTexture(device, lights=light, cfg=cfg)
 
     # initial image
-    meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
-    images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds)
-    visualize2DResults(images, outImgFile=join(outFolderForExperiment, 'Fig_00000_Initial.png'), withAlpha=False, sizeInInches=5)
+    if cfg.drawInitial:
+        meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
+        images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds)
+        visualize2DResults(images, outImgFile=join(outFolderForExperiment, 'Fig_00000_Initial.png'), withAlpha=False, sizeInInches=5)
 
     # initial diff image
     diffImageFolder = join(outFolderForExperiment, 'DiffImage')
     os.makedirs(diffImageFolder, exist_ok=True)
     outFolderDiffImage = join(outFolderForExperiment, 'DiffImage')
     os.makedirs(diffImageFolder, exist_ok=True)
-    diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
-    # print("Initial loss:", loss)
-    visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
+    if cfg.drawInitial:
+        diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
+        # print("Initial loss:", loss)
+        visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
 
     # the optimization loop
     optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
@@ -198,11 +201,19 @@ def texturedPoseFitting(inputs, cfg, device):
         loop.set_description(infoStr)
         logger.info(infoStr)
 
+        terminate = False
         # if lossVal < cfg.terminateLoss:
         #    break
+        if i>cfg.errAvgLength:
+            avgStep = np.mean(np.abs(np.array(losses[-11:-1]) - np.array(losses[-10:])))
+            if avgStep < cfg.terminateStep:
+                logger.info("Teminate because average step length in " + str(cfg.errAvgLength) + "steps is: " + str(
+                    avgStep) + " less than: " + str(cfg.terminateStep))
+
+                terminate = True
 
         # Save outputs to create a GIF.
-        if (i + 1) % cfg.plotStep == 0:
+        if (i + 1) % cfg.plotStep == 0 or terminate:
             lossesFile = join(outFolderForExperiment, 'Errs.json')
             json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
 
@@ -236,7 +247,8 @@ def texturedPoseFitting(inputs, cfg, device):
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
                 imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
-#
+        if terminate:
+            break
 if __name__ == '__main__':
     cfg = RenderingCfg()
 
@@ -254,7 +266,7 @@ if __name__ == '__main__':
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
-    cfg.batchSize = 2
+    cfg.batchSize = 4
     # cfg.faces_per_pixel = 10 # for testing
     cfg.faces_per_pixel = 1  # for debugging
     # cfg.imgSize = 2160
@@ -270,6 +282,10 @@ if __name__ == '__main__':
     cfg.noiseLevel = 0.1
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
+    cfg.plotStep = cfg.numIterations
+    cfg.drawInitial = False
+    cfg.terminateStep = 1e-6
+
     cfg.bin_size = 256
     pose_size = 3 * 52
     beta_size = 10

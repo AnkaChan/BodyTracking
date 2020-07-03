@@ -97,6 +97,12 @@ class RenderingCfg:
 
         s.inputImgExt = r'pgm'
 
+        # for terminal criteria
+        s.errAvgLength = 10
+        s.terminateStep = 1e-5
+
+        s.drawInitial = True
+
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg
