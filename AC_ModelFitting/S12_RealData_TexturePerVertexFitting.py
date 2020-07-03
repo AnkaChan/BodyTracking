@@ -125,6 +125,9 @@ def texturedPerVertexFitting(inputs, cfg, device):
         optimizer = torch.optim.Adam([xyzShift], lr=cfg.learningRate)
 
     losses = []
+    toSparseCloudLosses = []
+    headKpFixingLosses = []
+
     logFile = join(outFolderForExperiment, 'Logs.txt')
     logger = Logger.configLogger(logFile, )
 
@@ -199,6 +202,10 @@ def texturedPerVertexFitting(inputs, cfg, device):
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
+        losses.append(lossVal)
+        toSparseCloudLosses.append(toSparseCloudLoss)
+        headKpFixingLosses.append(headKpFixingLoss)
+
         infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
                   % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
 
@@ -208,6 +215,9 @@ def texturedPerVertexFitting(inputs, cfg, device):
         # Save outputs to create a GIF.
         if (i + 1) % cfg.plotStep == 0:
             showCudaMemUsage(device)
+            lossesFile = join(outFolderForExperiment, 'Errs.json')
+            json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
+            
             with torch.no_grad():
                 verts = smplsh(betas, pose, trans).type(torch.float32)
                 smplshMesh = mesh.update_padded(verts[None])
