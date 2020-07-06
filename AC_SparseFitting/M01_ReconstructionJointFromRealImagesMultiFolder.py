@@ -16,8 +16,8 @@ from M02_InverseConvert import inverseConvertMultiCams
 
 pathToPyModule = r"E:\Projects\ChbCapture\MultiCameraReconstructOutputCorrespondences\Release\MultiCameraReconstructOutputCorrespondences.cp36-win_amd64.pyd"
 spec = importlib.util.spec_from_file_location("MultiCameraReconstructFromRecog", pathToPyModule)
-MultiCameraReconstructFromRecog = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(MultiCameraReconstructFromRecog)
+# MultiCameraReconstructFromRecog = importlib.util.module_from_spec(spec)
+# spec.loader.exec_module(MultiCameraReconstructFromRecog)
 
 from matplotlib import pyplot as plt
 
@@ -112,9 +112,12 @@ class Config:
         64,  # 65
         65,  # 66
     ]
-        s.openposeModelDir = r"C:\Code\Project\Openpose\models"
+        s.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
         s.convertToRGB = True
+
+        s.rescale = False
+        s.rescaleLvl = 0.5
 
 class MultiCameraReconstructConfig:
     def __init__(self):
@@ -135,9 +138,13 @@ class MultiCameraReconstructConfig:
         self.verbose = True
         self.robustifierThres = 0.5
 
+
 # Import Openpose (Windows/Ubuntu/OSX)
-opBinDir = r'C:\Code\Project\Openpose\bin'
-opReleaseDir = r'C:\Code\Project\Openpose\x64\Release'
+# opBinDir = r'C:\Code\Project\Openpose\bin'
+# opReleaseDir = r'C:\Code\Project\Openpose\x64\Release'
+opBinDir = r'Z:\Anka\OpenPose\bin'
+opReleaseDir = r'Z:\Anka\OpenPose\x64\Release'
+
 try:
     # Windows Import
     if platform == "win32":
@@ -409,14 +416,252 @@ def reconstructKeypoints(imgFolder, calibrationDataFile, cfg=Config()):
             triangulations.append([0, 0, -1])
     if cfg.drawReconstructedKeypoints:
         for iCam, (img, imgF) in enumerate(zip(imgs, undistImgFiles)):
+            fx = camParam['fx']
+            fy = camParam['fy']
+            cx = camParam['cx']
+            cy = camParam['cy']
+            intrinsic_mtx = np.array([
+                [fx, 0.0, cx, ],
+                [0.0, fy, cy],
+                [0.0, 0.0, 1],
+            ])
+
+            undistortParameter = np.array([camParam['k1'], camParam['k2'], camParam['p1'], camParam['p2'],
+                                           camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']])
+
+            img = imgs[iCam]
+            imgUndist = cv2.undistort(img, intrinsic_mtx, undistortParameter)
+
             outResultOImgFile = join(folderProjectedKP, Path(imgF).stem + '.png')
-            project3DKeypoints(outResultOImgFile, img, camProjMats[iCam], triangulations, cfg.keypointSkeletonParentTable)
+            project3DKeypoints(outResultOImgFile, imgUndist, camProjMats[iCam], triangulations, cfg.keypointSkeletonParentTable)
 
     # reconstructionData = json.load(open(keypointsReconFile))
     # triangulations = reconstructionData['Triangulation']
 
     outTriangulationObjFile = join(reconFolder, "PointCloud.obj")
     write_obj(outTriangulationObjFile, triangulations)
+
+def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None):
+    params = dict()
+    params["model_folder"] = cfg.openposeModelDir
+    params["face"] = cfg.detecHead
+    params["hand"] = cfg.detectHand
+
+    numBodypts = 25
+    numHandpts = 21
+
+    if cfg.convertToRGB:
+        examplePngFiles = glob.glob(join('ExampleFiles', '*.dng'))
+        imgs = inverseConvertMultiCams(imgFiles, None, examplePngFiles, writeFiles=False)
+    else:
+        imgs = [cv2.imread(imgF) for imgF in imgFiles]
+
+    camParams, camNames = Camera.loadCamParams(calibrationDataFile)
+
+    camProjMats = []
+    for iCam in range(len(camParams)):
+        camParam = camParams[iCam]
+        I, E = Camera.calibrationParamsToIEMats(camParam, True)
+
+        projMat = I @ E
+        # pts2D = Triangulation.projectPoints(mesh.points, projMat)
+        # pts2Ds.append(pts2D)
+        camProjMats.append(projMat)
+
+    # if cfg.doUndist:
+    #     for imgF, camParam in zip(inFiles, camParams):
+    #         # f = inFiles[iCam][iP]
+    #         datum = op.Datum()
+    #         fx = camParam['fx']
+    #         fy = camParam['fy']
+    #         cx = camParam['cx']
+    #         cy = camParam['cy']
+    #         intrinsic_mtx = np.array([
+    #             [fx, 0.0, cx, ],
+    #             [0.0, fy, cy],
+    #             [0.0, 0.0, 1],
+    #         ])
+    #
+    #         undistortParameter = np.array([camParam['k1'], camParam['k2'], camParam['p1'], camParam['p2'],
+    #                                        camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']])
+    #
+    #         img = cv2.imread(imgF)
+    #         imgUndist = cv2.undistort(img, intrinsic_mtx, undistortParameter)
+    #         #
+    #         # if removeBayerPattern:
+    #         #     imgUndist = imgUndist[::2, ::2]
+    #
+    #         outUndistImgFile = join(undistImageFolder, Path(imgF).stem + '.' + cfg.extName)
+    #         cv2.imwrite(outUndistImgFile, imgUndist)
+    #
+    # if cfg.doUndist:
+    #     undistImgFiles = glob.glob(join(undistImageFolder, '*.' + cfg.extName))
+    # else:
+    #     undistImgFiles = glob.glob(join(inFolder, '*.' + cfg.extName))
+    opWrapper = op.WrapperPython()
+    opWrapper.configure(params)
+    opWrapper.start()
+
+    corrs = []
+
+    datum = op.Datum()
+
+    for iCam in range(len(imgs)):
+        imageToProcess = imgs[iCam]
+        imageToProcess = cv2.cvtColor(imageToProcess, cv2.COLOR_RGB2BGR)
+        if cfg.rescale:
+            imgScale = cfg.rescaleLvl
+            imgShape = imageToProcess.shape
+            newX, newY = imgShape[1] * imgScale, imgShape[0] * imgScale
+            imageToProcess = cv2.resize(imageToProcess, (int(newX), int(newY)))
+        datum.cvInputData = imageToProcess
+        opWrapper.emplaceAndPop([datum])
+        data = {}
+        data['BodyKeypoints'] = datum.poseKeypoints.tolist()
+
+        # resultImg = datum.cvOutputData
+        # cv2.imshow('resultImg', resultImg)
+        # cv2.waitKey(0)
+        # cv2.imwrite(outResultOImgFile, resultImg)
+
+        if len(datum.poseKeypoints.shape) == 3:
+            bodyKeyPoints = np.copy(datum.poseKeypoints)[0, :, :]
+        else:
+            bodyKeyPoints = np.copy(datum.poseKeypoints)
+
+        # print(bodyKeyPoints)
+        if len(bodyKeyPoints.shape) and bodyKeyPoints.shape[0] == numBodypts:
+            bodyKeyPoints = filterOutUnconfidentRecog(bodyKeyPoints, cfg.confidenceThreshold)
+        else:
+            bodyKeyPoints = np.zeros((numBodypts, 3))
+        # print(bodyKeyPoints)
+
+        if len(datum.handKeypoints[0].shape) and datum.handKeypoints[0].shape[0] == numHandpts:
+            handKeyPointsLeft = np.copy(datum.handKeypoints[0])[0, :, :]
+            handKeyPointsLeft = filterOutUnconfidentRecog(handKeyPointsLeft, cfg.confidenceThreshold)
+        else:
+            handKeyPointsLeft = np.zeros((numHandpts, 3))
+
+        if len(datum.handKeypoints[1].shape) and datum.handKeypoints[1].shape[0] == numHandpts:
+            handKeyPointsRight = np.copy(datum.handKeypoints[1])[0, :, :]
+            handKeyPointsRight = filterOutUnconfidentRecog(handKeyPointsRight, cfg.confidenceThreshold)
+        else:
+            handKeyPointsRight = np.zeros((numHandpts, 3))
+
+        keypoints = np.vstack([bodyKeyPoints, handKeyPointsLeft, handKeyPointsRight])
+
+        if cfg.rescale:
+            goodKpIds = np.where(keypoints[:,0]>=0)[0]
+            keypoints[goodKpIds,:2] = keypoints[goodKpIds,:2]/cfg.rescaleLvl
+
+        camParam = camParams[iCam]
+        fx = camParam['fx']
+        fy = camParam['fy']
+        cx = camParam['cx']
+        cy = camParam['cy']
+        intrinsic_mtx = np.array([
+                [fx, 0.0, cx, ],
+                [0.0, fy, cy],
+                [0.0, 0.0, 1],
+        ], dtype=np.float32)
+        undistortParameter = np.array([camParam['k1'], camParam['k2'], camParam['p1'], camParam['p2'],
+                                           camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']], dtype=np.float32)
+        keypointsPadded = keypoints[:, None, :2]
+        keypointsPaddedUndist = cv2.undistortPoints(keypointsPadded, intrinsic_mtx, undistortParameter, P=intrinsic_mtx)
+        keypointsPaddedUndist = np.squeeze(keypointsPaddedUndist)
+        keypointsPaddedUndist[np.where(keypoints[:,0]==-1)[0], :] = [-1, -1]
+
+        corrs.append(np.hstack([keypointsPaddedUndist, keypoints[:,2:3]]).tolist())
+
+        # if cfg.drawResults:
+        #     # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
+        #     outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.png')
+        #     drawKeyPoints(outResultOImgFile, imageToProcess, keypoints, cfg.keypointSkeletonParentTable)
+        #
+        #     # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
+        #     # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
+        #
+        #     # I, dist, E = Camera.loadCalibrationXML(calibXMLFiles[iCam])
+        #     #
+        #     # I4 = np.eye(4)
+        #     # I4[:3,:3] = I
+        #     # outProjectedMesh = join(folderProjectedMesh, Path(imgF).stem + '.png')
+        #     # projectMesh(outProjectedMesh, imageToProcess, I4 @ E, mesh)
+
+    # keypointsCorrsFile = join(reconFolder, 'KeypointsCorrs.json')
+    # json.dump(corrs, open(keypointsCorrsFile, 'w'))
+    # keypointsReconFile = join(reconFolder, 'KeypointsReconstruction.json')
+
+    # triangulate using python code
+    triangulations = []
+    for i in range(len(corrs[0])):
+        camPts = []
+        selectedCamProjMats = []
+        confidence = []
+        for iCam in range(len(camProjMats)):
+            if corrs[iCam][i][0] != -1:
+                camPts.append(corrs[iCam][i])
+                confidence.append(corrs[iCam][i][2])
+                selectedCamProjMats.append(camProjMats[iCam])
+
+        if cfg.numMostConfidentToPick != -1:
+            sortedId = np.argsort(-np.array(confidence))
+            # print(sortedId)
+            selecedIds = sortedId[:cfg.numMostConfidentToPick]
+            camPts = [camPts[i] for i in selecedIds]
+            selectedCamProjMats = [selectedCamProjMats[i] for i in selecedIds]
+
+        try:
+            keyPoint3D, errs = Triangulation.mulCamsDLT(camPts, selectedCamProjMats)
+
+            # print(errs.shape[0], errs)
+
+            if np.mean(errs) < cfg.reprojectErrThreshold:
+                triangulations.append(keyPoint3D)
+            else:
+                triangulations.append([0, 0, -1])
+        except:
+            triangulations.append([0, 0, -1])
+
+    if cfg.drawReconstructedKeypoints:
+        for iCam, (img, imgF) in enumerate(zip(imgs, imgFiles)):
+            outResultOImgFile = join(debugFolder, Path(imgF).stem + '.png')
+            project3DKeypoints(outResultOImgFile, img, camProjMats[iCam], triangulations, cfg.keypointSkeletonParentTable)
+
+    # reconstructionData = json.load(open(keypointsReconFile))
+    # triangulations = reconstructionData['Triangulation']
+
+    # outTriangulationObjFile = join(reconFolder, "PointCloud.obj")
+    write_obj(outTriangulationObjFile, triangulations)
+
+if __name__ == '__main__':
+    inParentFolder = r'Z:\shareZ\2019_12_13_Lada_Capture\Converted'
+    outFolder = r'Z:\shareZ\2019_12_13_Lada_Capture\KeyPoints'
+    cfg = Config()
+    cfg.rescale = True
+    # cfg.drawReconstructedKeypoints = True
+    # cfg.rescale = False
+    # reconInterval = [8853, 10853]
+    # reconInterval = [8724, 8734]
+    reconInterval = [9109, 10853]
+
+    camFolders = glob.glob(join(inParentFolder, '*'))
+    camFolders.sort()
+    allImgs = [glob.glob(join(camFolder, '*.pgm')) for camFolder in camFolders]
+    for iCam in range(len(allImgs)):
+        allImgs[iCam].sort()
+
+    debugFolder = join(outFolder, 'Debug')
+    os.makedirs(debugFolder, exist_ok=True)
+
+    camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
+    os.makedirs(outFolder, exist_ok=True)
+    for iFrame in tqdm.tqdm(range(reconInterval[0], reconInterval[1])):
+        imgFiles = [camFiles[iFrame] for camFiles in allImgs]
+        outFile = join(outFolder, str(iFrame).zfill(5)+'.obj')
+        debugFolderFrame = join(debugFolder, str(iFrame).zfill(5))
+        os.makedirs(debugFolderFrame, exist_ok=True)
+        reconstructKeypoints2(imgFiles, outFile, camParamF, cfg, debugFolder=debugFolderFrame)
 
 
 # if __name__ == '__main__':
