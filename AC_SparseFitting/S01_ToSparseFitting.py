@@ -45,8 +45,9 @@ if __name__ == '__main__':
     inImgFolders.sort()
     inObjFiles.sort()
 
-    # # openpose key points detection
-    loop = tqdm.tqdm(inImgFolders[52:])
+    # openpose key points detection
+    loop = tqdm.tqdm(inImgFolders[51:])
+    # loop = tqdm.tqdm(inImgFolders)
     for inFolder in loop:
         loop.set_description('Detecting key points for frame: ', os.path.basename(inFolder))
         M01_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints(inFolder, camParamFile, cfg.keypointsDetectionCfg)
