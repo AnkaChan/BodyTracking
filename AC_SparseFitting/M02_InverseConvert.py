@@ -39,8 +39,9 @@ class Configs:
     # how many worker processes to launch in parallel
     num_processes = 6
 
-def inverseConvertMultiCams(imgFilesToConvert, outFolder, exampleDngFiles, config=Configs()):
-    os.makedirs(outFolder, exist_ok=True)
+def inverseConvertMultiCams(imgFilesToConvert, outFolder, exampleDngFiles, config=Configs(), writeFiles=True):
+    if writeFiles:
+        os.makedirs(outFolder, exist_ok=True)
     # imgFiles = glob.glob(join(imgFilesToConvert, '*.' + inExtname))
     assert len(imgFilesToConvert) == len(exampleDngFiles)
 
@@ -58,6 +59,7 @@ def inverseConvertMultiCams(imgFilesToConvert, outFolder, exampleDngFiles, confi
                                filter3 * config.wb_scales[2] + filter4 * config.wb_scales[0]) \
                               / (config.white_level - config.black_level)
 
+    rgbImgs = []
     for imgF, exampleDng in zip(imgFilesToConvert, exampleDngFiles):
         rimg = raw.imread(exampleDng)
         img = cv2.imread(imgF, flags=cv2.IMREAD_GRAYSCALE)
@@ -70,10 +72,13 @@ def inverseConvertMultiCams(imgFilesToConvert, outFolder, exampleDngFiles, confi
         raw_image = rimg.raw_image
         raw_image[:] = inverted
 
-        rgbFile = join(outFolder, os.path.basename(imgF) + '.png')
         rgb = rimg.postprocess()
         rgb = rgb[config.margin_crop:(config.height - config.margin_crop),
               config.margin_crop:(config.width - config.margin_crop)]
-        imageio.imsave(rgbFile, rgb)
-
+        if writeFiles:
+            rgbFile = join(outFolder, os.path.basename(imgF) + '.png')
+            imageio.imsave(rgbFile, rgb)
+        rgbImgs.append(rgb)
         # print(img.shape)
+
+    return rgbImgs
