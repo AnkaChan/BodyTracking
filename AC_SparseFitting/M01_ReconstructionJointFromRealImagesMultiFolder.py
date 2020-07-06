@@ -325,7 +325,7 @@ def reconstructKeypoints(imgFolder, calibrationDataFile, cfg=Config()):
         # data['BodyKeypoints'] = op.datum.poseKeypoints.tolist()
         # print(datum.handKeypoints)
 
-        resultImg = datum.cvOutputData
+        # resultImg = datum.cvOutputData
         # cv2.imshow('resultImg', resultImg)
         # cv2.waitKey(0)
         # cv2.imwrite(outResultOImgFile, resultImg)

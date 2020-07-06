@@ -45,7 +45,7 @@ class Config:
         s.noBodyKeyJoint = True
         s.numBodyJoint = 22 - 9
 
-        s.numIterFitting = 5000
+        s.numIterFitting = 6000
         s.printStep = 500
 
         s.numPtsSmplshMesh = 6750
@@ -68,7 +68,7 @@ class Config:
 
         s.skeletonJointsToFix = [10, 11]
 
-        s.terminateLoss = 1.2e-4
+        s.terminateLoss = 1.0e-4
 
 
 def barycentric_coordinates_of_projection(p, q, u, v):
@@ -482,6 +482,12 @@ if __name__ == '__main__':
     outFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\ToSparse'
 
     cfg = Config()
+    cfg.numIterFitting = 5000
+    cfg.terminateLoss = 1e-4
+
+    startFrame=51
+    # startFrame=41
+
     import glob
 
     class InputBundle:
@@ -504,9 +510,15 @@ if __name__ == '__main__':
     inImgFolders.sort()
     inObjFiles.sort()
 
-    for iFrame, inImgFolder in tqdm.tqdm(enumerate(inImgFolders[52:])):
+    loop =  tqdm.tqdm(range(startFrame, len(inImgFolders)))
+    for iFrame in loop:
+        inImgFolder = inImgFolders[ startFrame]
         objFile = inObjFiles[iFrame]
         frameName = os.path.basename(inImgFolder)
+        loop.set_description('Processing frame: ', os.path.basename(frameName))
+
+        print('Processing frame: ', os.path.basename(frameName))
+
         outFolderFrame = join(outFolder, join(outFolder, frameName))
         os.makedirs(outFolderFrame, exist_ok=True)
         toSparseFitting(inImgFolder, objFile, outFolderFrame, inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile,
