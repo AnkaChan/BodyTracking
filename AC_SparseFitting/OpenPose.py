@@ -13,8 +13,11 @@ from copy import  copy
 
 # Import Openpose (Windows/Ubuntu/OSX)
 #dir_path = os.path.dirname(os.path.realpath(__file__))
-opBinDir = r'C:\Code\Project\Openpose\bin'
-opReleaseDir = r'C:\Code\Project\Openpose\x64\Release'
+# opBinDir = r'C:\Code\Project\Openpose\bin'
+# opReleaseDir = r'C:\Code\Project\Openpose\x64\Release'
+
+opBinDir = r'Z:\Anka\OpenPose\bin'
+opReleaseDir = r'Z:\Anka\OpenPose\x64\Release'
 try:
     # Windows Import
     if platform == "win32":
