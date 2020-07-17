@@ -395,6 +395,86 @@ class SMPLModel(Module):
     else:
       return T
 
+  def getTransformation(self, betas, pose, trans, simplify=False, returnPoseBlendShape=False):
+    """
+          Construct a compute graph that takes in parameters and outputs a tensor as
+          model vertices. Face indices are also returned as a numpy ndarray.
+
+          Prameters:
+          ---------
+          pose: Also known as 'theta', a [24,3] tensor indicating child joint rotation
+          relative to parent joint. For root joint it's global orientation.
+          Represented in a axis-angle format.
+
+          betas: Parameter for model shape. A tensor of shape [10] as coefficients of
+          PCA components. Only 10 components were released by SMPL author.
+
+          trans: Global translation tensor of shape [3].
+
+          Return:
+          ------
+          A tensor for vertices, and a numpy ndarray as face indices.
+
+    """
+    # id_to_col = {self.kintree_table[1, i]: i
+    #              for i in range(self.numJoints)}
+    # parent = {
+    #   i: id_to_col[self.kintree_table[0, i]]
+    #   for i in range(1, self.kintree_table.shape[1])
+    # }
+    v_shaped = torch.tensordot(self.shapedirs, betas, dims=([2], [0])) + self.v_template
+    J = torch.matmul(self.J_regressor, v_shaped)
+    R_cube_big = self.rodrigues(pose.view(-1, 1, 3))
+
+    if simplify or not returnPoseBlendShape:
+      v_posed = v_shaped
+    else:
+      R_cube = R_cube_big[1:]
+      I_cube = (torch.eye(3, dtype=torch.float64).unsqueeze(dim=0) + \
+        torch.zeros((R_cube.shape[0], 3, 3), dtype=torch.float64)).to(self.device)
+      lrotmin = torch.reshape(R_cube - I_cube, (-1, 1)).squeeze()
+      v_posed = v_shaped + torch.tensordot(self.posedirs, lrotmin, dims=([2], [0]))
+
+    if self.personalShape is not  None:
+      v_posed = v_posed + self.personalShape
+
+    results = []
+    results.append(
+      self.with_zeros(torch.cat((R_cube_big[0], torch.reshape(J[0, :], (3, 1))), dim=1))
+    )
+    for i in range(1, self.numJoints):
+      results.append(
+        torch.matmul(
+          results[self.parent[i]],
+          self.with_zeros(
+            torch.cat(
+              (R_cube_big[i], torch.reshape(J[i, :] - J[self.parent[i], :], (3, 1))),
+              dim=1
+            )
+          )
+        )
+      )
+
+    stacked = torch.stack(results, dim=0)
+    results = stacked - \
+      self.pack(
+        torch.matmul(
+          stacked,
+          torch.reshape(
+            torch.cat((J, torch.zeros((self.numJoints, 1), dtype=torch.float64).to(self.device)), dim=1),
+            (self.numJoints, 4, 1)
+          )
+        )
+      )
+    T = torch.tensordot(self.weights, results, dims=([1], [0]))
+    
+    T[:, :3, 3] += trans
+    
+    if returnPoseBlendShape:
+      return T, torch.tensordot(self.posedirs, lrotmin, dims=([2], [0])), v_shaped
+    else:
+      return T
+
 
 def test_gpu(gpu_id=[1], modelPath = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SmplshModel.npz'):
   if len(gpu_id) > 0 and torch.cuda.is_available():
