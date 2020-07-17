@@ -485,7 +485,7 @@ if __name__ == '__main__':
     cfg.numIterFitting = 5000
     cfg.terminateLoss = 1e-4
 
-    startFrame=51
+    startFrame=52
     # startFrame=41
 
     import glob

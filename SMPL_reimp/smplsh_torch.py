@@ -142,7 +142,7 @@ class SMPLModel(Module):
           fp.write('%d ' % (fv + 1))
         fp.write('\n')
 
-  def forward(self, betas, pose, trans, simplify=False):
+  def forward(self, betas, pose, trans, simplify=False, returnDeformedJoints=False):
     """
           Construct a compute graph that takes in parameters and outputs a tensor as
           model vertices. Face indices are also returned as a numpy ndarray.
@@ -220,7 +220,20 @@ class SMPLModel(Module):
     v = torch.matmul(T, torch.reshape(rest_shape_h, (-1, 4, 1)))
     v = torch.reshape(v, (-1, 4))[:, :3]
     result = v + torch.reshape(trans, (1, 3))
-    return result
+    if not returnDeformedJoints:
+      return result
+    else:
+      jointsH = torch.cat([
+        torch.transpose(J, 0, 1),
+        torch.ones((1, J.shape[0]), dtype=torch.float64, requires_grad=False, device=self.device)
+      ], dim=0)
+      # for i in range(J.shape[0]):
+      #   jointsH[:, i] = results[i, ...] @ jointsH[:, i]
+      jointsH = torch.matmul(results, torch.transpose(jointsH, 0, 1)[...,None])
+      # newJs = torch.transpose(jointsH[:3, :], 0, 1) + torch.reshape(trans, (1, 3))
+      newJs = jointsH[:, :3, 0] + torch.reshape(trans, (1, 3))
+
+      return result, newJs
 
   def getTransformation(self, betas, pose, trans, simplify=False, returnPoseBlendShape=False):
     """

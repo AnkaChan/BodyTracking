@@ -143,7 +143,7 @@ def pack_batch(x, dtype=tf.float64):
   return ret
 
 
-def smplsh_model(model_path, betas, pose, trans, personalShape=None, simplify=False, unitMM=False):
+def smplsh_model(model_path, betas, pose, trans, personalShape=None, simplify=False, unitMM=False, returnDeformedJoints=False):
   """
   Construct a compute graph that takes in parameters and outputs a tensor as
   model vertices. Face indices are also returned as a numpy ndarray.
@@ -265,7 +265,20 @@ def smplsh_model(model_path, betas, pose, trans, personalShape=None, simplify=Fa
   v = tf.matmul(T, tf.reshape(rest_shape_h, (-1, 4, 1)))
   v = tf.reshape(v, (-1, 4))[:, :3]
   result = v + tf.reshape(trans, (1, 3))
-  return result, faces
+  if not returnDeformedJoints:
+    return result, faces
+  else:
+    jointsH = tf.concat(
+      (J, tf.ones((J.get_shape().as_list()[0], 1), dtype=tf.float64)),
+      axis=1
+      )
+
+    # for i in range(J.shape[0]):
+    #   jointsH[:, i] = results[i, ...] @ jointsH[:, i]
+    jointsH = tf.matmul(results, tf.reshape(jointsH, (-1, 4, 1)))
+    # newJs = torch.transpose(jointsH[:3, :], 0, 1) + torch.reshape(trans, (1, 3))
+    newJs = jointsH[:, :3, 0] + tf.reshape(trans, (1, 3))
+    return result, newJs, faces
 
 def smpl_model_tensor(model_path, betas, pose, trans, simplify=False, dtype=tf.float64):
   """
@@ -369,6 +382,7 @@ def smpl_model_tensor(model_path, betas, pose, trans, simplify=False, dtype=tf.f
   v = tf.matmul(T, tf.reshape(rest_shape_h, (numBatches, -1, 4, 1)))
   v = tf.reshape(v, (numBatches, -1, 4))[:, :, :3]
   result = v + tf.reshape(trans, (numBatches, 1, 3))
+
   return result, f
 
 if __name__ == '__main__':

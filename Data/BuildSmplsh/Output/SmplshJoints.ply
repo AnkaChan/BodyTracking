@@ -1,0 +1,15 @@
+ply
+format binary_little_endian 1.0
+comment VTK generated PLY File
+obj_info vtkPolyData points and polygons: vtk4.0
+element vertex 52
+property float x
+property float y
+property float z
+element face 0
+property list uchar int vertex_indices
+end_header
++4ª≥çvæ'9Í<—g=ig•æ˜
+3<°ÍΩõû©æëv<.æ;TÓΩt ºÓÑÃ=`£5ø’[õ</åÿΩ¨7øi7'<»r›;1”∞<Ω{ã<∂bÆ=stëøÂπñº\π±ΩßIëøz©«ºf>ì;‚ıû=‘ﬂ¢<±K>óôø+˘‘=Ì∂˘ΩŒ2ôø>‹=Ô√º˜î>Øï^º¶ú=L7D>ı¯Ä:⁄Ø†Ωı¶B>&±zªÈoü:.¢¡>:’=lÂK>ìÅr>FˆìºJDæ9°r>o{Iºî≠Ë>;{b>]¯'ΩiTÁæeÍc>r2ΩP\8?˜{o>æ-FΩÉé8øaﬂj>√!KΩ∫vS?–1d>j˝÷º£Ï[?—ˆe>π√∑ººﬂa?ôc>{±º¢U?ig>ˇzNΩ∞¨]?B–g>Éë]ΩÒc?tae>©kΩå÷N?äK`>•˚ΩΩxAS?Í`>ó∫‘ΩîûW?õá^>\xÈΩüZR?Ce>°äôΩÀÈY?Lf>Ò
+°Ω†`?,d>e≠Ω–.C?-ÿW>@†º”„G?B[>—/“;óM?ûuX>'∂<√4Sø⁄a>¬Eøº±—[øUìd>
+ï™ºÅ»aø.;b>‰ÁÆºAjUøŒe>ò⁄GΩíç]øπPg>Î˝WΩK∫cø√le>LXgΩ¥Oø˛]>7áºΩ„^SøB|\>,⁄”Ω¸¢Wø¥‹Z>ÊÊËΩÙrRøÒ-c> GòΩ.ÁYøÌ?e>Tø°ΩªÓ_øbfc>⁄#∞Ω…üBø|>T>ÚZèºYGø“jU> u<∑Lø£P>G#‘<

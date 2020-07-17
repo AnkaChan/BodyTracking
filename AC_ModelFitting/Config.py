@@ -130,7 +130,6 @@ class Renderer:
                 blur_radius=0,
                 faces_per_pixel=cfg.faces_per_pixel,
                 bin_size=cfg.bin_size,
-
             )
 
         s.rasterizer = MeshRasterizer(
@@ -140,6 +139,7 @@ class Renderer:
         if cfg.blurRange != 0:
             s.renderer = MeshRenderer(
                 rasterizer=s.rasterizer,
+
                 #     shader=SoftPhongShader(
                 #         device=device,
                 #         cameras=cameras,
@@ -148,6 +148,7 @@ class Renderer:
                 #     )
                 shader=SoftSilhouetteShader(
                     blend_params=s.blend_params
+
                     # device=device,
                     # cameras=cameras,
                     # lights=lights
@@ -156,6 +157,7 @@ class Renderer:
         else:
             s.renderer = MeshRenderer(
                 rasterizer=s.rasterizer,
+
                 #     shader=SoftPhongShader(
                 #         device=device,
                 #         cameras=cameras,
@@ -163,11 +165,12 @@ class Renderer:
                 #         blend_params=blend_params
                 #     )
                 shader=SoftSilhouetteShader(
-                    blend_params=s.blend_params
+                    blend_params=s.blend_params,
                     # device=device,
                     # cameras=cameras,
                     # lights=lights
-                )
+
+            )
             )
 
 class RendererWithTexture:
