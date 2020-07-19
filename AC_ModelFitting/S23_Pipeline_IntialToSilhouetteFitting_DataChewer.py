@@ -32,8 +32,6 @@ from S05_InterpolateWithSparsePointCloud import interpolateWithSparsePointCloudS
 if __name__ == '__main__':
     ### This is the firsting fitting to silhouette, before we have it register to sparse point cloud
     # before we have the texture
-
-
     inputs = InputBundle()
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
@@ -79,6 +77,7 @@ if __name__ == '__main__':
     cfgPerVert.terminateLoss = 0.1
     # cfgPerVert.lpSmootherW = 0.000001
     cfgPerVert.lpSmootherW = 1e-7
+    cfgPerVert.vertexFixingWeight = 0
     cfgPerVert.normalSmootherW = 0.0
     cfgPerVert.numIterations = 500
     # cfgPerVert.numIterations = 20
@@ -90,6 +89,7 @@ if __name__ == '__main__':
     inputs.imageFolder = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\03052\Silhouette'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
     inputs.outputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
+    inputs.finalOutputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\Final')
 
     inputs.compressedStorage = False
     inputs.initialFittingParamPoseFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert)
+    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
     perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder, cfgPerVert, Prefix='XYZRestpose_')
 
     # copy final data
