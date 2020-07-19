@@ -103,6 +103,7 @@ class RenderingCfg:
 
         s.drawInitial = True
 
+
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg

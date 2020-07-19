@@ -184,7 +184,7 @@ def toSilhouettePoseInitalFitting(inputs, cfg, undistortSilhouettes=False):
         betaInit = np.load(inputs.initialFittingParamBetasFile)
     # Make fitting parameter tensors
     pose = torch.tensor(poseInit, dtype=torch.float64, requires_grad=True, device=device)
-    betas = torch.tensor(betaInit, dtype=torch.float64, requires_grad=True, device=device)
+    betas = torch.tensor(betaInit, dtype=torch.float64, requires_grad=False, device=device)
     trans = torch.tensor(transInit, dtype=torch.float64,
                          requires_grad=True, device=device)
 
@@ -354,19 +354,19 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
     registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
     print("Number of registered corners:", registeredCornerIds.shape)
 
-    sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
-    sparsePC = np.array(sparsePC.points)
-
-    constraintIds = np.where(sparsePC[:, 2] > 0)[0]
-    constraintIds = np.intersect1d(registeredCornerIds, constraintIds)
-    print("Number of constraint corners:", constraintIds.shape)
-
-    interpoMat = interpoMat[constraintIds, :]
-    sparsePC = sparsePC[constraintIds, :]
-    # initial to sparse point cloud dis
-
-    sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device)
-    interpoMat = torch.tensor(interpoMat, dtype=torch.float32, requires_grad=False, device=device)
+    # sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
+    # sparsePC = np.array(sparsePC.points)
+    #
+    # constraintIds = np.where(sparsePC[:, 2] > 0)[0]
+    # constraintIds = np.intersect1d(registeredCornerIds, constraintIds)
+    # print("Number of constraint corners:", constraintIds.shape)
+    #
+    # interpoMat = interpoMat[constraintIds, :]
+    # sparsePC = sparsePC[constraintIds, :]
+    # # initial to sparse point cloud dis
+    #
+    # sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device)
+    # interpoMat = torch.tensor(interpoMat, dtype=torch.float32, requires_grad=False, device=device)
 
     # load pose
     if inputs.compressedStorage:
@@ -457,17 +457,17 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
 
         loss.backward()
         lossVal += loss.item()
-        # to corners loss
-        verts = smplsh(betas, pose, trans).type(torch.float32)
-        loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
-        loss.backward()
-        #     lossVal += loss.item()
-        toSparseCloudLoss = loss.item()
+        # # to corners loss
+        # verts = smplsh(betas, pose, trans).type(torch.float32)
+        # loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
+        # loss.backward()
+        # #     lossVal += loss.item()
+        # toSparseCloudLoss = loss.item()
 
         # fixing loss
         loss = torch.sum(xyzShift[indicesToFix, :] ** 2)
         loss.backward()
-        #     lossVal += loss.item()
+        hhFixingLoss = loss.item()
         # recordData
         losses.append(lossVal)
 
@@ -476,8 +476,8 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
-        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
-                  % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, hhFixingLoss %.6f, MemUsed:%.2f' \
+                  % (lossVal, normalSmootherVal, lpSmootherVal, hhFixingLoss, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
@@ -525,7 +525,7 @@ if __name__ == '__main__':
     cfgPoseFitting.plotStep = 20
     cfgPoseFitting.numCams = 16
     # low learning rate for pose optimization
-    cfgPoseFitting.learningRate = 1e-5
+    cfgPoseFitting.learningRate = 1e-3
     cfgPoseFitting.batchSize = 4
     # cfgPoseFitting.faces_per_pixel = 6 # for testing
     cfgPoseFitting.faces_per_pixel = 6 # for debugging
@@ -537,7 +537,7 @@ if __name__ == '__main__':
     cfgPoseFitting.normalSmootherW = 0.0
     cfgPoseFitting.numIterations = 500
     # cfgPoseFitting.numIterations = 20
-    cfgPoseFitting.kpFixingWeight = 0.01
+    cfgPoseFitting.kpFixingWeight = 0.005
     cfgPoseFitting.bin_size = 256
 
     cfgPerVert = RenderingCfg()
