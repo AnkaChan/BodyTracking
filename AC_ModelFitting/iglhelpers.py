@@ -7,9 +7,10 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 import numpy as np
 import scipy.sparse as sparse
-import pyigl as igl
 
 def p2e(m):
+    import pyigl as igl
+
     if isinstance(m, np.ndarray):
         if not (m.flags['C_CONTIGUOUS'] or m.flags['F_CONTIGUOUS']):
             raise TypeError('p2e support either c-order or f-order')

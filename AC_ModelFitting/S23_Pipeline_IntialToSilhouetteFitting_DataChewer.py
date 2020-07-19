@@ -1,21 +1,18 @@
-from Config import *
-from Utility import *
-from copy import copy
-from tqdm import tqdm
-import shutil
+from S23_Pipeline_IntialToSilhouetteFitting import *
 
 class InputBundle:
     def __init__(s):
         # same over all frames
-        s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-        s.smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
-        s.toSparsePCMat = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
-        s.smplshRegressorMatFile = r'C:\Code\MyRepo\ChbCapture\08_CNNs\Openpose\SMPLSHAlignToAdamWithHeadNoFemurHead\smplshRegressorNoFlatten.npy'
+        s.camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
+        s.smplshExampleMeshFile = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\SMPLSH.obj'
+        s.toSparsePCMat = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
+        s.smplshRegressorMatFile = r'smplshRegressorNoFlatten.npy'
+        # s.smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
         s.smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
 
         s.handIndicesFile = r'HandIndices.json'
         s.HeadIndicesFile = r'HeadIndices.json'
-        s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+        s.personalShapeFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
         s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
 
         # frame specific inputs
@@ -354,19 +351,19 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
     registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
     print("Number of registered corners:", registeredCornerIds.shape)
 
-    sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
-    sparsePC = np.array(sparsePC.points)
-
-    constraintIds = np.where(sparsePC[:, 2] > 0)[0]
-    constraintIds = np.intersect1d(registeredCornerIds, constraintIds)
-    print("Number of constraint corners:", constraintIds.shape)
-
-    interpoMat = interpoMat[constraintIds, :]
-    sparsePC = sparsePC[constraintIds, :]
-    # initial to sparse point cloud dis
-
-    sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device)
-    interpoMat = torch.tensor(interpoMat, dtype=torch.float32, requires_grad=False, device=device)
+    # sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
+    # sparsePC = np.array(sparsePC.points)
+    #
+    # constraintIds = np.where(sparsePC[:, 2] > 0)[0]
+    # constraintIds = np.intersect1d(registeredCornerIds, constraintIds)
+    # print("Number of constraint corners:", constraintIds.shape)
+    #
+    # interpoMat = interpoMat[constraintIds, :]
+    # sparsePC = sparsePC[constraintIds, :]
+    # # initial to sparse point cloud dis
+    #
+    # sparsePC = torch.tensor(sparsePC, dtype=torch.float32, requires_grad=False, device=device)
+    # interpoMat = torch.tensor(interpoMat, dtype=torch.float32, requires_grad=False, device=device)
 
     # load pose
     if inputs.compressedStorage:
@@ -457,12 +454,12 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
 
         loss.backward()
         lossVal += loss.item()
-        # to corners loss
-        verts = smplsh(betas, pose, trans).type(torch.float32)
-        loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
-        loss.backward()
-        #     lossVal += loss.item()
-        toSparseCloudLoss = loss.item()
+        # # to corners loss
+        # verts = smplsh(betas, pose, trans).type(torch.float32)
+        # loss = cfg.toSparseCornersFixingWeight * torch.sum((sparsePC - interpoMat @ verts) ** 2)
+        # loss.backward()
+        # #     lossVal += loss.item()
+        # toSparseCloudLoss = loss.item()
 
         # fixing loss
         loss = torch.sum(xyzShift[indicesToFix, :] ** 2)
@@ -476,8 +473,8 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
-        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
-                  % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, MemUsed:%.2f' \
+                  % (lossVal, normalSmootherVal, lpSmootherVal, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
@@ -522,10 +519,10 @@ if __name__ == '__main__':
     cfgPoseFitting.sigma = 1e-7
     cfgPoseFitting.blurRange = 1e-7
     # cfgPoseFitting.plotStep = 20
-    cfgPoseFitting.plotStep = 20
+    cfgPoseFitting.plotStep = 100
     cfgPoseFitting.numCams = 16
     # low learning rate for pose optimization
-    cfgPoseFitting.learningRate = 1e-5
+    cfgPoseFitting.learningRate = 2e-5
     cfgPoseFitting.batchSize = 4
     # cfgPoseFitting.faces_per_pixel = 6 # for testing
     cfgPoseFitting.faces_per_pixel = 6 # for debugging
@@ -535,7 +532,7 @@ if __name__ == '__main__':
     cfgPoseFitting.lpSmootherW = 0.000001
     # cfgPoseFitting.normalSmootherW = 0.1
     cfgPoseFitting.normalSmootherW = 0.0
-    cfgPoseFitting.numIterations = 500
+    cfgPoseFitting.numIterations = 2000
     # cfgPoseFitting.numIterations = 20
     cfgPoseFitting.kpFixingWeight = 0.01
     cfgPoseFitting.bin_size = 256
@@ -556,7 +553,8 @@ if __name__ == '__main__':
     cfgPerVert.imgSize = 1080
     device = torch.device("cuda:0")
     cfgPerVert.terminateLoss = 0.1
-    cfgPerVert.lpSmootherW = 0.000001
+    # cfgPerVert.lpSmootherW = 0.000001
+    cfgPerVert.lpSmootherW = 1e-7
     cfgPerVert.normalSmootherW = 0.0
     cfgPerVert.numIterations = 500
     # cfgPerVert.numIterations = 20
@@ -565,20 +563,20 @@ if __name__ == '__main__':
     frameName = '3052'
     undistortSilhouette = False
 
-    inputs.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\3052\Silhouette'
+    inputs.imageFolder = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\03052\Silhouette'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
-    inputs.outputFolder = join(r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
+    inputs.outputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
 
     inputs.compressedStorage = False
-    inputs.initialFittingParamPoseFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
-    inputs.initialFittingParamBetasFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
-    inputs.initialFittingParamTranslationFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
+    inputs.initialFittingParamPoseFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
+    inputs.initialFittingParamBetasFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
+    inputs.initialFittingParamTranslationFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
 
-    inputs.KeypointsFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\KepPoints\00352.obj'
+    inputs.KeypointsFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\KepPoints\00352.obj'
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting)
+    # toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()

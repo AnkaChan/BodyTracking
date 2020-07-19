@@ -14,7 +14,6 @@ from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     SfMPerspectiveCameras,
 )
-import pyigl as igl
 from iglhelpers import *
 
 vertex_ids = {
@@ -314,6 +313,8 @@ def showCudaMemUsage(device):
 
 
 def getLaplacian(meshFile, biLaplacian = False):
+    import pyigl as igl
+
     V = igl.eigen.MatrixXd()
     N = igl.eigen.MatrixXd()
     F = igl.eigen.MatrixXi()
