@@ -87,7 +87,7 @@ class RenderingCfg:
         s.useKeypoints = False
         s.kpFixingWeight = 1
         # fix the shape of hand and head
-        s.vertexFixingWeight = 100
+        s.vertexFixingWeight = 1
         s.toSparseCornersFixingWeight = 1e-6
 
         # for per vertex adjustment only

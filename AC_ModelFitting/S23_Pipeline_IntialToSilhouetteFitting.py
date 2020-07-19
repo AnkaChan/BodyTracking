@@ -48,7 +48,7 @@ def makeOutputFolder(outputParentFolder, cfg, Prefix = ''):
         cfg.faces_per_pixel) \
               + '_NCams' + str(cfg.numCams) + '_ImS' + str(cfg.imgSize) + '_LR' + str(cfg.learningRate) + '_JR' + str(
         cfg.jointRegularizerWeight) + '_KPW' + str(cfg.kpFixingWeight) + '_SCW' + str(cfg.toSparseCornersFixingWeight) \
-        # + '_It' + str(cfg.numIterations)
+        + 'LPW_' + str(cfg.lpSmootherW) + 'HHW_' + cfg.vertexFixingWeight + '_It' + str(cfg.numIterations)
 
     outFolderForExperiment = join(outputParentFolder, expName)
     os.makedirs(outFolderForExperiment, exist_ok=True)
@@ -465,7 +465,7 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg):
         # toSparseCloudLoss = loss.item()
 
         # fixing loss
-        loss = torch.sum(xyzShift[indicesToFix, :] ** 2)
+        loss = cfg.vertexFixingWeight * torch.sum(xyzShift[indicesToFix, :] ** 2)
         loss.backward()
         hhFixingLoss = loss.item()
         # recordData
