@@ -5,38 +5,5 @@ clean plates   : ./22_data/CleanPlates/undistorted
 images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
 ---------------------------------------------
 
-=== 20200719 Start ==========================
-cameras        : ./22_data/cam_params.json
-mesh           : ./22_data/200619_SilFittedMesh_vtAdded
-clean plates   : ./22_data/CleanPlates/undistorted
-images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
----------------------------------------------
-
-=== 20200719 Start ==========================
-cameras        : ./22_data/cam_params.json
-mesh           : ./22_data/200619_SilFittedMesh_vtAdded
-clean plates   : ./22_data/CleanPlates/undistorted
-images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
----------------------------------------------
-
-=== 20200719 Start ==========================
-cameras        : ./22_data/cam_params.json
-mesh           : ./22_data/200619_SilFittedMesh_vtAdded
-clean plates   : ./22_data/CleanPlates/undistorted
-images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
----------------------------------------------
-
-=== 20200719 Start ==========================
-cameras        : ./22_data/cam_params.json
-mesh           : ./22_data/200619_SilFittedMesh_vtAdded
-clean plates   : ./22_data/CleanPlates/undistorted
-images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
----------------------------------------------
-
-=== 20200719 Start ==========================
-cameras        : ./22_data/cam_params.json
-mesh           : ./22_data/200619_SilFittedMesh_vtAdded
-clean plates   : ./22_data/CleanPlates/undistorted
-images         : 03052.pgm 03067.pgm 04735.pgm 06550.pgm 06250.pgm
----------------------------------------------
-
+20:00:29 | 0000 | 14.06s | lr=0.10000000 | loss=0.271249 | GPU_allocated(933.35Mb) | GPU_cached(1,598.03Mb)
+20:00:48 | 0001 | 13.69s | lr=0.10000000 | loss=0.212608 | GPU_allocated(934.41Mb) | GPU_cached(1,598.03Mb)

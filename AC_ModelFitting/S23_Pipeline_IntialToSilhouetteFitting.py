@@ -48,7 +48,7 @@ def makeOutputFolder(outputParentFolder, cfg, Prefix = ''):
         cfg.faces_per_pixel) \
               + '_NCams' + str(cfg.numCams) + '_ImS' + str(cfg.imgSize) + '_LR' + str(cfg.learningRate) + '_JR' + str(
         cfg.jointRegularizerWeight) + '_KPW' + str(cfg.kpFixingWeight) + '_SCW' + str(cfg.toSparseCornersFixingWeight) \
-        + 'LPW_' + str(cfg.lpSmootherW) + 'HHW_' + cfg.vertexFixingWeight + '_It' + str(cfg.numIterations)
+        + 'LPW_' + str(cfg.lpSmootherW) + 'HHW_' + str(cfg.vertexFixingWeight) + '_It' + str(cfg.numIterations)
 
     outFolderForExperiment = join(outputParentFolder, expName)
     os.makedirs(outFolderForExperiment, exist_ok=True)
@@ -164,7 +164,7 @@ def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, s
         if outImgFile is not None:
             fig.savefig(outImgFile, dpi=512, transparent=True, bbox_inches='tight', pad_inches=0)
 
-def toSilhouettePoseInitalFitting(inputs, cfg, undistortSilhouettes=False):
+def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=False):
     OPHeadKeypoints = [0, 15, 16, 17, 18]
     smplshExampleMesh = pv.PolyData(inputs.smplshExampleMeshFile)
 
@@ -316,7 +316,7 @@ def toSilhouettePoseInitalFitting(inputs, cfg, undistortSilhouettes=False):
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
-def toSilhouettePerVertexInitialFitting(inputs, cfg):
+def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
     handIndices = json.load(open(inputs.handIndicesFile))
     headIndices = json.load(open(inputs.HeadIndicesFile))
 
@@ -578,7 +578,7 @@ if __name__ == '__main__':
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting)
+    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()
@@ -592,7 +592,7 @@ if __name__ == '__main__':
 
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert)
+    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
     perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder, cfgPerVert, Prefix='XYZRestpose_')
 
     # copy final data
