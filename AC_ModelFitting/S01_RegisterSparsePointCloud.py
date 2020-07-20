@@ -248,10 +248,17 @@ if __name__ == '__main__':
     # inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
     # outInterpolatedFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\InterpolatedWithSparse.ply'
 
-    inMeshFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\FinalMesh.obj'
+    # inMeshFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\FinalMesh.obj'
+    # inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
+    # outInterpolatedFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
+    # outFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel'
+
+    inMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\Fit00499.ply'
     inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
-    outInterpolatedFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
-    outFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel'
+    outFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final'
+    outInterpolatedFile = join(outFolder, 'InterpolatedWithSparse.ply')
+
+
     skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
     handIndicesFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\HandIndices.json'

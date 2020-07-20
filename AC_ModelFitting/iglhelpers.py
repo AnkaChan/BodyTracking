@@ -42,6 +42,8 @@ def p2e(m):
 
 
 def e2p(m):
+    import pyigl as igl
+
     if isinstance(m, igl.eigen.MatrixXd):
         return np.array(m, dtype='float64', order='C')
     elif isinstance(m, igl.eigen.MatrixXi):
