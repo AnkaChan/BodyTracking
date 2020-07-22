@@ -30,9 +30,13 @@ if __name__ == "__main__":
     # inFolder = r'F:\WorkingCopy2\2020_03_27_RenderTest\DataSMPLH\TPose'
     # inFolder = r'F:\WorkingCopy2\2020_03_27_RenderTest\DataSMPLH\Squat'
     # inFolder = r'F:\WorkingCopy2\2020_07_09_TestSimplify\ImageData'
-    inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052\toRGB'
+    # inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052\toRGB'
+    inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Undist'
+    extName = 'png'
+    # showDetection = False
+    showDetection = True
 
-    inFiles = glob.glob(join(inFolder, r'*.jpg'))
+    inFiles = glob.glob(join(inFolder, r'*.' + extName))
     keypointsJsonDir = join(inFolder, 'KeypointsJson')
 
     os.makedirs(keypointsJsonDir, exist_ok=True)
@@ -68,8 +72,8 @@ if __name__ == "__main__":
         # data['BodyKeypoints'] = op.datum.poseKeypoints.tolist()
 
         print(datum.handKeypoints)
-
-        resultImg = datum.cvOutputData
-        cv2.imshow('resultImg', resultImg)
-        cv2.waitKey(0)
+        if showDetection:
+            resultImg = datum.cvOutputData
+            cv2.imshow('resultImg', resultImg)
+            cv2.waitKey(0)
 

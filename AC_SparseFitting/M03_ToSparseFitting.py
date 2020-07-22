@@ -483,7 +483,7 @@ if __name__ == '__main__':
 
     cfg = Config()
     cfg.numIterFitting = 5000
-    cfg.terminateLoss = 1e-4
+    cfg.terminateLoss = 1e-3
 
     startFrame=52
     # startFrame=41

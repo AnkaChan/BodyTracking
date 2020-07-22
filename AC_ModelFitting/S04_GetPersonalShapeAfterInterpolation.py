@@ -21,35 +21,41 @@ import numpy as np
 from Utility import *
 
 if __name__ == '__main__':
-    fitParamFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\XYZ_RestPose_HHFix_Sig_1e-07_BR1e-07_Fpp6_NCams16ImS1080_LR0.4_LW1e-07_NW0.0_Batch4\FitParam'
-    smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
+    # fitParamFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\XYZ_RestPose_HHFix_Sig_1e-07_BR1e-07_Fpp6_NCams16ImS1080_LR0.4_LW1e-07_NW0.0_Batch4\FitParam'
+    # smplshData = r'..\SMPL_reimp\SmplshModel_m.npz'
+    # smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
+    # personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+    # # interpolatedMeshFile =  r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
+    # interpolatedMeshFile =  r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\FinalMesh.obj'
+
+    fitParamFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\Param_00499.npz'
+    smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
     smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
-    personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+    outPersonalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
     # interpolatedMeshFile =  r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
-    interpolatedMeshFile =  r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\FinalMesh.obj'
+    interpolatedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\FinalMesh.obj'
 
     device = torch.device("cuda:0")
     smplsh = smplsh_torch.SMPLModel(device, smplshData, personalShape=None, unitMM=True)
 
-    fitParamFiles= glob.glob(join(fitParamFolder, '*.npz'))
-    fitParamFiles.sort()
+    # fitParamFiles= glob.glob(join(fitParamFolder, '*.npz'))
+    # fitParamFiles.sort()
     pose_size = 3 * 52
 
     smplshExampleMesh = pv.PolyData(smplshExampleMeshFile)
-    outFolderMesh = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\XYZ_RestPose_HHFix_Sig_1e-07_BR1e-07_Fpp6_NCams16ImS1080_LR0.4_LW1e-07_NW0.0_Batch4\RestposeChange'
 
-    param = np.load(fitParamFiles[-1])
+    param = np.load(fitParamFile)
     personalShapeFinal = param['personalShape']
     trans = param['trans']
     pose = param['pose']
     beta = param['beta']
 
-    pose = torch.tensor(pose, dtype=torch.float64, requires_grad=True, device=device)
-    beta = torch.tensor(beta, dtype=torch.float64, requires_grad=True, device=device)
+    pose = torch.tensor(pose, dtype=torch.float64, requires_grad=False, device=device)
+    beta = torch.tensor(beta, dtype=torch.float64, requires_grad=False, device=device)
     trans = torch.tensor(trans, dtype=torch.float64,
-                         requires_grad=True, device=device)
+                         requires_grad=False, device=device)
 
-    T, pbs = smplsh.getTransformation(beta, pose, trans, returnPoseBlendShape=True)
+    T, pbs, v_shaped = smplsh.getTransformation(beta, pose, trans, returnPoseBlendShape=True)
 
     inverseTransform = np.zeros(T.shape, dtype=np.float64)
 
@@ -70,8 +76,7 @@ if __name__ == '__main__':
 
     # then get the pure smplsh rest pose shape
 
-
     interpolatedMesh.points = personalShapeFinalRestpose
     interpolatedMesh.save('DisplacementToRestpose.ply')
 
-    np.save(personalShapeFile, personalShapeFinal)
+    np.save(outPersonalShapeFile, personalShapeFinal)
