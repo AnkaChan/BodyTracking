@@ -76,6 +76,7 @@ class RenderingCfg:
         s.plotStep = 10
         s.numCams = 16
         s.imgSize = 2160
+        s.ambientLvl = 0.8
 
         s.lpSmootherW = 0.1
         s.normalSmootherW = 0.1
@@ -96,12 +97,14 @@ class RenderingCfg:
         s.cull_backfaces=False
 
         s.inputImgExt = r'pgm'
+        s.undistImg = False
 
         # for terminal criteria
         s.errAvgLength = 10
         s.terminateStep = 1e-5
 
         s.drawInitial = True
+
 
 
 class Renderer:

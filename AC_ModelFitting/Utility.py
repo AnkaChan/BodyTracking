@@ -315,11 +315,16 @@ def showCudaMemUsage(device):
 def getLaplacian(meshFile, biLaplacian = False):
     import pyigl as igl
 
+    extName = Path(meshFile).suffix
     V = igl.eigen.MatrixXd()
-    N = igl.eigen.MatrixXd()
     F = igl.eigen.MatrixXi()
-    igl.readOBJ(meshFile, V, F)
 
+    if extName.lower() == '.obj':
+        igl.readOBJ(meshFile, V, F)
+    elif extName.lower()  == '.ply':
+        N = igl.eigen.MatrixXd()
+        UV = igl.eigen.MatrixXd()
+        igl.readPLY(meshFile, V, F, N, UV)
 
     # Compute Laplace-Beltrami operator: #V by #V
     L = igl.eigen.SparseMatrixd()

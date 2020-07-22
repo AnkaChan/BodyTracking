@@ -1,6 +1,7 @@
 from S07_ToSilhouetteFitting_MultiFrames import *
+from S13_GetPersonalShapeFromInterpolation import getPersonalShapeFromInterpolation
 
-def texturedPoseFitting(inputs, cfg, device):
+def texturedPoseFitting(inputs, cfg, device, ):
     outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='Pose_')
 
     handIndices = json.load(open(inputs.handIndicesFile))
@@ -22,14 +23,13 @@ def texturedPoseFitting(inputs, cfg, device):
 
     # normalShift = torch.tensor(np.full((nVerts,1), 0), dtype=torch.float32, requires_grad = True, device=device)
 
-
     # load cameras
     actual_img_shape = (2160, 4000)
     cam_params, cams_torch = load_cameras(inputs.camParamF, device, actual_img_shape, unitM=True)
     cams = init_camera_batches(cams_torch, device, batchSize=cfg.batchSize)
 
     # load Images
-    image_refs_out, crops_out = load_images(inputs.imageFolder, camParamF=inputs.camParamF, UndistImgs=True, cropSize=cfg.imgSize, imgExt='pgm')
+    image_refs_out, crops_out = load_images(inputs.imageFolder, camParamF=inputs.camParamF, UndistImgs=cfg.undistImg, cropSize=cfg.imgSize, imgExt=cfg.inputImgExt)
     crops_out = np.stack(crops_out, axis=0)
     cp_out, cp_crop_out = load_images(inputs.cleanPlateFolder, cropSize=cfg.imgSize, UndistImgs=False, camParamF=inputs.camParamF,
                                       imgExt='png')
@@ -68,6 +68,9 @@ def texturedPoseFitting(inputs, cfg, device):
 
     # load texture
     mesh = load_objs_as_meshes([inputs.texturedMesh], device=device)
+    # textureMp = np.squeeze(mesh.textures.maps_padded().cpu().numpy())
+    # cv2.imshow('Texture', textureMp)
+    # cv2.waitKey()
 
     # load pose
     if inputs.compressedStorage:
@@ -100,7 +103,7 @@ def texturedPoseFitting(inputs, cfg, device):
     # set up light
     xyz = torch.from_numpy(np.float32([0, 0, 2000]))[None]
     diffuse = 0.0
-    ambient = 0.5
+    ambient = cfg.ambientLvl
     specular = 0.0
     s = specular * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
     d = diffuse * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
@@ -213,7 +216,7 @@ def texturedPoseFitting(inputs, cfg, device):
                 terminate = True
 
         # Save outputs to create a GIF.
-        if (i + 1) % cfg.plotStep == 0 or terminate:
+        if (i + 1) % cfg.plotStep == 0 or terminate or (i==0 and cfg.drawInitial):
             lossesFile = join(outFolderForExperiment, 'Errs.json')
             json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
 
@@ -244,8 +247,11 @@ def texturedPoseFitting(inputs, cfg, device):
             os.makedirs(comparisonFolderThisIter, exist_ok=True)
             for iCam in range(images.shape[0]):
                 img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
                 imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
+                imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
         if terminate:
             break
@@ -256,13 +262,20 @@ if __name__ == '__main__':
     # cfg.blurRange = 0
     cfg.sigma = 1e-8
     cfg.blurRange = 1e-8
+    #
+    # cfg.sigma = 1e-6
+    # cfg.blurRange = 1e-6
+
+    # cfg.sigma = 1e-5
+    # cfg.blurRange = 1e-5
 
     # cfg.plotStep = 5
     cfg.plotStep = 50
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
-    cfg.learningRate = 5e-5
+    cfg.learningRate = 1e-4
+    # cfg.learningRate = 1e-3
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
@@ -275,16 +288,19 @@ if __name__ == '__main__':
     cfg.lpSmootherW = 1e-10
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
-    cfg.numIterations = 200
+    cfg.numIterations = 1000
     # cfg.numIterations = 20
     cfg.useKeypoints = False
     cfg.kpFixingWeight = 0
     cfg.noiseLevel = 0.1
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
-    cfg.plotStep = cfg.numIterations
-    cfg.drawInitial = False
-    cfg.terminateStep = 1e-6
+    # cfg.plotStep = cfg.numIterations
+    # cfg.drawInitial = False
+    cfg.drawInitial = True
+    cfg.terminateStep = 1e-7 * (cfg.learningRate / 1e-4)
+    cfg.undistImg = False
+    cfg.inputImgExt = 'png'
 
     cfg.bin_size = 256
     pose_size = 3 * 52
@@ -292,15 +308,38 @@ if __name__ == '__main__':
 
     inputs = InputBundle()
 
-    inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950'
+    # inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950'
+    # # inputs.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
+    # inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950\A00006950.obj'
+    # inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
+    # inputs.compressedStorage = True
+    # # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\06950.npz'
+    # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\FitParams.npz'
+    #
+    # inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting\06950_Accelerated'
+
+    inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Undist'
     # inputs.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
-    inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950\A00006950.obj'
-    inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
+    inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003067.obj'
+    inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\rgb\Undist'
     inputs.compressedStorage = True
     # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\06950.npz'
-    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\FitParams.npz'
+    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\ToSparseFittingParams.npz'
+    inDeformedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\ToSparseFinal.obj'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
+    inputs.toSparsePointCloudInterpoMatFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
+    inputs.texturedMesh = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\TextureMap2Color\Initial1Frame\SMPLWithSocks_tri.obj'
 
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting\06950_Accelerated'
+    outInterpolatedFile = join(inputs.outputFolder, 'Interpolation.ply')
+    outFittingParamFileWithPS = join(inputs.outputFolder,  'WithAccuratePS.npz')
+
+    getPersonalShapeFromInterpolation(inDeformedMeshFile, inputs.sparsePointCloudFile, inputs.initialFittingParamFile, outInterpolatedFile,
+                                          outFittingParamFileWithPS,
+                                          inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile, smplshData=inputs.smplshData)
+    inputs.initialFittingParamFile = outFittingParamFileWithPS
+
+
+
     # copy all the final result to this folder
     # inputs.finalOutputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting'
     # Setup
