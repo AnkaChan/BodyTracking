@@ -593,15 +593,27 @@ if __name__ == '__main__':
     ]
     corseMeshToSMPLSHCorrs = np.array(corseMeshToSMPLSHCorrs)
 
-    targetMesh = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\AA00003052_CoarseMesh_tri.ply'
+    # targetMesh = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\AA00003052_CoarseMesh_tri.ply'
+    # SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+    # skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    #
+    # # outFolder = r'SMPLSHFit\LadaOldSuit_WithOPKeypoints'
+    # outFolder = r'..\Data\NewInitialFitting\InitialRegistration'
+    #
+    # inputKeypoints = r'F:\WorkingCopy2\2020_05_15_AC_Gray2RGBData\Copied\TPose\ToRGB\Reconstruction\PointCloud.obj'
+    # inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
+    # inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
+
     SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
     skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
     # outFolder = r'SMPLSHFit\LadaOldSuit_WithOPKeypoints'
-    outFolder = r'..\Data\NewInitialFitting\InitialRegistration'
+    outFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
 
-    inputKeypoints = r'F:\WorkingCopy2\2020_05_15_AC_Gray2RGBData\Copied\TPose\ToRGB\Reconstruction\PointCloud.obj'
-    inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
+    targetMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003067.ply'
+    inputKeypoints = r'FF:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Reconstruction\PointCloud.obj'
+    # inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
+    inputDensePointCloudFile = None
     inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
 
     smplsh_npModel = smplsh_np.SMPLSHModel(SMPLSHNpzFile)

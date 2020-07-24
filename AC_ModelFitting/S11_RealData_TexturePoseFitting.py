@@ -298,7 +298,7 @@ if __name__ == '__main__':
     # cfg.plotStep = cfg.numIterations
     # cfg.drawInitial = False
     cfg.drawInitial = True
-    cfg.terminateStep = 1e-7 * (cfg.learningRate / 1e-4)
+    cfg.terminateStep = 1e-6 * (cfg.learningRate / 1e-4)
     cfg.undistImg = False
     cfg.inputImgExt = 'png'
 
@@ -325,9 +325,9 @@ if __name__ == '__main__':
     inputs.compressedStorage = True
     # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\06950.npz'
     inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\ToSparseFittingParams.npz'
-    inDeformedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\ToSparseFinal.obj'
+    inDeformedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\ToSparseFitFinalMesh.obj'
     inputs.outputFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
-    inputs.toSparsePointCloudInterpoMatFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
+    inputs.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
     inputs.texturedMesh = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\TextureMap2Color\Initial1Frame\SMPLWithSocks_tri.obj'
 
     outInterpolatedFile = join(inputs.outputFolder, 'Interpolation.ply')
@@ -335,7 +335,7 @@ if __name__ == '__main__':
 
     getPersonalShapeFromInterpolation(inDeformedMeshFile, inputs.sparsePointCloudFile, inputs.initialFittingParamFile, outInterpolatedFile,
                                           outFittingParamFileWithPS,
-                                          inputs.skelDataFile, inputs.toSparsePointCloudInterpoMatFile, smplshData=inputs.smplshData)
+                                          inputs.skelDataFile, inputs.toSparsePCMat, smplshData=inputs.smplshData)
     inputs.initialFittingParamFile = outFittingParamFileWithPS
 
 

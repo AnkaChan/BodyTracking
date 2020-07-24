@@ -1,7 +1,7 @@
 from S07_ToSilhouetteFitting_MultiFrames import *
 
 def texturedPerVertexFitting(inputs, cfg, device):
-    outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='Pose_')
+    outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='PerVertex_SGD_')
 
     handIndices = json.load(open(inputs.handIndicesFile))
     headIndices = json.load(open(inputs.HeadIndicesFile))
@@ -29,7 +29,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     cams = init_camera_batches(cams_torch, device, batchSize=cfg.batchSize)
 
     # load Images
-    image_refs_out, crops_out = load_images(inputs.imageFolder, camParamF=inputs.camParamF, UndistImgs=True, cropSize=cfg.imgSize, imgExt='pgm')
+    image_refs_out, crops_out = load_images(inputs.imageFolder, camParamF=inputs.camParamF, UndistImgs=cfg.undistImg, cropSize=cfg.imgSize, imgExt=cfg.inputImgExt)
     crops_out = np.stack(crops_out, axis=0)
     cp_out, cp_crop_out = load_images(inputs.cleanPlateFolder, cropSize=cfg.imgSize, UndistImgs=False, camParamF=inputs.camParamF,
                                       imgExt='png')
@@ -98,7 +98,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     # set up light
     xyz = torch.from_numpy(np.float32([0, 0, 2000]))[None]
     diffuse = 0.0
-    ambient = 0.5
+    ambient = cfg.ambientLvl
     specular = 0.0
     s = specular * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
     d = diffuse * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
@@ -124,9 +124,11 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
     # the optimization loop
     if cfg.optimizePose:
-        optimizer = torch.optim.Adam([xyzShift, trans, pose, betas], lr=cfg.learningRate)
+        # optimizer = torch.optim.Adam([xyzShift, trans, pose, betas], lr=cfg.learningRate)
+        optimizer = torch.optim.SGD([xyzShift, trans, pose, betas], lr=cfg.learningRate)
     else:
-        optimizer = torch.optim.Adam([xyzShift], lr=cfg.learningRate)
+        # optimizer = torch.optim.Adam([xyzShift], lr=cfg.learningRate)
+        optimizer = torch.optim.SGD([xyzShift, trans, pose, betas], lr=cfg.learningRate)
 
     losses = []
     toSparseCloudLosses = []
@@ -256,8 +258,11 @@ def texturedPerVertexFitting(inputs, cfg, device):
             os.makedirs(comparisonFolderThisIter, exist_ok=True)
             for iCam in range(images.shape[0]):
                 img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
                 imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
+                imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
         if terminate:
             break
@@ -275,7 +280,7 @@ if __name__ == '__main__':
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
-    cfg.learningRate = 1e-4
+    cfg.learningRate = 1e-3
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
@@ -290,7 +295,7 @@ if __name__ == '__main__':
     cfg.lpSmootherW = 1e-1
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
-    cfg.numIterations = 500
+    cfg.numIterations = 50
     # cfg.numIterations = 20
     cfg.useKeypoints = False
     cfg.kpFixingWeight = 0
@@ -298,9 +303,13 @@ if __name__ == '__main__':
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
     cfg.toSparseCornersFixingWeight = 1
+    cfg.ambientLvl = 0.8
+    cfg.terminateStep = 1e-6
 
-    cfg.plotStep = cfg.numIterations
+    # cfg.plotStep = cfg.numIterations
     cfg.drawInitial = False
+    cfg.undistImg = False
+    cfg.inputImgExt = 'png'
 
     cfg.bin_size = 128
     pose_size = 3 * 52
@@ -308,13 +317,23 @@ if __name__ == '__main__':
 
     inputs = InputBundle()
 
-    inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950'
+    # inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950'
+    # # inputs.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
+    # inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950\A00006950.obj'
+    # inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
+    # inputs.compressedStorage = True
+    # inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\Param_00959.npz'
+    # inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPerVertsFitting\06950'
+
+    inputs.imageFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Undist'
     # inputs.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
-    inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\06950\A00006950.obj'
-    inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
+    inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003067.obj'
+    inputs.cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\rgb\Undist'
     inputs.compressedStorage = True
-    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_21_TextureRendering\Model\06950\Param_00959.npz'
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPerVertsFitting\06950'
+    inputs.initialFittingParamFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067\PoseParam_00077.npz'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
+    inputs.texturedMesh = r'..\Data\TextureMap2Color\Initial1Frame\SMPLWithSocks_tri.obj'
+
     # copy all the final result to this folder
     # inputs.finalOutputFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\RealDataPoseFitting'
     # Setup

@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, SMPLSH_Dir)
 import smplsh_torch
 
+
 from os.path import join
 import pyvista as pv
 import torch
@@ -32,8 +33,11 @@ if __name__ == '__main__':
     smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
     smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
     outPersonalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
+    outBetaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
     # interpolatedMeshFile =  r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
-    interpolatedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\FinalMesh.obj'
+    # The mesh after to sparse interpolation, NOT the mesh after to silhouette fitting
+    interpolatedMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
+    interpolatedMeshObjFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.obj'
 
     device = torch.device("cuda:0")
     smplsh = smplsh_torch.SMPLModel(device, smplshData, personalShape=None, unitMM=True)
@@ -77,6 +81,7 @@ if __name__ == '__main__':
     # then get the pure smplsh rest pose shape
 
     interpolatedMesh.points = personalShapeFinalRestpose
-    interpolatedMesh.save('DisplacementToRestpose.ply')
+    interpolatedMesh.save(join(r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final', 'DisplacementToRestpose.ply'))
 
-    np.save(outPersonalShapeFile, personalShapeFinal)
+    np.save(outPersonalShapeFile, personalShapeFinalRestpose-v_shaped.cpu().detach().numpy())
+    np.save(outBetaFile, beta.cpu().numpy())
