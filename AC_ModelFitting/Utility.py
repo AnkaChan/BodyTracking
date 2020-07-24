@@ -535,3 +535,17 @@ class VertexToOpJointsConverter(torch.nn.Module):
         joint_mapped = s.joint_mapper(allJoints)
 
         return joint_mapped
+
+def write_obj(file_name, verts, faces=None, faceVIdAdd1 = True):
+    with open(file_name, 'w') as fp:
+        for v in verts:
+            fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))
+        if faces is not None:
+            for f in faces:
+                fp.write('f ')
+                for vId in f:
+                    if faceVIdAdd1:
+                        vId += 1
+                    fp.write('%d ' % (vId))
+                fp.write('\n')
+

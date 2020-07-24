@@ -1,4 +1,5 @@
 
+
 from CGAL.CGAL_Kernel import Point_3
 from CGAL.CGAL_Kernel import Triangle_3
 from CGAL.CGAL_Kernel import Ray_3
@@ -253,11 +254,11 @@ if __name__ == '__main__':
     # outInterpolatedFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolatedWithSparse.ply'
     # outFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel'
 
-    inMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\Fit00499.ply'
+    inMeshFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\ToSIlhouetteFinalMesh.obj'
     inSparseInterpolatedMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003052.obj'
     outFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final'
     outInterpolatedFile = join(outFolder, 'InterpolatedWithSparse.ply')
-
+    outInterpolatedObjFile = join(outFolder, 'InterpolatedWithSparse.obj')
 
     skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
@@ -366,6 +367,8 @@ if __name__ == '__main__':
 
     deformedSMPLSH.points = interpolatedVerts
     deformedSMPLSH.save(outInterpolatedFile)
+
+    write_obj(outInterpolatedObjFile, interpolatedVerts, smplshFaces)
 
     np.save(join(outFolder, 'InterpolationBarys.npy'), barys)
     np.save(join(outFolder, 'InterpolationTriId.npy'), trianglesId)
