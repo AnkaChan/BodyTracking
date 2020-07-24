@@ -295,7 +295,7 @@ if __name__ == '__main__':
     cfg.lpSmootherW = 1e-1
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
-    cfg.numIterations = 50
+    cfg.numIterations = 500
     # cfg.numIterations = 20
     cfg.useKeypoints = False
     cfg.kpFixingWeight = 0
@@ -307,6 +307,7 @@ if __name__ == '__main__':
     cfg.terminateStep = 1e-6
 
     # cfg.plotStep = cfg.numIterations
+    cfg.plotStep = 50
     cfg.drawInitial = False
     cfg.undistImg = False
     cfg.inputImgExt = 'png'
