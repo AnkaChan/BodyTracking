@@ -280,7 +280,7 @@ if __name__ == '__main__':
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
-    cfg.learningRate = 1e-3
+    cfg.learningRate = 1e-2
     # cfg.learningRate = 1
     # cfg.learningRate = 100
 
@@ -292,7 +292,8 @@ if __name__ == '__main__':
     cfg.terminateLoss = 0.1
     # cfg.lpSmootherW = 1e-10
     # cfg.lpSmootherW = 1e-4
-    cfg.lpSmootherW = 1e-1
+    # cfg.lpSmootherW = 1e-1
+    cfg.lpSmootherW = 1e-2
     # cfg.normalSmootherW = 0.1
     cfg.normalSmootherW = 0.0
     cfg.numIterations = 500
@@ -304,7 +305,7 @@ if __name__ == '__main__':
     cfg.jointRegularizerWeight = 1e-5
     cfg.toSparseCornersFixingWeight = 1
     cfg.ambientLvl = 0.8
-    cfg.terminateStep = 1e-6
+    cfg.terminateStep = 1e-7
 
     # cfg.plotStep = cfg.numIterations
     cfg.plotStep = 50
