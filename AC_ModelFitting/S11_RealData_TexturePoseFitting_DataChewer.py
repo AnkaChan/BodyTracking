@@ -7,12 +7,12 @@ class InputBundle:
         # same over all frames
         s.camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
         s.smplshExampleMeshFile = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\SMPLSH.obj'
-        s.toSparsePCMat = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
+        s.toSparsePCMat = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
         s.smplshRegressorMatFile = r'smplshRegressorNoFlatten.npy'
         s.smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
         s.handIndicesFile = r'HandIndices.json'
         s.HeadIndicesFile = r'HeadIndices.json'
-        s.personalShapeFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+        s.personalShapeFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
         s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
         s.skelDataFile = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
@@ -36,18 +36,19 @@ if __name__ == '__main__':
     # cfg.sigma = 1e-8
     # cfg.blurRange = 1e-8
     #
-    cfg.sigma = 1e-6
-    cfg.blurRange = 1e-6
+    cfg.sigma = 1e-7
+    cfg.blurRange = 1e-7
 
     # cfg.sigma = 1e-5
     # cfg.blurRange = 1e-5
 
     # cfg.plotStep = 5
+    cfg.plotStep = 200
     cfg.plotStep = 50
     cfg.numCams = 16
     # low learning rate for pose optimization
     # cfg.learningRate = 2e-3
-    cfg.learningRate = 1e-4
+    cfg.learningRate = 1e-3
     # cfg.learningRate = 1e-3
     # cfg.learningRate = 1
     # cfg.learningRate = 100
@@ -69,11 +70,12 @@ if __name__ == '__main__':
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
     # cfg.plotStep = cfg.numIterations
-    cfg.drawInitial = False
-    # cfg.drawInitial = True
+    # cfg.drawInitial = False
+    cfg.drawInitial = True
     cfg.terminateStep = 1e-7 * (cfg.learningRate / 1e-4)
     cfg.undistImg = False
     cfg.inputImgExt = 'png'
+    cfg.toSparseCornersFixingWeight = 1e-7
 
     cfg.bin_size = 256
     pose_size = 3 * 52

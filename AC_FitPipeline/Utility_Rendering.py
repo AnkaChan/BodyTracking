@@ -14,7 +14,7 @@ from pytorch3d.renderer import (
     OpenGLPerspectiveCameras,
     SfMPerspectiveCameras,
 )
-from iglhelpers import *
+# from iglhelpers import *
 
 from matplotlib import pyplot as plt
 

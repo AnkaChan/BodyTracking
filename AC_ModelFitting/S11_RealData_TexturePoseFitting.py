@@ -2,7 +2,7 @@ from S07_ToSilhouetteFitting_MultiFrames import *
 from S13_GetPersonalShapeFromInterpolation import getPersonalShapeFromInterpolation
 
 def texturedPoseFitting(inputs, cfg, device, ):
-    outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='Pose_')
+    outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='Pose_SGD_')
 
     handIndices = json.load(open(inputs.handIndicesFile))
     headIndices = json.load(open(inputs.HeadIndicesFile))
@@ -128,7 +128,8 @@ def texturedPoseFitting(inputs, cfg, device, ):
         visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
 
     # the optimization loop
-    optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
+    # optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
+    optimizer = torch.optim.SGD([trans, pose, betas], lr=cfg.learningRate)
     losses = []
     toSparseCloudLosses = []
     headKpFixingLosses = []

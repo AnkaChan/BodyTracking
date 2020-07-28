@@ -9,7 +9,6 @@ class Config:
         s.texturedPoseFittingCfg = RenderingCfg()
         s.texturedPerVertexFittingCfg = RenderingCfg()
 
-
 class InputBundle():
     def __init__(s):
         s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
@@ -34,7 +33,7 @@ class InputBundle():
         s.outputFolderAll = None
         s.initialFittingParamFile = None
 
-def texturedFitting(inputs, cfg=Config()):
+def texturedFitting(inputs, frameNames, cfg=Config()):
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 
@@ -68,9 +67,9 @@ if __name__ == '__main__':
                   # '03990',
                   '04735', '04917', '06250', '06550', '06950']
 
-    inputs.inOriginalObjFilesFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    inputs.toSparseFittedFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\ToSparse'
-    inputs.outputFolderAll = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TexturedFitting'
+    inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
+    inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\TexturedFitting'
 
     cfg = Config()
     cfg.texturedPoseFittingCfg.sigma = 1e-7
@@ -127,4 +126,4 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
     cfg.texturedPoseFittingCfg.terminateStep = 1e-7
 
-    texturedFitting(inputs, cfg)
+    texturedFitting(inputs, frameNames, cfg)

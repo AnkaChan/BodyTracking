@@ -2,13 +2,13 @@ from os.path import join
 import glob
 import os
 from pathlib import Path
-from iglhelpers import *
 
 def sortedGlob(pathname):
     return sorted(glob.glob(pathname))
 
 def getLaplacian(meshFile, biLaplacian = False):
     import pyigl as igl
+    import iglhelpers
 
     extName = Path(meshFile).suffix
     V = igl.eigen.MatrixXd()
@@ -26,7 +26,7 @@ def getLaplacian(meshFile, biLaplacian = False):
 
     igl.cotmatrix(V, F, L)
 
-    LNP = - e2p(L).todense()
+    LNP = - iglhelpers.e2p(L).todense()
     if biLaplacian:
         LNP = LNP @ LNP
 
