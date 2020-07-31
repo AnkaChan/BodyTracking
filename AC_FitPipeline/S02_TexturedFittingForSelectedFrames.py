@@ -4,6 +4,8 @@ import tqdm, copy
 import torch
 from Config import RenderingCfg
 import shutil
+from M04_ObjConverter import converObjsInFolder
+
 class Config:
     def __init__(s):
         s.texturedPoseFittingCfg = RenderingCfg()
@@ -31,6 +33,7 @@ class InputBundle():
         s.inputKpFolder = join(s.dataFolder, 'Keypoints')
         s.toSparseFittedFolder = None
         s.outputFolderAll = None
+        s.outputFolderFinal = None
         s.initialFittingParamFile = None
 
 def texturedFitting(inputs, frameNames, cfg=Config()):
@@ -67,12 +70,13 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
 
         os.makedirs(finalMeshFolder, exist_ok=True)
         os.makedirs(finalParamFolder, exist_ok=True)
-        for iF in tqdm.tqdm(range(len(frameNames)), desc='Textured Fitting: '):
-            meshFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'Mesh'))[-1]
-            paramFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'FitParam', '*.npz'))[-1]
 
-            shutil.copy(meshFile, join(finalMeshFolder, frameName + '.obj'))
-            shutil.copy(paramFile, join(finalMeshFolder, frameName + '.npz'))
+        meshFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'Mesh', '*.ply'))[-1]
+        paramFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'FitParam', '*.npz'))[-1]
+
+        shutil.copy(meshFile, join(finalMeshFolder, frameName + '.ply'))
+        shutil.copy(paramFile, join(finalParamFolder, frameName + '.npz'))
+    converObjsInFolder(finalMeshFolder, join(finalMeshFolder, 'ObjWithUV'), ext='ply', convertToMM=True)
 
 if __name__ == '__main__':
     inputs = InputBundle()

@@ -11,7 +11,7 @@ import smplsh_torch
 from scipy.spatial import KDTree
 import numpy as np
 from iglhelpers import *
-import pyigl as igl
+import tqdm, os, json
 import tqdm, os, json
 from os.path import join
 import tensorflow as tf
