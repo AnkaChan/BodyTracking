@@ -1,6 +1,5 @@
 from S02_TexturedFittingForSelectedFrames import *
 
-
 class InputBundle():
     def __init__(s):
 
@@ -36,6 +35,7 @@ if __name__ == '__main__':
     inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
     inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
     inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\TexturedFitting'
+    inputs.outputFolderFinal = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Final'
 
     cfg = Config()
     cfg.texturedPoseFittingCfg.sigma = 1e-8

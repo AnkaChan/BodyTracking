@@ -54,7 +54,7 @@ def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
         frameName = frameNames[iF]
         deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
         kpFile = join(inputs.inputKpFolder, frameName + '.obj')
-        outputFolderForFrame = join(inputs.outFolderAll, frameName)
+        outputFolderForFrame = join(inputs.outFolderAll, 'ToSparse', frameName)
         os.makedirs(outputFolderForFrame, exist_ok=True)
 
         M03_ToSparseFitting.toSparseFittingNewRegressor(kpFile, deformedSparseMeshFile, outputFolderForFrame, inputs.skelDataFile, inputs.toSparsePCMat,
@@ -72,7 +72,7 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
         outInterpolatedParamsFile = join(frameFittingFolder, 'InterpolatedParams.npz')
 
         M03_ToSparseFitting.getPersonalShapeFromInterpolation(fittedMeshFile, deformedSparseMeshFile, fitParamFile, outInterpolatedMeshFile, outInterpolatedParamsFile,
-            inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=None, smplshData=inputs.SMPLSHNpzFile,\
+            inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=inputs.laplacianMatFile, smplshData=inputs.SMPLSHNpzFile,\
             handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
             numRealCorners = 1487, fixHandAndHead = True, )
 
@@ -92,6 +92,7 @@ class InputBundle():
         s.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed'
         s.inputKpFolder = join(s.dataFolder, 'Keypoints')
         s.outFolderAll = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\ToSparse'
+        s.laplacianMatFile = None
 
 
 if __name__ == '__main__':
