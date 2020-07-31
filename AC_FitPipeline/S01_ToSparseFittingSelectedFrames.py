@@ -78,7 +78,7 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
         frameName = frameNames[iF]
         deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
 
-        frameFittingFolder = join(inputs.outFolderAll, frameName)
+        frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
         fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams.npz')
         fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh.obj')
         outInterpolatedMeshFile = join(frameFittingFolder, 'InterpolatedMesh.obj')
