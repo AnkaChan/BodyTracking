@@ -59,6 +59,7 @@ import tqdm, copy
 import torch
 
 from Utility import getLaplacian
+from matplotlib import pyplot as plt
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 vertex_ids = {
@@ -622,6 +623,10 @@ class Config:
 
         s.terminateLoss = 1.0e-4
 
+        s.outputErrs = False
+        s.terminateLossStep = 1e-7
+        # s.terminateLossStepAvgRange = 5
+
 
 def barycentric_coordinates_of_projection(p, q, u, v):
     """Given a point, gives projected coords of that point to a triangle
@@ -1032,7 +1037,7 @@ def toSparseFitting(dataFolder, objFile, outFolder, skelDataFile, toSparsePointC
     Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
 
 def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skelDataFile, toSparsePointCloudInterpoMatFile,
-                    betaFile, personalShapeFile, smplshDataFile, inputDensePointCloudFile=None, cfg=Config()):
+                    betaFile, personalShapeFile, smplshDataFile, inputDensePointCloudFile=None, initialPoseFile=None, cfg=Config()):
     tf.reset_default_graph()
 
     os.makedirs(outFolder, exist_ok=True)
@@ -1043,26 +1048,21 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     if cfg.withDensePointCloud:
         densePointCloud = np.array(pv.PolyData(inputDensePointCloudFile).points).astype(np.float64) / 1000
 
-    betas = np.load(betaFile)
-    trans = np.array([0, 0, 0], dtype=np.float64)
+    if initialPoseFile is None:
+        pose = None
+        betas = np.load(betaFile)
+        trans = np.array([0, 0, 0], dtype=np.float64)
+    else:
+        trans, pose, betas = loadCompressedFittingParam(initialPoseFile,)
 
     personalShape = np.load(personalShapeFile) / 1000
 
-    smplshtf = SMPLSH(trans=trans, betas=betas, constantBeta=cfg.constantBeta, personalShape=personalShape,
+    smplshtf = SMPLSH(pose=pose, trans=trans, betas=betas, constantBeta=cfg.constantBeta, personalShape=personalShape,
                       SMPLSHNpzFile=smplshDataFile)
     smplshtf.skeletonJointsToFixToDense = []
     # smplshtf = SMPLSH(betas, pose, trans)
 
     smplFaces = np.array(smplshtf.smplFaces)
-
-    sess = tf.Session()
-    init = tf.global_variables_initializer()
-    sess.run(init)
-
-    # smplshRestposeVerts = sess.run(smplshtf.smplVerts)
-    # smplshJoints = sess.run(smplshtf.smplJoints)
-    # Data.write_obj(join(outFolder, 'SmplshRestPoseMesh.obj'), smplshRestposeVerts, smplshtf.smplFaces)
-    # Data.write_obj(join(outFolder, 'SmplshRestPoseJoints.obj'), smplshJoints)
 
     jointConverter = VertexToOpJointsConverter()
     opJoints = jointConverter(smplshtf.smplVerts[None, ...], smplshtf.smplJoints[None, ...])[0, ...]
@@ -1139,22 +1139,46 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     # train_step_ICPToSparse = tf.train.GradientDescentOptimizer(learning_rate=rateICPToSparse).minimize(costICPToSparse,
     #                                                                                         global_step=stepICPToSparse)
 
+    sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run(init)
 
+    smplshInitialVerts = sess.run(smplshtf.smplVerts)
+    # smplshJoints = sess.run(smplshtf.smplJoints)
+    Data.write_obj(join(outFolder, 'SmplshInitial.obj'), smplshInitialVerts * 1000, smplshtf.smplFaces)
+    # Data.write_obj(join(outFolder, 'SmplshRestPoseJoints.obj'), smplshJoints)
+
+    errs = []
+
     # Nonrigid ICP Procedure
     # print("Fit to sparse point clouds, initialCost:", sess.run(costICPToSparse))
-    for i in range(cfg.numIterFitting):
+    loop = tqdm.tqdm(range(cfg.numIterFitting))
+    for i in loop:
         # sess.run(costICPToSparse)
         sess.run(train_step_ICPToSparse, )
 
-        if not i % cfg.printStep:
-            print("Cost:", sess.run(costICPToSparse,),
-                  "keypointFitCost:", sess.run(keypointFitCost, ),
-                  'regularizerCostToKp:', sess.run(regularizerCostToKp, ),
-                  'LearningRate:', sess.run(rateICPToSparse, ))
+        errs.append(np.abs(sess.run(costICPToSparse,)))
+
+        # if not i % cfg.printStep:
+            # print("Cost:", errs[-1],
+            #       "keypointFitCost:", sess.run(keypointFitCost, ),
+            #       'regularizerCostToKp:', sess.run(regularizerCostToKp, ),
+            #       'LearningRate:', sess.run(rateICPToSparse, ))
+        desc = "Cost:" + str(errs[-1]) + \
+                  " keypointFitCost:" + str(sess.run(keypointFitCost, )) +\
+                  ' regularizerCostToKp:' + str(sess.run(regularizerCostToKp, )) +\
+                  ' LearningRate:' + str(sess.run(rateICPToSparse, ))
+        loop.set_description(desc)
+
         if sess.run(costICPToSparse,) < cfg.terminateLoss:
+            print("Stop optimization because current loss is: ", sess.run(costICPToSparse,), ' less than: ', cfg.terminateLoss)
             break
+
+        if i > 0 :
+            errStep = np.abs(errs[-1] - errs[-2])
+            if errStep < cfg.terminateLossStep:
+                print("Stop optimization because current step is: ", errStep, ' less than: ', cfg.terminateLossStep)
+                break
 
     transVal = sess.run(smplshtf.trans)
     poseVal = sess.run(smplshtf.pose)
@@ -1166,6 +1190,18 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     outFile = join(outFolder, 'ToSparseMesh.obj')
     Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
 
+    if cfg.outputErrs:
+        fig, a_loss = plt.subplots()
+        a_loss.plot(errs, linewidth=3)
+        a_loss.set_yscale('log')
+        # a_loss.yscale('log')
+        a_loss.set_title('losses: {}'.format(errs[-1]))
+        a_loss.grid()
+        fig.savefig(join(outFolder,
+                         'ErrCurve_' + '_LR' + str(cfg.learnrate_ph)  + '.png'),
+                    dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
+
+        json.dump(errs, open(join(outFolder, 'Errs.json'), 'w'))
 
 
 def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
@@ -1219,6 +1255,7 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     if fixHandAndHead:
         displacement = np.vstack([displacement, handDisplacement])
         partialInterpolation = np.vstack([partialInterpolation, fixHandMat])
+
 
     # displacement = 0*displacement + 10
     # We should interpolate displacement
