@@ -130,16 +130,31 @@ def renderImages(cams, renderer, mesh):
     # showCudaMemUsage(device)
     return images
 
+def updataMeshes(meshes, cams_torch, iCam, cfg):
+    # apply extrinsics outside camera to avoid bugs
+    if cfg.extrinsicsOutsideCamera:
+        R = cams_torch['R'][iCam*cfg.batchSize:iCam*cfg.batchSize + cfg.batchSize].to(meshes.device)
+        T = cams_torch['T'][iCam*cfg.batchSize:iCam*cfg.batchSize + cfg.batchSize].to(meshes.device)
 
-def renderImagesWithBackground(cams, renderer, mesh, backgrounds, device=None):
+        transposed = torch.transpose(meshes.verts_padded(), 1, 2)
+        R = torch.transpose(R, 1, 2)
+
+        vertsTransformed = torch.matmul(R, transposed) + T[..., None]
+        vertsTransformed = torch.transpose(vertsTransformed, 1, 2)
+        meshes = meshes.update_padded(vertsTransformed)
+    return meshes
+
+def renderImagesWithBackground(cams, renderer, mesh, backgrounds, device=None, cams_torch=None, cfg=None):
     images = []
     with torch.no_grad():
         for iCam in range(len(cams)):
+            meshTransformed = updataMeshes(mesh, cams_torch, iCam, cfg)
+
             if device is not None:
                 showCudaMemUsage(device)
             blend_params = BlendParams(
                 renderer.blend_params.sigma, renderer.blend_params.gamma, background_color=backgrounds[iCam])
-            image_cur = renderer.renderer(mesh, cameras=cams[iCam], blend_params=blend_params)
+            image_cur = renderer.renderer(meshTransformed, cameras=cams[iCam], blend_params=blend_params)
 
             images.append(image_cur.cpu().detach().numpy())
         images = np.concatenate(images, axis=0)
@@ -282,13 +297,15 @@ def load_cameras(cam_path, device, actual_img_shape, unitM=False):
             T = T/1000
 
         R, _ = cv2.Rodrigues(rvec)
-        Rs.append(R.T)
+
+        Rs.append((R).T)
         Ts.append(T)
-        
-        cx_corrected = cx*2/img_size - w/img_size
-        cy_corrected = cy*2/img_size - h/img_size
-        fx_corrected = fx*2/img_size
-        fy_corrected = fy*2/img_size
+
+        cx_corrected = (cx*2/img_size - w/img_size)
+        cy_corrected = (cy*2/img_size - h/img_size)
+        fx_corrected = (fx*2/img_size)
+        fy_corrected = (fy*2/img_size)
+
         principal_point = np.array([cx_corrected, cy_corrected]).astype(np.float32)
         focal_length = np.array([fx_corrected, fy_corrected]).astype(np.float32)
         focal_lengths.append(focal_length)
@@ -371,7 +388,7 @@ def normalizeNormals(normals):
     normals[:, 2] = normals[:, 2] / norm
     return normals
 
-def init_camera_batches(cam_torch, device, batchSize = 1):
+def init_camera_batches(cam_torch, device, batchSize = 1, withoutExtrinsics=False):
     cams = []
     numCams = cam_torch['R'].shape[0]
 
@@ -379,8 +396,12 @@ def init_camera_batches(cam_torch, device, batchSize = 1):
     for i in range(numBatches):
         focal_length = cam_torch['fl'][i*batchSize:i*batchSize+batchSize]
         principal_point = cam_torch['pp'][i*batchSize:i*batchSize+batchSize]
-        R = cam_torch['R'][i*batchSize:i*batchSize+batchSize]
-        T = cam_torch['T'][i*batchSize:i*batchSize+batchSize]
+        if withoutExtrinsics:
+            R = torch.tensor(np.repeat(np.eye(3)[None, ...], batchSize, axis=0), device=device)
+            T = torch.tensor(np.repeat(np.zeros(3)[None, ...], batchSize, axis=0), device=device)
+        else:
+            R = cam_torch['R'][i*batchSize:i*batchSize+batchSize]
+            T = cam_torch['T'][i*batchSize:i*batchSize+batchSize]
         cameras = SfMPerspectiveCameras(device=device, R=R, T=T, principal_point=principal_point, focal_length=focal_length)
         cams.append(cameras)
     return cams

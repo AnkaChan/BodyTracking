@@ -95,12 +95,20 @@ class InputBundle():
 
 
 if __name__ == '__main__':
+    # dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\Images'
+    # preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # frameNames = ['03067',
+    #               # '03990',
+    #               '04735', '04917', '06250', '06550', '06950']
+
     dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\Images'
     preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
     camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
     frameNames = ['03067',
                   # '03990',
                   '04735', '04917', '06250', '06550', '06950']
+
     cfg = Config()
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
     cfg.toSparseFittingCfg.learnrate_ph = 0.05

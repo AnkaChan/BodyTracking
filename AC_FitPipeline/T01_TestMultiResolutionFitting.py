@@ -39,25 +39,31 @@ if __name__ == '__main__':
     inputs.outputFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067_Old2DKpErr'
     inputs.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
     inputs.texturedMesh = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\TextureMap2Color\Initial1Frame\SMPLWithSocks_tri.obj'
-    inputs.outputFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TestMultiResolution\03067'
+    inputs.outputFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TestMultiResolution\03067'
 
     cfg = RenderingCfg()
-    cfg.sigma = 1e-7
-    cfg.blurRange = 1e-7
+    cfg.sigma = 1e-6
+    cfg.blurRange = 1e-6
+    cfg.gamma = 1e-5
 
     cfg.numIterations = 2000
-    cfg.plotStep = 1000
+    # cfg.plotStep = 400
+    cfg.plotStep = 100
     cfg.numCams = 16
     # low learning rate for pose optimization
-    cfg.learningRate = 1e-4
+    cfg.learningRate = 5e-3
 
-    cfg.faces_per_pixel = 1  # for debugging
+    # cfg.faces_per_pixel = 5  # for debugging
+    cfg.faces_per_pixel = 5  # for debugging
+    # cfg.faces_per_pixel = 1  # for debugging
     # cfg.imgSize = 2160
     # cfg.imgSize = 1080
     # cfg.batchSize = 2
 
-    # cfg.imgSize = 540
+    # cfg.imgSize = 1080
+    # cfg.imgSize = 256
     cfg.imgSize = 256
+    # cfg.imgSize = 512
     cfg.batchSize = 8
 
     cfg.terminateLoss = 0.1
@@ -69,11 +75,16 @@ if __name__ == '__main__':
     cfg.kpFixingWeight = 0
     cfg.bodyJointOnly = True
     cfg.jointRegularizerWeight = 1e-5
+    cfg.toSparseCornersFixingWeight = 0
     # cfg.bin_size = 256
     cfg.bin_size = None
     cfg.inputImgExt = 'png'
     cfg.terminateStep = 1e-6
+    cfg.extrinsicsOutsideCamera = True
+    cfg.makeOutputSubfolder = True
+    cfg.optimizerType = 'SGD'
 
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
     texturedPoseFitting(inputs, cfg, device)
+    # texturedPoseFittingNegativeXZ(inputs, cfg, device)

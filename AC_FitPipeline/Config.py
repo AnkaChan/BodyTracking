@@ -66,6 +66,7 @@ class RenderingCfg:
     def __init__(s):
         s.sigma = 1e-4
         s.blurRange = 1e-4
+        s.gamma = 1e-7
         s.faces_per_pixel = 50
         s.bodyJointOnly = False
         s.randSeedPerturb = 1234
@@ -77,6 +78,8 @@ class RenderingCfg:
         s.numCams = 16
         s.imgSize = 2160
         s.ambientLvl = 0.8
+
+        s.extrinsicsOutsideCamera =False
 
         s.lpSmootherW = 0.1
         s.normalSmootherW = 0.1
@@ -108,12 +111,13 @@ class RenderingCfg:
         # selecting optimizer type
         s.optimizerType = 'Adam'
 
+        s.makeOutputSubfolder = False
 
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg
         # blend_params = BlendParams(sigma=1e-4, gamma=1e-4)
-        s.blend_params = BlendParams(sigma=cfg.sigma, gamma=1e-4)
+        s.blend_params = BlendParams(sigma=cfg.sigma, gamma=cfg.gamma)
 
         # Place a point light in front of the object. As mentioned above, the front of the cow is facing the
         # -z direction.
@@ -129,6 +133,8 @@ class Renderer:
                 blur_radius=np.log(1. / cfg.blurRange - 1.) * s.blend_params.sigma,
                 faces_per_pixel=cfg.faces_per_pixel,
                 bin_size=cfg.bin_size,
+                cull_backfaces=cfg.cull_backfaces,
+
             )
         else:
             s.raster_settings = RasterizationSettings(
@@ -136,6 +142,7 @@ class Renderer:
                 blur_radius=0,
                 faces_per_pixel=cfg.faces_per_pixel,
                 bin_size=cfg.bin_size,
+                cull_backfaces=cfg.cull_backfaces,
             )
 
         s.rasterizer = MeshRasterizer(
@@ -183,7 +190,7 @@ class RendererWithTexture:
     def __init__(s, device, lights= None, cfg=RenderingCfg()):
         s.cfg = cfg
         # blend_params = BlendParams(sigma=1e-4, gamma=1e-4)
-        s.blend_params = BlendParams(sigma=cfg.sigma, gamma=1e-4)
+        s.blend_params = BlendParams(sigma=cfg.sigma, gamma=cfg.gamma)
 
         # Place a point light in front of the object. As mentioned above, the front of the cow is facing the
         # -z direction.
@@ -203,6 +210,7 @@ class RendererWithTexture:
                 faces_per_pixel=cfg.faces_per_pixel,
 
                 bin_size=cfg.bin_size,
+                cull_backfaces=cfg.cull_backfaces,
 
             )
         else:
@@ -211,6 +219,7 @@ class RendererWithTexture:
                 blur_radius=0,
                 faces_per_pixel=cfg.faces_per_pixel,
                 bin_size=cfg.bin_size,
+                cull_backfaces=cfg.cull_backfaces,
 
             )
 

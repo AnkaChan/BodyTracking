@@ -31,3 +31,4 @@ def getLaplacian(meshFile, biLaplacian = False):
         LNP = LNP @ LNP
 
     return LNP
+
