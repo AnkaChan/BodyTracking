@@ -55,12 +55,10 @@ if __name__ == '__main__':
 
     # cfg.faces_per_pixel = 5  # for debugging
     cfg.faces_per_pixel = 5  # for debugging
-    # cfg.faces_per_pixel = 1  # for debugging
     # cfg.imgSize = 2160
     # cfg.imgSize = 1080
     # cfg.batchSize = 2
 
-    # cfg.imgSize = 1080
     # cfg.imgSize = 256
     cfg.imgSize = 256
     # cfg.imgSize = 512

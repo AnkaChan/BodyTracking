@@ -125,15 +125,15 @@ def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False,
 
 
 if __name__ == '__main__':
-    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
-    # visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
+    toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
+    visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
 
-    kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
-    # visualizeToSparseFitting(kpFolder, addUV=False)
-    Visualization.obj2vtkFolder(kpFolder)
-
-    sparseMeshFOdler = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
-    # visualizeToSparseFitting(sparseMeshFOdler, addUV=False)
-    Visualization.obj2vtkFolder(sparseMeshFOdler)
+    # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    # # visualizeToSparseFitting(kpFolder, addUV=False)
+    # Visualization.obj2vtkFolder(kpFolder)
+    #
+    # sparseMeshFOdler = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    # # visualizeToSparseFitting(sparseMeshFOdler, addUV=False)
+    # Visualization.obj2vtkFolder(sparseMeshFOdler)
 
     pass
