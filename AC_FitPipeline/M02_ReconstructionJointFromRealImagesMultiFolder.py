@@ -546,7 +546,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             handKeyPointsLeft = np.zeros((numHandpts, 3))
 
         handKeyPointsRight = getFirstPersonKp(datum.handKeypoints[1])
-        if len(handKeyPointsRight) and handKeyPointsRight.shape[0] == numHandpts:
+        if len(handKeyPointsRight.shape) and handKeyPointsRight.shape[0] == numHandpts:
             handKeyPointsRight = filterOutUnconfidentRecog(handKeyPointsRight, cfg.confidenceThreshold)
         else:
             handKeyPointsRight = np.zeros((numHandpts, 3))

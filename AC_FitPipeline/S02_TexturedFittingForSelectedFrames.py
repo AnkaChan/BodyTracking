@@ -50,7 +50,7 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
         inputsPoseFitting.initialFittingParamFile = join(inputs.dataFolder, 'ToSparse',  frameName, 'InterpolatedParams.npz')
 
         os.makedirs(inputsPoseFitting.outputFolder, exist_ok=True)
-        # texturedPoseFitting(inputsPoseFitting, cfg.texturedPoseFittingCfg, device)
+        texturedPoseFitting(inputsPoseFitting, cfg.texturedPoseFittingCfg, device)
 
         paramFiles = sortedGlob(join(inputsPoseFitting.outputFolder, 'FitParam', '*.npz'))
         paramFiles.sort()

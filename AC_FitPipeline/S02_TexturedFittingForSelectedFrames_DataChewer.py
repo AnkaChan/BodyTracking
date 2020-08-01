@@ -34,20 +34,21 @@ if __name__ == '__main__':
 
     inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
     inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
-    inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\TexturedFitting'
-    inputs.outputFolderFinal = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Final'
+    inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\TexturedFitting'
+    inputs.outputFolderFinal = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\Final'
 
     cfg = Config()
-    cfg.texturedPoseFittingCfg.sigma = 1e-8
-    cfg.texturedPoseFittingCfg.blurRange = 1e-8
+    cfg.texturedPoseFittingCfg.sigma = 1e-6
+    cfg.texturedPoseFittingCfg.blurRange = 1e-6
     cfg.texturedPoseFittingCfg.numIterations = 200
+
     cfg.texturedPoseFittingCfg.plotStep = cfg.texturedPoseFittingCfg.numIterations
     cfg.texturedPoseFittingCfg.numCams = 16
     # low learning rate for pose optimization
-    cfg.texturedPoseFittingCfg.learningRate = 1e-4
+    cfg.texturedPoseFittingCfg.learningRate = 1e-3
 
     cfg.texturedPoseFittingCfg.batchSize = 2
-    cfg.texturedPoseFittingCfg.faces_per_pixel = 1  # for debugging
+    cfg.texturedPoseFittingCfg.faces_per_pixel = 2  # for debugging
     # cfg.imgSize = 2160
     cfg.texturedPoseFittingCfg.imgSize = 1080
     cfg.texturedPoseFittingCfg.terminateLoss = 0.1
@@ -63,9 +64,10 @@ if __name__ == '__main__':
     cfg.texturedPoseFittingCfg.bin_size = 256
     cfg.texturedPoseFittingCfg.inputImgExt = 'png'
     cfg.texturedPoseFittingCfg.terminateStep = 1e-6
+    cfg.texturedPoseFittingCfg.extrinsicsOutsideCamera = True
 
-    cfg.texturedPerVertexFittingCfg.sigma = 1e-8
-    cfg.texturedPerVertexFittingCfg.blurRange = 1e-8
+    cfg.texturedPerVertexFittingCfg.sigma = 1e-7
+    cfg.texturedPerVertexFittingCfg.blurRange = 1e-7
 
     # cfg.texturedPerVertexFittingCfg.plotStep = 100
     # cfg.texturedPerVertexFittingCfg.plotStep = 20
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.numCams = 16
     cfg.texturedPerVertexFittingCfg.learningRate = 1e-2
     cfg.texturedPerVertexFittingCfg.batchSize = 2
-    cfg.texturedPerVertexFittingCfg.faces_per_pixel = 1  # for debugging
+    cfg.texturedPerVertexFittingCfg.faces_per_pixel = 2  # for debugging
     cfg.texturedPerVertexFittingCfg.imgSize = 1080
     cfg.texturedPerVertexFittingCfg.terminateLoss = 0.1
     cfg.texturedPerVertexFittingCfg.lpSmootherW = 1e-2
@@ -93,5 +95,7 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
     # cfg.texturedPerVertexFittingCfg.optimizerType = 'Adam'
     cfg.texturedPerVertexFittingCfg.terminateStep = 1e-7
+    cfg.texturedPerVertexFittingCfg.extrinsicsOutsideCamera = True
+
 
     texturedFitting(inputs, frameNames, cfg)
