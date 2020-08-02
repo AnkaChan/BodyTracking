@@ -10,6 +10,8 @@ class Config:
     def __init__(s):
         s.texturedPoseFittingCfg = RenderingCfg()
         s.texturedPerVertexFittingCfg = RenderingCfg()
+        s.skipPoseFitting = False
+        s.skipPerVertFitting = False
 
 class InputBundle():
     def __init__(s):
@@ -29,6 +31,7 @@ class InputBundle():
         s.compressedStorage = True
 
         s.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+        s.silhouetteFolderParent = None
         s.deformedSparseMeshFolder = None
         s.inputKpFolder = join(s.dataFolder, 'Keypoints')
         s.toSparseFittedFolder = None
@@ -36,7 +39,7 @@ class InputBundle():
         s.outputFolderFinal = None
         s.initialFittingParamFile = None
 
-def texturedFitting(inputs, frameNames, cfg=Config()):
+def texturedFittingWithSilhouettes(inputs, frameNames, cfg=Config()):
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 
@@ -44,13 +47,15 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
         frameName = frameNames[iF]
         inputsPoseFitting = copy.copy(inputs)
         inputsPoseFitting.imageFolder = join(inputs.dataFolder, 'Preprocessed',  frameName)
+        inputsPoseFitting.silhouetteFolder = join(inputs.silhouetteFolderParent, frameName, 'Silhouettes')
         inputsPoseFitting.sparsePointCloudFile = join(inputs.inOriginalObjFilesFolder,  'A'+frameName.zfill(8) + '.obj')
         inputsPoseFitting.KeypointsFile = join(inputs.outputFolderAll, 'Keypoints', frameName + '.obj')
         inputsPoseFitting.outputFolder = join(inputs.outputFolderAll, 'PoseFitting', frameName)
         inputsPoseFitting.initialFittingParamFile = join(inputs.dataFolder, 'ToSparse',  frameName, 'InterpolatedParams.npz')
 
         os.makedirs(inputsPoseFitting.outputFolder, exist_ok=True)
-        texturedPoseFitting(inputsPoseFitting, cfg.texturedPoseFittingCfg, device)
+        if not cfg.skipPoseFitting:
+            texturedPoseFitting(inputsPoseFitting, cfg.texturedPoseFittingCfg, device)
 
         paramFiles = sortedGlob(join(inputsPoseFitting.outputFolder, 'FitParam', '*.npz'))
         paramFiles.sort()
@@ -62,7 +67,8 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
         inputsPerVertexFitting.outputFolder = join(inputs.outputFolderAll, 'PerVertexFitting', frameName)
         os.makedirs(inputsPerVertexFitting.outputFolder, exist_ok=True)
 
-        texturedPerVertexFitting(inputsPerVertexFitting, cfg.texturedPerVertexFittingCfg, device)
+        if not cfg.skipPerVertFitting:
+            texturedPerVertexFitting(inputsPerVertexFitting, cfg.texturedPerVertexFittingCfg, device)
 
         # copy final files
         finalMeshFolder = join(inputs.outputFolderFinal, 'Mesh')
@@ -80,19 +86,23 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    frameNames = [
-        # '03067',
+    frameNames = ['03067',
                   # '03990',
-                  # '04735', '04917',
-                    '06250', '06550', '06950']
+                  '04735', '04917', '06250', '06550', '06950']
 
     inputs.inOriginalObjFilesFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
     inputs.toSparseFittedFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\ToSparse'
+    inputs.silhouetteFolderParent = r'F:\WorkingCopy2\2020_06_07_AC_ToSilhouetteFitting'
+    inputs.texturedMesh = r'..\Data\TextureMap2Color\Initial1Frame\SMPLWithSocks_tri.obj'
     # inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\TexturedFitting'
-    inputs.outputFolderAll = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TexturedFitting_Size540'
-    inputs.outputFolderFinal = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\Final'
+    # inputs.outputFolderAll = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TexturedFitting_Size540'
+    inputs.outputFolderAll = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TexturedFittingWithSilhouettes'
+    inputs.outputFolderFinal = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\TextureCompletionWithSilhouettes'
 
     cfg = Config()
+    # cfg.skipPerVertFitting = True
+    cfg.skipPoseFitting = True
+
     cfg.texturedPoseFittingCfg.sigma = 1e-7
     cfg.texturedPoseFittingCfg.blurRange = 1e-7
 
@@ -101,7 +111,7 @@ if __name__ == '__main__':
     # low learning rate for pose optimization
     cfg.texturedPoseFittingCfg.learningRate = 1e-4
 
-    cfg.texturedPoseFittingCfg.faces_per_pixel = 1  # for debugging
+    cfg.texturedPoseFittingCfg.faces_per_pixel = 2  # for debugging
     # cfg.imgSize = 2160
     # cfg.texturedPoseFittingCfg.imgSize = 1080
     # cfg.texturedPoseFittingCfg.batchSize = 2
@@ -124,7 +134,7 @@ if __name__ == '__main__':
     cfg.texturedPoseFittingCfg.inputImgExt = 'png'
     cfg.texturedPoseFittingCfg.terminateStep = 1e-6
     cfg.texturedPoseFittingCfg.withSilhouette = True
-    c
+    cfg.texturedPerVertexFittingCfg.extrinsicsOutsideCamera = True
 
     cfg.texturedPerVertexFittingCfg.sigma = 1e-7
     cfg.texturedPerVertexFittingCfg.blurRange = 1e-7
@@ -132,8 +142,8 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.plotStep = 100
     # cfg.texturedPerVertexFittingCfg.plotStep = 20
     cfg.texturedPerVertexFittingCfg.numCams = 16
-    cfg.texturedPerVertexFittingCfg.learningRate = 1e-2
-    cfg.texturedPerVertexFittingCfg.faces_per_pixel = 1  # for debugging
+    cfg.texturedPerVertexFittingCfg.learningRate = 1e-4
+    cfg.texturedPerVertexFittingCfg.faces_per_pixel = 2  # for debugging
     # cfg.texturedPerVertexFittingCfg.imgSize = 1080
     # cfg.texturedPerVertexFittingCfg.batchSize = 2
 
@@ -154,7 +164,12 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.inputImgExt = 'png'
     cfg.texturedPerVertexFittingCfg.drawInitial = True
     # cfg.texturedPerVertexFittingCfg.drawInitial = False
-    cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
-    cfg.texturedPoseFittingCfg.terminateStep = 1e-7
+    # cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
+    cfg.texturedPerVertexFittingCfg.optimizerType = 'Adam'
+    cfg.texturedPerVertexFittingCfg.terminateStep = 1e-7
+    cfg.texturedPerVertexFittingCfg.withSilhouette = True
+    cfg.texturedPerVertexFittingCfg.silhouetteLossWeight = 0.1
+    cfg.texturedPerVertexFittingCfg.extrinsicsOutsideCamera = True
 
-    texturedFitting(inputs, frameNames, cfg)
+
+    texturedFittingWithSilhouettes(inputs, frameNames, cfg)

@@ -120,11 +120,13 @@ def loadCompressedFittingParam(file, readPersonalShape=False):
     else:
         return transInit, poseInit, betaInit
 
-def renderImages(cams, renderer, mesh):
+def renderImages(cams, renderer, mesh, cams_torch=None, cfg=None):
     images = []
     with torch.no_grad():
         for iCam in range(len(cams)):
-            image_cur = renderer.renderer(mesh, cameras=cams[iCam])
+            meshTransformed = updataMeshes(mesh, cams_torch, iCam, cfg)
+
+            image_cur = renderer.renderer(meshTransformed, cameras=cams[iCam])
             images.append(image_cur.cpu().detach().numpy())
         images = np.concatenate(images, axis=0)
     # showCudaMemUsage(device)
@@ -204,6 +206,33 @@ def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, s
                 imgAlpha = cv2.flip(imgAlpha, -1)
                 if not withAlpha:
                     imgAlpha = imgAlpha[...,:3]
+
+                axs[iRow, iCol].imshow(imgAlpha, vmin=0.0, vmax=1.0)
+                axs[iRow, iCol].axis('off')
+
+        if outImgFile is not None:
+            fig.savefig(outImgFile, dpi=512, transparent=True, bbox_inches='tight', pad_inches=0)
+
+def visualize2DSilhouetteResults(images, backGroundImages=None, outImgFile=None, rows=2,
+                                 sizeInInches=2):
+    numCams = len(images)
+    numCols = int(numCams / rows)
+    fig, axs = plt.subplots(rows, numCols)
+    fig.set_size_inches(numCols * sizeInInches, rows * sizeInInches)
+    with torch.no_grad():
+        for iRow in range(rows):
+            for iCol in range(numCols):
+                iCam = rows * iRow + iCol
+                imgAlpha = images[iCam, ..., 3]
+
+                if backGroundImages is not None:
+                    img = np.copy(backGroundImages[iCam]) * 0.5
+                    #                     fgMask = np.logical_not(np.where())
+                    #                     for iChannel in range(3):
+                    img[..., 0] = img[..., 0] + imgAlpha * 0.5
+                    imgAlpha = img
+
+                imgAlpha = cv2.flip(imgAlpha, -1)
 
                 axs[iRow, iCol].imshow(imgAlpha, vmin=0.0, vmax=1.0)
                 axs[iRow, iCol].axis('off')
