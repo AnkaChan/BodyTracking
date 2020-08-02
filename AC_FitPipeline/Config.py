@@ -103,7 +103,7 @@ class RenderingCfg:
         s.undistImg = False
 
         # for terminal criteria
-        s.errAvgLength = 10
+        s.errAvgLength = 1
         s.terminateStep = 1e-5
 
         s.drawInitial = True

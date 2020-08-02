@@ -83,24 +83,30 @@ if __name__ == '__main__':
     # cfgPerVert.numIterations = 20
     cfgPerVert.bin_size = 256
 
-    frameName = '3052'
-    undistortSilhouette = False
+    # frameName = '3052'
+    # undistortSilhouette = False
 
-    inputs.imageFolder = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\03052\Silhouette'
+    frameName = '06250'
+    undistortSilhouette = True
+
+    inputs.imageFolder = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\\' + frameName + r'\Silhouettes'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
     inputs.outputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
-    inputs.finalOutputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\Final')
+    inputs.finalOutputFolder = join(r'Z:\shareZ\2020_07_15_NewInitialFitting\Final', frameName)
 
-    inputs.compressedStorage = False
-    inputs.initialFittingParamPoseFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
-    inputs.initialFittingParamBetasFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
-    inputs.initialFittingParamTranslationFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
+    # inputs.compressedStorage = False
+    # inputs.initialFittingParamPoseFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
+    # inputs.initialFittingParamBetasFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
+    # inputs.initialFittingParamTranslationFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
 
-    inputs.KeypointsFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\KepPoints\00352.obj'
+    inputs.compressedStorage = True
+    inputs.initialFittingParamFile = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse\06250\ToSparseFittingParams.npz'
+
+    inputs.KeypointsFile = r'Z:\shareZ\2020_06_14_FitToMultipleCams\KepPoints\\'+frameName+'.obj'
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    # toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting)
+    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()

@@ -62,7 +62,7 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
         inputsPerVertexFitting.outputFolder = join(inputs.outputFolderAll, 'PerVertexFitting', frameName)
         os.makedirs(inputsPerVertexFitting.outputFolder, exist_ok=True)
 
-        # texturedPerVertexFitting(inputsPerVertexFitting, cfg.texturedPerVertexFittingCfg, device)
+        texturedPerVertexFitting(inputsPerVertexFitting, cfg.texturedPerVertexFittingCfg, device)
 
         # copy final files
         finalMeshFolder = join(inputs.outputFolderFinal, 'Mesh')
@@ -80,9 +80,11 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    frameNames = ['03067',
+    frameNames = [
+        # '03067',
                   # '03990',
-                  '04735', '04917', '06250', '06550', '06950']
+                  # '04735', '04917',
+                    '06250', '06550', '06950']
 
     inputs.inOriginalObjFilesFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
     inputs.toSparseFittedFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\ToSparse'

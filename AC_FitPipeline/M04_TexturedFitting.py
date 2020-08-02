@@ -238,7 +238,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
         # if lossVal < cfg.terminateLoss:
         #    break
         if i>cfg.errAvgLength:
-            avgStep = np.mean(np.abs(np.array(losses[-11:-1]) - np.array(losses[-10:])))
+            avgStep = np.mean(np.abs(np.array(losses[-cfg.errAvgLength-1:-1]) - np.array(losses[-cfg.errAvgLength:])))
             if avgStep < cfg.terminateStep:
                 logger.info("Teminate because average step length in " + str(cfg.errAvgLength) + "steps is: " + str(
                     avgStep) + " less than: " + str(cfg.terminateStep))
@@ -526,7 +526,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
         terminate = False
 
         if i > cfg.errAvgLength:
-            avgStep = np.mean(np.abs(np.array(losses[-11:-1]) - np.array(losses[-10:])))
+            avgStep = np.mean(np.abs(np.array(losses[-cfg.errAvgLength-1:-1]) - np.array(losses[-cfg.errAvgLength:])))
             if avgStep < cfg.terminateStep:
                 logger.info("Teminate because average step length in " + str(cfg.errAvgLength) + "steps is: " + str(
                     avgStep) + " less than: " + str(cfg.terminateStep))

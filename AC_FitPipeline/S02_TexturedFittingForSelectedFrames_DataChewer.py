@@ -28,9 +28,14 @@ class InputBundle():
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    frameNames = ['03067',
+    frameNames = [
+        # '03067',
                   # '03990',
-                  '04735', '04917', '06250', '06550', '06950']
+                  # '04735', '04917',
+                  #   '06250',
+        # '06550',
+        '06950'
+    ]
 
     inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
     inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
@@ -72,10 +77,12 @@ if __name__ == '__main__':
     # cfg.texturedPerVertexFittingCfg.plotStep = 100
     # cfg.texturedPerVertexFittingCfg.plotStep = 20
     cfg.texturedPerVertexFittingCfg.numIterations = 500
+    cfg.texturedPerVertexFittingCfg.plotStep = 100
     cfg.texturedPerVertexFittingCfg.plotStep = cfg.texturedPerVertexFittingCfg.numIterations
 
     cfg.texturedPerVertexFittingCfg.numCams = 16
-    cfg.texturedPerVertexFittingCfg.learningRate = 1e-2
+    # cfg.texturedPerVertexFittingCfg.learningRate = 1e-2 # for SGD
+    cfg.texturedPerVertexFittingCfg.learningRate = 1e-4 # for Adam
     cfg.texturedPerVertexFittingCfg.batchSize = 2
     cfg.texturedPerVertexFittingCfg.faces_per_pixel = 2  # for debugging
     cfg.texturedPerVertexFittingCfg.imgSize = 1080
@@ -92,10 +99,9 @@ if __name__ == '__main__':
     cfg.texturedPerVertexFittingCfg.inputImgExt = 'png'
     cfg.texturedPerVertexFittingCfg.drawInitial = True
     # cfg.texturedPerVertexFittingCfg.drawInitial = False
-    cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
-    # cfg.texturedPerVertexFittingCfg.optimizerType = 'Adam'
+    # cfg.texturedPerVertexFittingCfg.optimizerType = 'SGD'
+    cfg.texturedPerVertexFittingCfg.optimizerType = 'Adam'
     cfg.texturedPerVertexFittingCfg.terminateStep = 1e-7
     cfg.texturedPerVertexFittingCfg.extrinsicsOutsideCamera = True
-
 
     texturedFitting(inputs, frameNames, cfg)
