@@ -113,6 +113,11 @@ class RenderingCfg:
 
         s.makeOutputSubfolder = False
 
+        # control silhouette fitting
+        s.withSilhouette = False
+        s.silhouetteLossWeight = 0.1
+        s.undistortSilhouettes = True
+
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg

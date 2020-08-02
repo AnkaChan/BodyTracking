@@ -170,6 +170,24 @@ def texturedPoseFitting(inputs, cfg, device, ):
     comprisonFolder = join(outFolderForExperiment, 'Comparison')
     os.makedirs(comprisonFolder, exist_ok=True)
 
+    # silhouette renderer
+    if cfg.withSilhouette:
+        silhouettesBatchRefs = []
+        silhouettes_refs_out, silhouettes_crops_out = load_images(inputs.silhouetteFolder, cropSize=cfg.imgSize,
+                                                                  UndistImgs=cfg.undistortSilhouettes,
+                                                                  camParamF=inputs.camParamF)
+        silhouettes_crops_out = np.stack(silhouettes_crops_out, axis=0)
+        rendererSilhouette = Renderer(device, cfg)
+        if cfg.drawInitial:
+            meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
+            images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+            visualize2DSilhouetteResults(images, backGroundImages = silhouettes_crops_out, outImgFile=join(outFolderForExperiment, 'Fit0_Silhouette_Initial.png'))
+
+        for iCam in range(len(cams)):
+            silhouettesBatchRef = silhouettes_crops_out[iCam * cfg.batchSize:iCam * cfg.batchSize + cfg.batchSize, ..., 0]
+            silhouettesBatchRef = torch.tensor(silhouettesBatchRef, dtype=torch.float32, device=device, requires_grad=False)
+            silhouettesBatchRefs.append(silhouettesBatchRef)
+
     imagesBatchRefs = []
     for iCam in range(len(cams)):
         imagesBatchRef = crops_out[iCam * cfg.batchSize:iCam * cfg.batchSize + cfg.batchSize, ...]
@@ -186,6 +204,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
         # smplshMesh = mesh.update_padded(verts[None])
         smplshMesh = mesh.offset_verts(verts - mesh.verts_packed())
 
+        # pixel wise image loss
         meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
         for iCam in range(len(cams)):
             meshesTransformed = updataMeshes(meshes, cams_torch, iCam, cfg)
@@ -198,6 +217,23 @@ def texturedPoseFitting(inputs, cfg, device, ):
             loss = torch.mean(torch.abs(imagesBatchRefs[iCam] - images[..., :3]))
             loss.backward(retain_graph=True)
             lossVal += loss.item()
+
+        # To silhouette loss
+        silhouetteLossVal = 0
+        if cfg.withSilhouette:
+            for iCam in range(len(cams)):
+                meshesTransformed = updataMeshes(meshes, cams_torch, iCam, cfg)
+                silhouettesBatchRef = silhouettesBatchRefs[iCam]
+
+                images = rendererSilhouette.renderer(meshesTransformed, cameras=cams[iCam])
+                loss = 0
+                for iIm in range(cfg.batchSize):
+                    loss += cfg.silhouetteLossWeight * (1 - torch.norm(silhouettesBatchRef[iIm, ...] * images[iIm, ..., 3], p=1) / torch.norm(
+                        silhouettesBatchRef[iIm, ...] + images[iIm, ..., 3] - silhouettesBatchRef[iIm, ...] * images[iIm, ..., 3],
+                        p=1)) / cfg.numCams
+
+                loss.backward(retain_graph=True)
+                silhouetteLossVal += loss.item()
 
         # joint regularizer
         loss = cfg.jointRegularizerWeight * torch.sum((pose ** 2))
@@ -228,8 +264,12 @@ def texturedPoseFitting(inputs, cfg, device, ):
         memAllocated = memStats['active_bytes.all.current'] / 1000000
         torch.cuda.empty_cache()
 
-        infoStr = 'image loss %.6f, toSparseCloudLoss %.6f, headKpFixingLoss %.4f, MemUsed:%.2f' \
-                  % (lossVal, toSparseCloudLoss, headKpFixingLoss, memAllocated)
+        if cfg.withSilhouette:
+            infoStr = 'image loss %.6f, to silhouette loss: %.6f, toSparseCloudLoss %.6f, headKpFixingLoss %.4f, MemUsed:%.2f' \
+                  % (lossVal, silhouetteLossVal, toSparseCloudLoss, headKpFixingLoss, memAllocated)
+        else:
+            infoStr = 'image loss %.6f, toSparseCloudLoss %.6f, headKpFixingLoss %.4f, MemUsed:%.2f' \
+                      % (lossVal, toSparseCloudLoss, headKpFixingLoss, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
@@ -260,7 +300,6 @@ def texturedPoseFitting(inputs, cfg, device, ):
 
             outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
             images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
-
             outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
             np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
                      beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
@@ -284,6 +323,12 @@ def texturedPoseFitting(inputs, cfg, device, ):
                 imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
 
+            if cfg.withSilhouette:
+                # render silhouette
+                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
+                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
             # draw loss curve
             fig, a_loss  = plt.subplots()
             a_loss.plot(losses, linewidth=3)
@@ -453,6 +498,27 @@ def texturedPerVertexFitting(inputs, cfg, device):
     elif cfg.optimizerType == 'SGD':
         optimizer = torch.optim.SGD([xyzShift], lr=cfg.learningRate)
 
+        # silhouette renderer
+    if cfg.withSilhouette:
+        silhouettesBatchRefs = []
+        silhouettes_refs_out, silhouettes_crops_out = load_images(inputs.silhouetteFolder, cropSize=cfg.imgSize,
+                                                                  UndistImgs=cfg.undistortSilhouettes,
+                                                                  camParamF=inputs.camParamF)
+        silhouettes_crops_out = np.stack(silhouettes_crops_out, axis=0)
+        rendererSilhouette = Renderer(device, cfg)
+        if cfg.drawInitial:
+            meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
+            images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+            visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                         outImgFile=join(outFolderForExperiment, 'Fit0_Silhouette_Initial.png'))
+
+        for iCam in range(len(cams)):
+            silhouettesBatchRef = silhouettes_crops_out[iCam * cfg.batchSize:iCam * cfg.batchSize + cfg.batchSize, ...,
+                                  0]
+            silhouettesBatchRef = torch.tensor(silhouettesBatchRef, dtype=torch.float32, device=device,
+                                               requires_grad=False)
+            silhouettesBatchRefs.append(silhouettesBatchRef)
+
     # main optimization loop
     for i in loop:
         optimizer.zero_grad()
@@ -476,6 +542,26 @@ def texturedPerVertexFitting(inputs, cfg, device):
             # loss.backward(keep_graph= True)
 
             lossVal += loss.item()
+
+            # To silhouette loss
+        silhouetteLossVal = 0
+        if cfg.withSilhouette:
+            for iCam in range(len(cams)):
+                meshesTransformed = updataMeshes(meshes, cams_torch, iCam, cfg)
+                silhouettesBatchRef = silhouettesBatchRefs[iCam]
+
+                images = rendererSilhouette.renderer(meshesTransformed, cameras=cams[iCam])
+                loss = 0
+                for iIm in range(cfg.batchSize):
+                    loss += cfg.silhouetteLossWeight * (
+                                1 - torch.norm(silhouettesBatchRef[iIm, ...] * images[iIm, ..., 3],
+                                               p=1) / torch.norm(
+                            silhouettesBatchRef[iIm, ...] + images[iIm, ..., 3] - silhouettesBatchRef[iIm, ...] *
+                            images[iIm, ..., 3],
+                            p=1)) / cfg.numCams
+
+                loss.backward(retain_graph=True)
+                silhouetteLossVal += loss.item()
 
         # joint regularizer
         if cfg.optimizePose:
@@ -517,8 +603,15 @@ def texturedPerVertexFitting(inputs, cfg, device):
         toSparseCloudLosses.append(toSparseCloudLoss)
         lpSmootherLosses.append(lpSmootherVal)
 
-        infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
-                  % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+        # infoStr = 'Fitting loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
+        #           % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+
+        if cfg.withSilhouette:
+            infoStr = 'Image loss %.6f, silhouette loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
+                      % (lossVal, silhouetteLossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
+        else:
+            infoStr = 'Image loss %.6f, normal regularizer loss %.6f, Laplacian regularizer loss %.6f, toSparseCloudLoss %.6f, MemUsed:%.2f' \
+                      % (lossVal, normalSmootherVal, lpSmootherVal, toSparseCloudLoss, memAllocated)
 
         loop.set_description(infoStr)
         logger.info(infoStr)
@@ -561,6 +654,13 @@ def texturedPerVertexFitting(inputs, cfg, device):
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
+            if cfg.withSilhouette:
+                # render silhouette
+                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
+                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
+
             # make comparison view
             comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5))
             os.makedirs(comparisonFolderThisIter, exist_ok=True)
@@ -572,6 +672,8 @@ def texturedPerVertexFitting(inputs, cfg, device):
                 imgRef = (cv2.flip(crops_out[iCam, ...], -1) * 255).astype(np.uint8)
                 imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
+
+
 
             # draw loss curve
             fig, a_loss  = plt.subplots()
