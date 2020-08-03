@@ -84,8 +84,6 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
         outInterpolatedMeshFile = join(frameFittingFolder, 'InterpolatedMesh.obj')
         outInterpolatedParamsFile = join(frameFittingFolder, 'InterpolatedParams.npz')
 
-
-
         M03_ToSparseFitting.getPersonalShapeFromInterpolation(fittedMeshFile, deformedSparseMeshFile, fitParamFile, outInterpolatedMeshFile, outInterpolatedParamsFile,
             inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=inputs.laplacianMatFile, smplshData=inputs.SMPLSHNpzFile,\
             handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
@@ -111,22 +109,32 @@ class InputBundle():
 
 
 if __name__ == '__main__':
-    # dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\Images'
-    # preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    # camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    # frameNames = ['03067',
-    #               # '03990',
-    #               '04735', '04917', '06250', '06550', '06950']
-
     inputs = InputBundle()
 
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
-    inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    inputs.deformedSparseMeshFolder = r''
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.outFolderAll = inputs.dataFolder
+    frameNames = [
+    #              '03067',
+                  # '03990',
+                  # '04735', '04917',
+                  # '06250',
+                  '06550',
+                  #  '06950'
+                  ]
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
+
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
+    # inputs.outFolderAll = inputs.dataFolder
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+
+    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
 
     cfg = Config()
     cfg.toSparseFittingCfg.learnrate_ph = 0.05

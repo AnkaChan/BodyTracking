@@ -1105,6 +1105,10 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     # Define fit cost to sparse point cloud
     skelData = json.load(open(skelDataFile))
     coarseMeshPts = np.array(skelData['VTemplate'])
+
+    # if the input is original obj point cloud
+    if targetVerts.shape[0] == cfg.numRealCorners:
+        targetVerts = np.concatenate([targetVerts, np.repeat([[0,0,-1]], intepolationMatrix.shape[0] - cfg.numRealCorners, axis=0)])
     validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
 
     obsIds = np.where(targetVerts[:cfg.numRealCorners, 2] > 0)[0]
