@@ -654,13 +654,6 @@ def texturedPerVertexFitting(inputs, cfg, device):
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
-            if cfg.withSilhouette:
-                # render silhouette
-                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
-                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
-                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
-                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
-
             # make comparison view
             comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5))
             os.makedirs(comparisonFolderThisIter, exist_ok=True)
@@ -674,6 +667,12 @@ def texturedPerVertexFitting(inputs, cfg, device):
                 cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
 
 
+            if cfg.withSilhouette:
+                # render silhouette
+                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
+                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
 
             # draw loss curve
             fig, a_loss  = plt.subplots()

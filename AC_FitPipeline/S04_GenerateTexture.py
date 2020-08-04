@@ -20,16 +20,17 @@ class InputBundle():
         s.compressedStorage = True
 
         s.finalMeshFolder = None
-        s.initialFittingParamFile = None
-        s.cleanPlateFolder = None
+        s.undistImgsFolder = None
         s.outFolder = None
 
-def generateTexture(frameNames, inputs=InputBundle(), cfg=Config):
+def generateTexture(frameNames, inputs=InputBundle(), cfg=Config()):
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 
     contourOutFolder = join(inputs.outFolder, 'Size%dx%d' % (cfg.erosionSize, cfg.erosionSize))
-    generateContourMask(inputs.camParamF, inputs.finalMeshFolder, frameNames, inputs.cleanPlateFolder, device, contourOutFolder, cfg)
+    # generateContourMask(inputs.camParamF, inputs.finalMeshFolder, frameNames, inputs.cleanPlateFolder, device, contourOutFolder, cfg)
+
+    learnTexture(inputs.camParamF, inputs.finalMeshFolder, frameNames, device, inputs.undistImgsFolder, inputs.cleanPlateFolder, contourOutFolder, inputs.outFolder, cfg)
 
 if __name__ == '__main__':
     inputs = InputBundle()
