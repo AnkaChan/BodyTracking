@@ -38,7 +38,6 @@ class InputBundle():
 
 def texturedFitting(inputs, frameNames, cfg=Config()):
     device = torch.device("cuda:0")
-    torch.cuda.set_device(device)    device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 
     for iF in tqdm.tqdm(range(len(frameNames)), desc='Textured Fitting: '):
