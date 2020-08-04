@@ -28,24 +28,33 @@ class InputBundle():
 
 if __name__ == '__main__':
     inputs = InputBundle()
+    # frameNames = [
+    #     # '03067',
+    #               # '03990',
+    #               # '04735', '04917',
+    #               #   '06250',
+    #     '06550',
+    #     # '06950'
+    # ]
+    #
+    # inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    # inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
+    # inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\TexturedFitting'
+    # inputs.outputFolderFinal = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\Final'
+
     frameNames = [
-        # '03067',
-                  # '03990',
-                  # '04735', '04917',
-                  #   '06250',
-        '06550',
-        # '06950'
+        str(i).zfill(5) for i in range(8564, 8564 + 500)
     ]
 
-    inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_26_NewPipelineTestData\ToSparse'
-    inputs.outputFolderAll = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\TexturedFitting'
-    inputs.outputFolderFinal = r'Z:\shareZ\2020_07_26_NewPipelineTestData\Output2_ExtrinsicOutsize\Final'
+    inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_03_18_LadaAnimationWholeSeq\WholeSeq\TriangulationType1Only'
+    inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\ToSparse'
+    inputs.outputFolderAll = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\TexturedFitting'
+    inputs.outputFolderFinal = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\Final'
 
     cfg = Config()
-    cfg.texturedPoseFittingCfg.sigma = 1e-6
-    cfg.texturedPoseFittingCfg.blurRange = 1e-6
-    cfg.texturedPoseFittingCfg.numIterations = 200
+    cfg.texturedPoseFittingCfg.sigma = 1e-7
+    cfg.texturedPoseFittingCfg.blurRange = 1e-7
+    cfg.texturedPoseFittingCfg.numIterations = 300
 
     cfg.texturedPoseFittingCfg.plotStep = cfg.texturedPoseFittingCfg.numIterations
     cfg.texturedPoseFittingCfg.numCams = 16

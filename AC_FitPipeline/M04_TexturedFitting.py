@@ -61,7 +61,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
     cp_out, cp_crop_out = load_images(inputs.cleanPlateFolder, cropSize=cfg.imgSize, UndistImgs=False, camParamF=inputs.camParamF,
                                       imgExt='png')
 
-    if cfg.drawInitial:
+    if cfg.drawInitial and cfg.doPlot:
         refImgsFolder = join(outFolderForExperiment, 'RefImages')
         os.makedirs(refImgsFolder, exist_ok=True)
         for iCam in range(len(crops_out)):
@@ -139,18 +139,19 @@ def texturedPoseFitting(inputs, cfg, device, ):
     rendererSynth = RendererWithTexture(device, lights=light, cfg=cfg)
 
     # initial image
-    if cfg.drawInitial:
+    if cfg.drawInitial and  cfg.doPlot:
         meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
         images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
         visualize2DResults(images, outImgFile=join(outFolderForExperiment, 'Fig_00000_Initial.png'), withAlpha=False, sizeInInches=5)
 
     # initial diff image
-    diffImageFolder = join(outFolderForExperiment, 'DiffImage')
-    os.makedirs(diffImageFolder, exist_ok=True)
-    if cfg.drawInitial:
-        diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
-        # print("Initial loss:", loss)
-        visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
+    if  cfg.doPlot:
+        diffImageFolder = join(outFolderForExperiment, 'DiffImage')
+        os.makedirs(diffImageFolder, exist_ok=True)
+        if cfg.drawInitial:
+            diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
+            # print("Initial loss:", loss)
+            visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
 
     # the optimization loop
     if cfg.optimizerType == 'Adam':
@@ -167,8 +168,9 @@ def texturedPoseFitting(inputs, cfg, device, ):
 
     fitParamFolder = join(outFolderForExperiment, 'FitParam')
     os.makedirs(fitParamFolder, exist_ok=True)
-    comprisonFolder = join(outFolderForExperiment, 'Comparison')
-    os.makedirs(comprisonFolder, exist_ok=True)
+    if cfg.doPlot:
+        comprisonFolder = join(outFolderForExperiment, 'Comparison')
+        os.makedirs(comprisonFolder, exist_ok=True)
 
     # silhouette renderer
     if cfg.withSilhouette:
@@ -178,7 +180,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
                                                                   camParamF=inputs.camParamF)
         silhouettes_crops_out = np.stack(silhouettes_crops_out, axis=0)
         rendererSilhouette = Renderer(device, cfg)
-        if cfg.drawInitial:
+        if cfg.drawInitial  and cfg.doPlot:
             meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
             images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
             visualize2DSilhouetteResults(images, backGroundImages = silhouettes_crops_out, outImgFile=join(outFolderForExperiment, 'Fit0_Silhouette_Initial.png'))
@@ -286,56 +288,60 @@ def texturedPoseFitting(inputs, cfg, device, ):
                 terminate = True
 
         # Save outputs to create a GIF.
-        if (i + 1) % cfg.plotStep == 0 or terminate or (i==0 and cfg.drawInitial):
+        if (i + 1) % cfg.plotStep == 0 or terminate or (i==0 and cfg.drawInitial) :
             lossesFile = join(outFolderForExperiment, 'Errs.json')
             json.dump({'ImageLoss':losses, 'toSparseCloudLosses':toSparseCloudLosses, 'headKpFixingLosses':headKpFixingLosses}, open(lossesFile, 'w'))
-
-            showCudaMemUsage(device)
-            with torch.no_grad():
-                verts = smplsh(betas, pose, trans).type(torch.float32)
-                smplshMesh = mesh.update_padded(verts[None])
-                meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
-
-            plt.close('all')
-
-            outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
-            images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
             outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
             np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
                      beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
-            visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=5)
 
-            diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
-            outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
-            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
-            # make comparison view
-            comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5) )
-            os.makedirs(comparisonFolderThisIter, exist_ok=True)
-            for iCam in range(images.shape[0]):
-                img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            if cfg.doPlot:
+                showCudaMemUsage(device)
+                with torch.no_grad():
+                    verts = smplsh(betas, pose, trans).type(torch.float32)
+                    smplshMesh = mesh.update_padded(verts[None])
+                    meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
 
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
-                imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
-                imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
+                plt.close('all')
 
-            if cfg.withSilhouette:
-                # render silhouette
-                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
-                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
-                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
-                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
-            # draw loss curve
-            fig, a_loss  = plt.subplots()
-            a_loss.plot(losses, linewidth=3)
-            a_loss.set_title('losses: {}'.format(losses[-1]))
-            a_loss.grid()
-            fig.savefig(join(outFolderForExperiment, 'ErrCurve_'+ cfg.optimizerType + '_LR' +str(cfg.learningRate)+'_TStep' +str(cfg.terminateStep) + '.png'),
-                        dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
+                outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
+                images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
+
+                visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False, sizeInInches=5)
+
+                diffImgs = np.stack([np.abs(img[...,:3] - refImg) for img, refImg in zip(images, crops_out)])
+                outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
+                visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
+
+
+                # make comparison view
+                comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5) )
+                os.makedirs(comparisonFolderThisIter, exist_ok=True)
+                for iCam in range(images.shape[0]):
+                    img = (cv2.flip(images[iCam, ...,:3], -1) * 255).astype(np.uint8)
+                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+                    cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png' ), img)
+                    imgRef = (cv2.flip(crops_out[iCam, ...], -1)*255).astype(np.uint8)
+                    imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
+                    cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
+
+                if cfg.withSilhouette:
+                    # render silhouette
+                    images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+                    outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
+                    visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                                 outImgFile=join(outFolderForExperiment, outSilhouetteFile))
+                # draw loss curve
+                fig, a_loss  = plt.subplots()
+                a_loss.plot(losses, linewidth=3)
+                a_loss.set_title('losses: {}'.format(losses[-1]))
+                a_loss.grid()
+                fig.savefig(join(outFolderForExperiment, 'ErrCurve_'+ cfg.optimizerType + '_LR' +str(cfg.learningRate)+'_TStep' +str(cfg.terminateStep) + '.png'),
+                            dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
         if terminate:
             break
 
@@ -376,7 +382,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
                                       camParamF=inputs.camParamF,
                                       imgExt='png')
 
-    if cfg.drawInitial:
+    if cfg.drawInitial and cfg.doPlot:
         refImgsFolder = join(outFolderForExperiment, 'RefImages')
         os.makedirs(refImgsFolder, exist_ok=True)
         for iCam in range(len(crops_out)):
@@ -450,7 +456,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     light = PointLights(device=device, location=xyz, specular_color=s, ambient_color=a, diffuse_color=d)
     rendererSynth = RendererWithTexture(device, lights=light, cfg=cfg)
 
-    if cfg.drawInitial:
+    if cfg.drawInitial and  cfg.doPlot:
         # initial image
         meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
         images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
@@ -458,13 +464,14 @@ def texturedPerVertexFitting(inputs, cfg, device):
                            sizeInInches=5)
 
     # initial diff image
-    diffImageFolder = join(outFolderForExperiment, 'DiffImage')
-    os.makedirs(diffImageFolder, exist_ok=True)
+    if  cfg.doPlot:
+        diffImageFolder = join(outFolderForExperiment, 'DiffImage')
+        os.makedirs(diffImageFolder, exist_ok=True)
 
-    if cfg.drawInitial:
-        diffImgs = np.stack([np.abs(img[..., :3] - refImg) for img, refImg in zip(images, crops_out)])
-        # print("Initial loss:", loss)
-        visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
+        if cfg.drawInitial:
+            diffImgs = np.stack([np.abs(img[..., :3] - refImg) for img, refImg in zip(images, crops_out)])
+            # print("Initial loss:", loss)
+            visualize2DResults(diffImgs, outImgFile=join(diffImageFolder, 'Fig_00000_Initial.png'), sizeInInches=5)
 
     # the optimization loop
     if cfg.optimizePose:
@@ -483,8 +490,10 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
     fitParamFolder = join(outFolderForExperiment, 'FitParam')
     os.makedirs(fitParamFolder, exist_ok=True)
-    comprisonFolder = join(outFolderForExperiment, 'Comparison')
-    os.makedirs(comprisonFolder, exist_ok=True)
+
+    if  cfg.doPlot:
+        comprisonFolder = join(outFolderForExperiment, 'Comparison')
+        os.makedirs(comprisonFolder, exist_ok=True)
 
     imagesBatchRefs = []
     for iCam in range(len(cams)):
@@ -627,60 +636,63 @@ def texturedPerVertexFitting(inputs, cfg, device):
 
         # Save outputs to create a GIF.
         if (i + 1) % cfg.plotStep == 0 or terminate or (i==0 and cfg.drawInitial):
-            showCudaMemUsage(device)
-            lossesFile = join(outFolderForExperiment, 'Errs.json')
-            json.dump({'ImageLoss': losses, 'toSparseCloudLosses': toSparseCloudLosses,
-                       'LaplacianSmootherLoss': lpSmootherLosses}, open(lossesFile, 'w'))
-
-            with torch.no_grad():
-                verts = smplsh(betas, pose, trans).type(torch.float32)
-                smplshMesh = mesh.update_padded(verts[None])
-                meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
-
-            plt.close('all')
-
-            outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
-            images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
-
             outParamFile = join(fitParamFolder, 'Param_' + str(i).zfill(5) + '.npz')
             np.savez(outParamFile, trans=trans.cpu().detach().numpy(), pose=pose.cpu().detach().numpy(),
                      beta=betas.cpu().detach().numpy(), personalShape=xyzShift.cpu().detach().numpy())
-            visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False,
-                               sizeInInches=5)
 
-            diffImgs = np.stack([np.abs(img[..., :3] - refImg) for img, refImg in zip(images, crops_out)])
-            outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
-            visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
-            # make comparison view
-            comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5))
-            os.makedirs(comparisonFolderThisIter, exist_ok=True)
-            for iCam in range(images.shape[0]):
-                img = (cv2.flip(images[iCam, ..., :3], -1) * 255).astype(np.uint8)
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            if  cfg.doPlot:
+                showCudaMemUsage(device)
+                lossesFile = join(outFolderForExperiment, 'Errs.json')
+                json.dump({'ImageLoss': losses, 'toSparseCloudLosses': toSparseCloudLosses,
+                           'LaplacianSmootherLoss': lpSmootherLosses}, open(lossesFile, 'w'))
 
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png'), img)
-                imgRef = (cv2.flip(crops_out[iCam, ...], -1) * 255).astype(np.uint8)
-                imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
-                cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
+                with torch.no_grad():
+                    verts = smplsh(betas, pose, trans).type(torch.float32)
+                    smplshMesh = mesh.update_padded(verts[None])
+                    meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
+
+                plt.close('all')
+
+                outImgFile = join(outFolderForExperiment, 'Fig_' + str(i).zfill(5) + '.png')
+                images = renderImagesWithBackground(cams, rendererSynth, meshes, backgrounds, cams_torch=cams_torch, cfg=cfg)
+
+                visualize2DResults(images, outImgFile=join(outFolderForExperiment, outImgFile), withAlpha=False,
+                                   sizeInInches=5)
+
+                diffImgs = np.stack([np.abs(img[..., :3] - refImg) for img, refImg in zip(images, crops_out)])
+                outDiffImgFile = join(diffImageFolder, 'Fig_' + str(i).zfill(5) + '.png')
+                visualize2DResults(diffImgs, outImgFile=outDiffImgFile, withAlpha=False, sizeInInches=5)
+
+                # make comparison view
+                comparisonFolderThisIter = join(comprisonFolder, str(i).zfill(5))
+                os.makedirs(comparisonFolderThisIter, exist_ok=True)
+                for iCam in range(images.shape[0]):
+                    img = (cv2.flip(images[iCam, ..., :3], -1) * 255).astype(np.uint8)
+                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+                    cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_0Rendered.png'), img)
+                    imgRef = (cv2.flip(crops_out[iCam, ...], -1) * 255).astype(np.uint8)
+                    imgRef = cv2.cvtColor(imgRef, cv2.COLOR_RGB2BGR)
+                    cv2.imwrite(join(comparisonFolderThisIter, str(iCam).zfill(5) + '_1Ref.png'), imgRef)
 
 
-            if cfg.withSilhouette:
-                # render silhouette
-                images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
-                outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
-                visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
-                                             outImgFile=join(outFolderForExperiment, outSilhouetteFile))
+                if cfg.withSilhouette:
+                    # render silhouette
+                    images = renderImages(cams, rendererSilhouette, meshes, cams_torch, cfg)
+                    outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
+                    visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
+                                                 outImgFile=join(outFolderForExperiment, outSilhouetteFile))
 
-            # draw loss curve
-            fig, a_loss  = plt.subplots()
-            a_loss.plot(losses, linewidth=3)
-            a_loss.set_title('losses: {}'.format(losses[-1]))
-            a_loss.grid()
-            fig.savefig(join(outFolderForExperiment, 'ErrCurve_'+ cfg.optimizerType + '_LR' +str(cfg.learningRate)+'_TStep' +str(cfg.terminateStep) + '.png'),
-                        dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
+                # draw loss curve
+                fig, a_loss  = plt.subplots()
+                a_loss.plot(losses, linewidth=3)
+                a_loss.set_title('losses: {}'.format(losses[-1]))
+                a_loss.grid()
+                fig.savefig(join(outFolderForExperiment, 'ErrCurve_'+ cfg.optimizerType + '_LR' +str(cfg.learningRate)+'_TStep' +str(cfg.terminateStep) + '.png'),
+                            dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
 
         if terminate:
             break

@@ -118,6 +118,8 @@ class RenderingCfg:
         s.silhouetteLossWeight = 0.1
         s.undistortSilhouettes = True
 
+        s.doPlot = True
+
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg
