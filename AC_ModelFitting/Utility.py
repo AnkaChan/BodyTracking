@@ -218,7 +218,7 @@ def load_cameras(cam_path, device, actual_img_shape, unitM=False):
     out_for_torch = {'R': R_torch, 'T': T_torch, 'fl': focal_length, 'pp': principal_point}
     return cam_params, out_for_torch
 
-def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  imgExt = 'png', writeUndistorted=True, normalize=True, flipImg=True):
+def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  imgExt = 'png', writeUndistorted=True, normalize=True, flipImg=True,cvtToRGB=True):
     image_refs_out = []
     crops_out = []
     undistImageFolder = join(img_dir, 'Undist')
@@ -257,7 +257,8 @@ def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  i
                 cv2.imwrite(outUndistImgFile, img)
         if normalize:
             img = img.astype(np.float32) / 255.0
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if cvtToRGB:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         image_refs_out.append(img)
 
     w = int(img.shape[0])/2

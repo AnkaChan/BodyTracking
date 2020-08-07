@@ -5,6 +5,7 @@ import sys
 
 def configLogger(logFile, logFileMode='a', handlerStdoutLevel = logging.INFO, handlerFileLevel = logging.DEBUG, format=None, printToScreen=False):
     logger = logging.getLogger("logger")
+    logger.handlers = []
     if format is None:
         formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s")
     else:

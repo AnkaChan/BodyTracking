@@ -74,8 +74,8 @@ def texturedFitting(inputs, frameNames, cfg=Config()):
         meshFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'Mesh', '*.ply'))[-1]
         paramFile = sortedGlob(join(inputsPerVertexFitting.outputFolder, 'FitParam', '*.npz'))[-1]
 
-        shutil.copy(meshFile, join(finalMeshFolder, frameName + '.ply'))
-        shutil.copy(paramFile, join(finalParamFolder, frameName + '.npz'))
+        shutil.copy(meshFile, join(finalMeshFolder, 'A'+frameName + '.ply'))
+        shutil.copy(paramFile, join(finalParamFolder, 'A'+frameName + '.npz'))
     converObjsInFolder(finalMeshFolder, join(finalMeshFolder, 'ObjWithUV'), ext='ply', convertToMM=True)
 
 if __name__ == '__main__':

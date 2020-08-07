@@ -29,7 +29,7 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
     # set up light
     xyz = torch.from_numpy(np.float32([0, 0, 2000]))[None]
     diffuse = 0.0
-    ambient = 0.5
+    ambient = cfg.ambientLvl
     specular = 0.0
     s = specular * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
     d = diffuse * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
@@ -75,13 +75,42 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 
             imageio.imsave(outRenderedFile, (255*img).astype(np.uint8))
 
+class InputBundle():
+    def __init__(s):
+        s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+        s.smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+        s.skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+        s.handIndicesFile = r'HandIndices.json'
+        s.HeadIndicesFile = r'HeadIndices.json'
+        s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
+        s.inputDensePointCloudFile = None
+        s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
+        s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
+        s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+        s.smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
+        s.cleanPlateFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\CleanPlateExtracted\RgbUndist'
+        s.texturedMesh = r"..\Data\TextureMap2Color\SMPLWithSocks_tri.obj"
+        s.compressedStorage = True
+
+        s.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+        s.deformedSparseMeshFolder = None
+        s.inputKpFolder = join(s.dataFolder, 'Keypoints')
+        s.toSparseFittedFolder = None
+        s.outputFolderAll = None
+        s.outputFolderFinal = None
+        s.initialFittingParamFile = None
 
 if __name__ == '__main__':
     inputs = InputBundle()
-    inFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Final'
-    cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
-    outFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\RenderedResult'
-    imgParentFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Images'
+    # inFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Final'
+    # cleanPlateFolder = r'F:\WorkingCopy2\2020_06_21_TextureRendering\CleanPlatesExtracted\gray\distorted\Undist'
+    # outFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\RenderedResult'
+    # imgParentFolder = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\Copied\Images'
+
+    inFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    cleanPlateFolder =  r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData\CleanPlateExtracted\RgbUndist'
+    outFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\RenderedResult'
+    imgParentFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Preprocessed'
 
     cfg = RenderingCfg()
 
@@ -104,7 +133,8 @@ if __name__ == '__main__':
     cfg.jointRegularizerWeight = 1e-5
     cfg.toSparseCornersFixingWeight = 1
     cfg.bin_size = 256
-
+    cfg.ambientLvl = 0.8
+    imgExt = 'png'
     renderConsecutiveFrames(inFolder, cleanPlateFolder, inputs.texturedMesh, inputs.camParamF, outFolder, cfg=cfg)
 
     # copy reference images
@@ -115,7 +145,6 @@ if __name__ == '__main__':
     renderedImgFiles = []
     flipComparisonFolders = []
     sideBySideComparisonFolders = []
-
 
     for i in range(len(camNames)):
         camName = camNames[i]
@@ -136,12 +165,16 @@ if __name__ == '__main__':
         sideBySideComparisonFolders.append(sideBySideComparisonFolder)
 
     for iFrame, imgFolder in tqdm(enumerate(imageFolders), desc='Copy reference images.'):
-        imgFiles = glob.glob(join(imgFolder, '*.pgm'))
+        # imgFiles = glob.glob(join(imgFolder, '*.pgm'))
+        imgFiles = glob.glob(join(imgFolder, '*.'+imgExt))
         imgFiles.sort()
         # for iCam, imgF in enumerate(imgFiles):
         #     shutil.copy(imgF, join(referenceOutFolders[iCam], os.path.basename(imgF)))
+        # image_refs_out, crops_out = load_images(imgFolder, camParamF=inputs.camParamF, UndistImgs=True,
+        #                                         cropSize=cfg.imgSize, imgExt='pgm', writeUndistorted=False, normalize=False, flipImg=False)
         image_refs_out, crops_out = load_images(imgFolder, camParamF=inputs.camParamF, UndistImgs=True,
-                                                cropSize=cfg.imgSize, imgExt='pgm', writeUndistorted=False, normalize=False, flipImg=False)
+                                                cropSize=cfg.imgSize, imgExt=imgExt, writeUndistorted=False, normalize=False, flipImg=False, cvtToRGB=False)
+
         for iCam, imgF in enumerate(imgFiles):
             cv2.imwrite(join(referenceOutFolders[iCam], os.path.basename(imgF) + '.png'), crops_out[iCam].astype(np.uint8))
 
@@ -154,9 +187,6 @@ if __name__ == '__main__':
             # cv2.imshow('sideBySideComparison', collageImage)
             # cv2.waitKey()
             cv2.imwrite(join(sideBySideComparisonFolders[iCam], os.path.basename(imgF) + '.png'), collageImage)
-
-
-
 
 
 
