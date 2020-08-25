@@ -77,8 +77,9 @@ class RenderingCfg:
         s.plotStep = 10
         s.numCams = 16
         s.imgSize = 2160
-        s.ambientLvl = 0.8
+        s.batchSize = 1
 
+        s.ambientLvl = 0.8
         s.extrinsicsOutsideCamera =False
 
         s.lpSmootherW = 0.1

@@ -54,9 +54,9 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.texturedPoseFittingCfg.sigma = 1e-7
     cfg.texturedPoseFittingCfg.blurRange = 1e-7
-    cfg.texturedPoseFittingCfg.numIterations = 300
+    cfg.texturedPoseFittingCfg.numIterations = 2000
 
-    cfg.texturedPoseFittingCfg.plotStep = cfg.texturedPoseFittingCfg.numIterations
+    cfg.texturedPoseFittingCfg.plotStep = 100
     cfg.texturedPoseFittingCfg.numCams = 16
     # low learning rate for pose optimization
     cfg.texturedPoseFittingCfg.learningRate = 1e-3

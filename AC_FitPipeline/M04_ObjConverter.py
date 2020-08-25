@@ -106,8 +106,17 @@ if __name__ == '__main__':
     # obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\IniitalTexture\Meshes'
     # out_dir = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\FinalObj\WithTextureCoord'
     obj_dir = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+
+    plyFiles = glob.glob(join(obj_dir, '*.ply'))
+    for plyF in plyFiles:
+        fName = os.path.basename(plyF)
+        if fName[0] != 'A':
+            newFileName = join(obj_dir, 'A'+fName)
+            os.rename(plyF, newFileName)
+            # print(plyF, newFileName)
+
     out_dir = os.path.join(obj_dir, 'WithTextureCoord')
-    converObjsInFolder(obj_dir, out_dir, ext='ply', addA=True)
+    converObjsInFolder(obj_dir, out_dir, ext='ply', addA=False)
     objFilesToPly(out_dir, join(obj_dir, 'PlyWithTextureCoord'))
 
     # inFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
