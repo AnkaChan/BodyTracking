@@ -47,7 +47,7 @@ if __name__ == '__main__':
     ]
 
     inputs.inOriginalObjFilesFolder = r'Z:\shareZ\2020_03_18_LadaAnimationWholeSeq\WholeSeq\TriangulationType1Only'
-    inputs.toSparseFittedFolder = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\ToSparse'
+    inputs.toSparseFittedFolder = r'Z:\shareZ\2020_08_26_TexturedFitting_LadaGround\ToSparse'
     inputs.outputFolderAll = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\TexturedFitting'
     inputs.outputFolderFinal = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\Final'
 
