@@ -208,7 +208,10 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 
 
 if __name__ == '__main__':
-    toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
+    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
+    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\ToSparse'
+    toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+
     visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
 
     # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'

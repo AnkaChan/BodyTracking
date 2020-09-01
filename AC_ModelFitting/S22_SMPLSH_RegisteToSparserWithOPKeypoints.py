@@ -604,14 +604,27 @@ if __name__ == '__main__':
     # inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
     # inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
 
-    SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-    skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    # SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+    # skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    #
+    # # outFolder = r'SMPLSHFit\LadaOldSuit_WithOPKeypoints'
+    # outFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
+    #
+    # targetMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003067.ply'
+    # inputKeypoints = r'FF:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Reconstruction\PointCloud.obj'
+    # # inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
+    # inputDensePointCloudFile = None
+    # inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
+
+    # Data for katey
+    SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f.npz'
+    skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
 
     # outFolder = r'SMPLSHFit\LadaOldSuit_WithOPKeypoints'
-    outFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\TextureCompletionFitting\03067'
+    outFolder = r'..\Data\KateyBodyModel'
 
-    targetMesh = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\Deformed\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step8_Overlap0\Deformed\A00003067.ply'
-    inputKeypoints = r'FF:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\toRGB\Reconstruction\PointCloud.obj'
+    targetMesh = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Deformed\A00018411.obj'
+    inputKeypoints = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Keypoints\18411.obj'
     # inputDensePointCloudFile = r'F:\WorkingCopy2\2020_04_05_LadaRestPosePointCloud\Pointclouds\03052\scene_dense.ply'
     inputDensePointCloudFile = None
     inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
@@ -658,7 +671,12 @@ if __name__ == '__main__':
 
     targetKeypointsOP = np.array(pv.PolyData(inputKeypoints).points).astype(np.float64) / 1000
     skeletonJointsToFix = [10, 11]
-    densePointCloud = np.array(pv.PolyData(inputDensePointCloudFile).points).astype(np.float64) / 1000
+
+    if inputDensePointCloudFile is not None:
+        densePointCloud = np.array(pv.PolyData(inputDensePointCloudFile).points).astype(np.float64) / 1000
+
+    else:
+        densePointCloud = np.zeros((1,3))
 
     transInit, poseInit, betaInit = loadCompressedFittingParam(inFittingParam, readPersonalShape=False)
     betas = betaInit
