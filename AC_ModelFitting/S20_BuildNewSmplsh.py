@@ -388,9 +388,9 @@ if __name__ == '__main__':
     allJointsPC = pv.PolyData(joint_mapped.detach().cpu().numpy())
     allJointsPC.save(join(interpoDataOutFolder, 'AllJoints.ply'))
 
-    np.savez_compressed(outSMPLSHNpzFile, VTemplate=np.array(smplSocks.points), Faces=smplSocks.faces, Weights=np.load(outSkinningWeightsFile).astype(np.float32),
-             ShapeBlendShapes=np.load(outShapeBlendShapesFile).astype(np.float32),
-             PoseBlendShapes=np.load(outPoseBlendShapesFile).astype(np.float32), JRegressor=newJRegressor.astype(np.float32), ParentTable=np.load(join(interpoDataOutFolder, 'SMPLSH_ParentsTable.npy')))
+    np.savez_compressed(outSMPLSHNpzFile, VTemplate=np.array(smplSocks.points).astype(np.float64), Faces=smplSocks.faces, Weights=np.load(outSkinningWeightsFile).astype(np.float64),
+             ShapeBlendShapes=np.load(outShapeBlendShapesFile).astype(np.float64),
+             PoseBlendShapes=np.load(outPoseBlendShapesFile).astype(np.float64), JRegressor=newJRegressor.astype(np.float64), ParentTable=np.load(join(interpoDataOutFolder, 'SMPLSH_ParentsTable.npy')))
 
     # test new smplsh data
     inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
