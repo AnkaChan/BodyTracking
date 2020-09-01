@@ -7,8 +7,8 @@ from os.path import *
 
 import cv2
 
-from flownet2 import models, losses, datasets
-from flownet2.utils import tools
+from .flownet2 import models, losses, datasets
+from .flownet2.utils import tools
 
 parser = argparse.ArgumentParser()
 
@@ -123,14 +123,14 @@ class FlowController:
         self.is_cropped = False
 
     @staticmethod
-    def convert_flow_to_image(flow):
+    def convert_flow_to_image(flow, magAmplify=40):
         image_shape = flow.shape[0:2] + (3,)
 
         hsv = np.zeros(shape=image_shape, dtype=np.uint8)
         hsv[..., 1] = 255
         mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
         hsv[..., 0] = ang * 180 / np.pi / 2
-        normalized_mag = np.asarray(np.clip(mag*40, 0, 255), dtype=np.uint8)
+        normalized_mag = np.asarray(np.clip(mag*magAmplify, 0, 255), dtype=np.uint8)
         hsv[..., 2] = normalized_mag
         rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
         rgb = np.asarray(rgb, np.uint8)
