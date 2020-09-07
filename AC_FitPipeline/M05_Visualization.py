@@ -124,7 +124,7 @@ def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False,
             mesh.save(join(outFolder, 'A' + frameName + '.ply'))
 
 def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile, camParamF, outFolder, frameNames=None, cfg=RenderingCfg(),
-                            inMeshExt='ply', convertToM=False):
+                            inMeshExt='ply', convertToM=False, rendererType='RGB'):
     camNames = ['A', 'B', 'C', 'D', 'E', "F", 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
@@ -161,7 +161,13 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
     d = diffuse * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
     a = ambient * torch.from_numpy(np.ones((1, 3)).astype(np.float32)).to(device)
     light = PointLights(device=device, location=xyz, specular_color=s, ambient_color=a, diffuse_color=d)
-    rendererSynth = RendererWithTexture(device, lights=light, cfg=cfg)
+
+    if rendererType == 'RGB':
+        rendererSynth = RendererWithTexture(device, lights=light, cfg=cfg)
+    elif rendererType == 'Silhouette':
+        rendererSynth = Renderer(device,  cfg=cfg)
+    else:
+        assert False, 'Unknow renderer type:' + rendererType
 
     renderedOutFolders = []
     for i in range(len(camNames)):
@@ -200,7 +206,11 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
                 outRenderedFile = join(renderedOutFolders[iCam], join(frameNames[iFrame] + '.png'))
             else:
                 outRenderedFile = join(renderedOutFolders[iCam], join(Path(inDeformedMeshFile).stem + '.png'))
-            img = images[iCam,...,:3]
+            if rendererType == 'RGB':
+                img = images[iCam,...,:3]
+            elif rendererType == 'Silhouette':
+                img = images[iCam,...,3]
+
             img = cv2.flip(img, -1)
 
             imageio.imsave(outRenderedFile, (255*img).astype(np.uint8))
@@ -210,9 +220,10 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 if __name__ == '__main__':
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\ToSparse'
-    toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    finalFittingFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    converObjsInFolder(finalFittingFolder, join(finalFittingFolder, 'ObjWithUV'), ext='ply', convertToMM=True)
 
-    visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
+    # visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
 
     # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
     # # visualizeToSparseFitting(kpFolder, addUV=False)

@@ -161,9 +161,12 @@ if __name__ == '__main__':
     # cv2.waitKey()
 
     # inFolder = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CleanPlateExtracted\gray\distorted'
-    inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052'
+    # inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052'
+    # camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
 
+    inFolder = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\00_FiducialMarkerTrackingPipeline\Data'
     camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+
     outFolder = join(inFolder, 'RgbUndist')
 
     undistortMultiCamsFolder(inFolder, outFolder, camParamF)
