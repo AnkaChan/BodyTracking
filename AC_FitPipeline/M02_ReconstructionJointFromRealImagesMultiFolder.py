@@ -13,8 +13,8 @@ from SuitCapture import Triangulation
 import pyvista as pv
 from M01_Preprocessing import *
 
-pathToPyModule = r"E:\Projects\ChbCapture\MultiCameraReconstructOutputCorrespondences\Release\MultiCameraReconstructOutputCorrespondences.cp36-win_amd64.pyd"
-spec = importlib.util.spec_from_file_location("MultiCameraReconstructFromRecog", pathToPyModule)
+# pathToPyModule = r"E:\Projects\ChbCapture\MultiCameraReconstructOutputCorrespondences\Release\MultiCameraReconstructOutputCorrespondences.cp36-win_amd64.pyd"
+# spec = importlib.util.spec_from_file_location("MultiCameraReconstructFromRecog", pathToPyModule)
 # MultiCameraReconstructFromRecog = importlib.util.module_from_spec(spec)
 # spec.loader.exec_module(MultiCameraReconstructFromRecog)
 
@@ -38,6 +38,7 @@ class Config:
 
         s.drawResults = False
         s.drawReconstructedKeypoints = False
+        s.debugFolder = None
 
         s.keypointSkeletonParentTable = [
         # torso
@@ -580,20 +581,22 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
 
         corrs.append(np.hstack([keypointsPaddedUndist, keypoints[:,2:3]]).tolist())
 
-        # if cfg.drawResults:
-        #     # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
-        #     outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.png')
-        #     drawKeyPoints(outResultOImgFile, imageToProcess, keypoints, cfg.keypointSkeletonParentTable)
-        #
-        #     # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
-        #     # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
-        #
-        #     # I, dist, E = Camera.loadCalibrationXML(calibXMLFiles[iCam])
-        #     #
-        #     # I4 = np.eye(4)
-        #     # I4[:3,:3] = I
-        #     # outProjectedMesh = join(folderProjectedMesh, Path(imgF).stem + '.png')
-        #     # projectMesh(outProjectedMesh, imageToProcess, I4 @ E, mesh)
+        if cfg.drawResults:
+            detectionDrawFolder = join(debugFolder, 'Detection')
+            os.makedirs(detectionDrawFolder, exist_ok=True)
+            # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
+            outResultOImgFile = join(detectionDrawFolder, Path(imgFiles[iCam]).stem + '.png')
+            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints, cfg.keypointSkeletonParentTable)
+
+            # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
+            # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
+
+            # I, dist, E = Camera.loadCalibrationXML(calibXMLFiles[iCam])
+            #
+            # I4 = np.eye(4)
+            # I4[:3,:3] = I
+            # outProjectedMesh = join(folderProjectedMesh, Path(imgF).stem + '.png')
+            # projectMesh(outProjectedMesh, imageToProcess, I4 @ E, mesh)
 
     # keypointsCorrsFile = join(reconFolder, 'KeypointsCorrs.json')
     # json.dump(corrs, open(keypointsCorrsFile, 'w'))

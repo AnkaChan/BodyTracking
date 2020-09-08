@@ -15,7 +15,8 @@ from copy import  copy
 #dir_path = os.path.dirname(os.path.realpath(__file__))
 opBinDir = r'C:\Code\Project\Openpose\bin'
 opReleaseDir = r'C:\Code\Project\Openpose\x64\Release'
-
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 # opBinDir = r'Z:\Anka\OpenPose\bin'
 # opReleaseDir = r'Z:\Anka\OpenPose\x64\Release'
 try:
