@@ -74,7 +74,7 @@ def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
                                                         inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=fittingParamLastFrame, cfg=cfgFrame.toSparseFittingCfg)
 
 def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
-    for iF in tqdm.tqdm(range(len(frameNames)), desc='Fitting to Sparse: '):
+    for iF in tqdm.tqdm(range(len(frameNames)), desc='Interpolating meshes: '):
         frameName = frameNames[iF]
         deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
 

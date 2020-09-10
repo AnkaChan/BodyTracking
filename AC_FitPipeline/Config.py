@@ -119,6 +119,7 @@ class RenderingCfg:
         s.undistortSilhouettes = True
 
         s.doPlot = True
+        s.outputErr = True
 
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
