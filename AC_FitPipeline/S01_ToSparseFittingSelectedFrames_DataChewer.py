@@ -79,6 +79,7 @@ if __name__ == '__main__':
     # to sparse fitting
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
     toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 

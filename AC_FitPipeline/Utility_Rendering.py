@@ -351,7 +351,9 @@ def load_cameras(cam_path, device, actual_img_shape, unitM=False):
     out_for_torch = {'R': R_torch, 'T': T_torch, 'fl': focal_length, 'pp': principal_point}
     return cam_params, out_for_torch
 
-def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  imgExt = 'png', writeUndistorted=True, normalize=True, flipImg=True):
+
+def load_images(img_dir, UndistImgs=False, camParamF=None, cropSize=2160, imgExt='png', writeUndistorted=True,
+                normalize=True, flipImg=True, cvtToRGB=True):
     image_refs_out = []
     crops_out = []
     undistImageFolder = join(img_dir, 'Undist')
@@ -360,11 +362,11 @@ def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  i
         os.makedirs(undistImageFolder, exist_ok=True)
         camParams = json.load(open(camParamF))['cam_params']
 
-    #for img_name in img_names:
+    # for img_name in img_names:
     #    path = img_dir + '\\{}'.format(img_name)
     #    print(path)
     img_paths = sorted(glob.glob(img_dir + '/*.' + imgExt))
-    
+
     for i, path in enumerate(img_paths):
         # img = cv2.imread(path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
         img = cv2.imread(path)
@@ -381,8 +383,9 @@ def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  i
                 [0.0, 0.0, 1],
             ])
 
-            undistortParameter = np.array([camParams[str(i)]['k1'], camParams[str(i)]['k2'], camParams[str(i)]['p1'], camParams[str(i)]['p2'],
-                                           camParams[str(i)]['k3'], camParams[str(i)]['k4'], camParams[str(i)]['k5'], camParams[str(i)]['k6']])
+            undistortParameter = np.array(
+                [camParams[str(i)]['k1'], camParams[str(i)]['k2'], camParams[str(i)]['p1'], camParams[str(i)]['p2'],
+                 camParams[str(i)]['k3'], camParams[str(i)]['k4'], camParams[str(i)]['k5'], camParams[str(i)]['k6']])
 
             img = cv2.undistort(img, intrinsic_mtx, undistortParameter)
             if writeUndistorted:
@@ -390,17 +393,18 @@ def load_images(img_dir, UndistImgs = False, camParamF=None, cropSize = 2160,  i
                 cv2.imwrite(outUndistImgFile, img)
         if normalize:
             img = img.astype(np.float32) / 255.0
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if cvtToRGB:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         image_refs_out.append(img)
 
-    w = int(img.shape[0])/2
+    w = int(img.shape[0]) / 2
 
     for i in range(len(image_refs_out)):
         image = image_refs_out[i]
         cx = image.shape[1] / 2
-        
+
         image = image_refs_out[i]
-        img = image[:, int(cx-w):int(cx+w)]
+        img = image[:, int(cx - w):int(cx + w)]
         if not cropSize == img.shape[0]:
             img = cv2.resize(img, (cropSize, cropSize))
         if flipImg:

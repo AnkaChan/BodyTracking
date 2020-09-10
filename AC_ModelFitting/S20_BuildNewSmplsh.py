@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, SMPLSH_Dir)
 import smplsh_torch
 import smpl_np
-import trimesh
+# import trimesh
 from scipy.spatial import KDTree
 import numpy as np
 from iglhelpers import *
@@ -126,7 +126,7 @@ def buildKKT(L, D, e):
 
 def interpolateData(nDimData, constrantData, constraintIds, LMat):
     # nDimData = constrantData.shape[0]
-    nConstraints = goodCorrs.shape[0]
+    nConstraints = constraintIds.shape[0]
 
     x = constrantData
     # Build Constraint
@@ -189,19 +189,38 @@ class VertexToOpJointsConverter(torch.nn.Module):
 if __name__ == '__main__':
     # smpl_model_path = r'C:/Data/SMPL_python_v.1.0.0/smpl/models/basicModel_m_lbs_10_207_0_v1.0.0.pkl'
 
-    smpl_model_path = r'..\Data\BuildSmplsh\Input\SMPLH_male.pkl'
+    # smpl_model_path = r'..\Data\BuildSmplsh\Input\SMPLH_male.pkl'
+    # with open(smpl_model_path, 'rb') as smplh_file:
+    #     model_data = pickle.load(smplh_file, encoding='latin1')
+    #
+    # inSMPLSocksMesh = r'..\Data\BuildSmplsh\Input\SMPLWithSocks_tri_Aligned.obj'
+    # smplOriginAverageMeshOut = r'..\Data\BuildSmplsh\Output\SMPLOriginAverage.obj'
+    #
+    # interpoDataOutFolder = r'..\Data\BuildSmplsh\Output'
+    # outBlendShapeInterpoFolder = r'..\Data\BuildSmplsh\Output\BlendShapes'
+    # outSMPLSHNpzFile = join(interpoDataOutFolder, 'SmplshModel_m.npz')
+    #
+    # SMPLSocksTranslatedOut = r'SMPLWithSocks_tri_translated.ply'
+    # outWeightVisFile = join(interpoDataOutFolder, 'WeightVisualization.vtk')
+
+    # # Data for building smplsh male
+    smpl_model_path = r'C:\Code\MyRepo\03_capture\Smpl_SeriesData\models\smplh\SMPLH_female.pkl'
     with open(smpl_model_path, 'rb') as smplh_file:
         model_data = pickle.load(smplh_file, encoding='latin1')
 
-    inSMPLSocksMesh = r'..\Data\BuildSmplsh\Input\SMPLWithSocks_tri_Aligned.obj'
-    smplOriginAverageMeshOut = r'..\Data\BuildSmplsh\Output\SMPLOriginAverage.obj'
+    # this should be aligned to smplh restpose
+    inSMPLSocksMesh = r'..\Data\BuildSmplsh_Female\\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_female.obj'
+    smplOriginAverageMeshOut = r'..\Data\BuildSmplsh_Female\Output\SMPLOriginAverage.obj'
 
-    interpoDataOutFolder = r'..\Data\BuildSmplsh\Output'
-    outBlendShapeInterpoFolder = r'..\Data\BuildSmplsh\Output\BlendShapes'
-    outSMPLSHNpzFile = join(interpoDataOutFolder, 'SmplshModel_m.npz')
+    interpoDataOutFolder = r'..\Data\BuildSmplsh_Female\Output'
+    outBlendShapeInterpoFolder = r'..\Data\BuildSmplsh_Female\Output\BlendShapes'
+
+    # Data for building smplsh male
+    outSMPLSHNpzFile = join(interpoDataOutFolder, 'SmplshModel_f.npz')
 
     SMPLSocksTranslatedOut = r'SMPLWithSocks_tri_translated.ply'
     outWeightVisFile = join(interpoDataOutFolder, 'WeightVisualization.vtk')
+
 
     os.makedirs(interpoDataOutFolder, exist_ok=True)
     os.makedirs(outBlendShapeInterpoFolder, exist_ok=True)
@@ -271,9 +290,9 @@ if __name__ == '__main__':
     #     newWeights[:, iW] = interpolateData(nDimData, model_data['weights'][goodCorrs, iW], constraintIds, LNP)
     # np.save(outSkinningWeightsFile, newWeights)
     # visualizeInterpolation(smplSocks, newWeights, outWeightVisFile)
-
+    #
     outShapeBlendShapesFile = join(interpoDataOutFolder, 'ShapeBlendShapesInterpo.npy')
-    # interpolate shape blend shapes
+    # # interpolate shape blend shapes
     # numShapeParameter = model_data['shapedirs'].shape[2]
     # # Shape blend shapes: nVerts x 3 x 10
     # newSBS = np.zeros((nDimData, 3, model_data['shapedirs'].shape[2]))
@@ -289,9 +308,9 @@ if __name__ == '__main__':
     #     sbsMesh.save(outBlendShapeFile)
     #
     # np.save(outShapeBlendShapesFile, newSBS)
-
+    #
     outPoseBlendShapesFile = join(interpoDataOutFolder, 'SMPLSH_PoseBlendShapes.npy')
-    # interpolate pose blend shapes
+    # # interpolate pose blend shapes
     # numPoseParameter = model_data['posedirs'].shape[2]
     # # # Shape blend shapes: nVerts x 3 x 207
     # newPBS = np.zeros((nDimData, 3, numPoseParameter))
@@ -308,7 +327,7 @@ if __name__ == '__main__':
     #     sbsMesh.save(outBlendShapeFile)
     #
     # np.save(outPoseBlendShapesFile, newPBS)
-    #
+    # #
     outJRegressorFile = join(interpoDataOutFolder, 'SMPLSH_J_regressor.npy')
     # # There is one last J regressor to interpolate
     # # For J regressor we really cannot use interpolation
@@ -325,32 +344,32 @@ if __name__ == '__main__':
     # # Joint regressor is basically a weighted average of SMPL vertices
     # # Since we have less vertices on the feet, we will need to rebalance the weights
     # # My solution is, for every point on smpl, add its weight to corresponding closest point on SMPLSocks
-    # treeSMPLS = KDTree(smplSocks.points)
-    # corrsSMPLToSMPLSocks, ds = searchForClosestPoints(smplhOrgVertices, treeSMPLS)
-    # numJRegressor = model_data['J_regressor'].shape[0]
-    # # # Shape blend shapes: nVerts x 3 x 207
-    # newJRegressor = np.zeros((numJRegressor, nDimData))
-    # JRegressorData = np.copy(model_data['J_regressor'].todense())
-    # for iVSMPL, iVSMPLSocks in enumerate(corrsSMPLToSMPLSocks):
-    #     newJRegressor[:, iVSMPLSocks] += JRegressorData[:, iVSMPL]
-    # np.save(outJRegressorFile, newJRegressor)
-    #
-    # joints = newJRegressor @ smplSocks.points
-    # jointsPC = pv.PolyData(joints)
-    # jointsPC.save(join(interpoDataOutFolder, 'SmplshJoints.ply'))
+    treeSMPLS = KDTree(smplSocks.points)
+    corrsSMPLToSMPLSocks, ds = searchForClosestPoints(smplhOrgVertices, treeSMPLS)
+    numJRegressor = model_data['J_regressor'].shape[0]
+    # # Shape blend shapes: nVerts x 3 x 207
+    newJRegressor = np.zeros((numJRegressor, nDimData))
+    JRegressorData = np.copy(model_data['J_regressor'].todense())
+    for iVSMPL, iVSMPLSocks in enumerate(corrsSMPLToSMPLSocks):
+        newJRegressor[:, iVSMPLSocks] += JRegressorData[:, iVSMPL]
+    np.save(outJRegressorFile, newJRegressor)
+
+    joints = newJRegressor @ smplSocks.points
+    jointsPC = pv.PolyData(joints)
+    jointsPC.save(join(interpoDataOutFolder, 'SmplshJoints.ply'))
 
     # visualizeSMPLBones(smpl, 'SMPLBones.vtk')
     # The joint selector for smplsh
-    #
-    # smplhVertexIds = vertex_ids['smplh']
-    # newIdMap = {}
-    # for key, value in smplhVertexIds.items():
-    #     # print(key, ':', value, '->', corrsSMPLToSMPLSocks[value])
-    #     newIdMap[key] = int(corrsSMPLToSMPLSocks[value])
-    #
-    # # print(newIdMap)
-    # smplshJointSelectionMapFile = join(interpoDataOutFolder, 'SMPLSH_JointSelector.json')
-    # json.dump(newIdMap, open(smplshJointSelectionMapFile, 'w'), indent=3)
+
+    smplhVertexIds = vertex_ids['smplh']
+    newIdMap = {}
+    for key, value in smplhVertexIds.items():
+        # print(key, ':', value, '->', corrsSMPLToSMPLSocks[value])
+        newIdMap[key] = int(corrsSMPLToSMPLSocks[value])
+
+    # print(newIdMap)
+    smplshJointSelectionMapFile = join(interpoDataOutFolder, 'SMPLSH_JointSelector.json')
+    json.dump(newIdMap, open(smplshJointSelectionMapFile, 'w'), indent=3)
 
     # Test the joint selector for new smplsh
 
@@ -369,9 +388,9 @@ if __name__ == '__main__':
     allJointsPC = pv.PolyData(joint_mapped.detach().cpu().numpy())
     allJointsPC.save(join(interpoDataOutFolder, 'AllJoints.ply'))
 
-    np.savez_compressed(outSMPLSHNpzFile, VTemplate=np.array(smplSocks.points), Faces=smplSocks.faces, Weights=np.load(outSkinningWeightsFile),
-             ShapeBlendShapes=np.load(outShapeBlendShapesFile),
-             PoseBlendShapes=np.load(outPoseBlendShapesFile), JRegressor=newJRegressor, ParentTable=np.load(join(interpoDataOutFolder, 'SMPLSH_ParentsTable.npy')))
+    np.savez_compressed(outSMPLSHNpzFile, VTemplate=np.array(smplSocks.points).astype(np.float64), Faces=smplSocks.faces, Weights=np.load(outSkinningWeightsFile).astype(np.float64),
+             ShapeBlendShapes=np.load(outShapeBlendShapesFile).astype(np.float64),
+             PoseBlendShapes=np.load(outPoseBlendShapesFile).astype(np.float64), JRegressor=newJRegressor.astype(np.float64), ParentTable=np.load(join(interpoDataOutFolder, 'SMPLSH_ParentsTable.npy')))
 
     # test new smplsh data
     inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
