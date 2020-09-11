@@ -303,7 +303,7 @@ def init_camera_batches(cam_torch, device, batchSize = 1):
 
 def saveVTK(outFile, verts, smplshExampleMesh):
     smplshExampleMesh.points = verts
-    smplshExampleMesh.save(outFile)
+    smplshExampleMesh.save(outFile, binary=False)
 
 def showCudaMemUsage(device):
     memStats = torch.cuda.memory_stats(device=device)

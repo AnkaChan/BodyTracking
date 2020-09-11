@@ -243,6 +243,52 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
     return np.array(closestPts), np.array(barycentrics), np.array(trianglesId)
 
+def getInterpoMat(inDenseMeshFile, inSparseMesh, outInterpoMatFile, skelDataFile, handIndicesFile='HandIndices.json', HeadIndicesFile=r'HeadIndices.json',softConstraintWeight = 100,
+    numRealCorners = 1487, fixHandAndHead = True):
+    # os.makedirs(outFolder, exist_ok=True)
+
+    handIndices = json.load(open(handIndicesFile))
+    headIndices = json.load(open(HeadIndicesFile))
+
+    indicesToFix = copy.copy(handIndices)
+    indicesToFix.extend(headIndices)
+
+    deformedSMPLSH = pv.PolyData(inDenseMeshFile)
+    deformedSparseMesh = pv.PolyData(inSparseMesh)
+    # deformedSparseMesh.points = deformedSparseMesh.points[:1487, :]
+
+    smplshFaces = deformedSMPLSH.faces.reshape((-1, 4))[:, 1:]
+    print(smplshFaces.shape)
+
+    closestPtsNp, barys, trianglesId = searchForClosestPointsOnTriangleWithBarycentric(deformedSparseMesh.points,
+                                                                                       deformedSMPLSH.points,
+                                                                                       smplshFaces)
+
+    # LNP = getLaplacian(inMeshFile)
+    # LNP
+    # Define fit cost to dense point cloud
+    skelData = json.load(open(skelDataFile))
+    coarseMeshPts = np.array(skelData['VTemplate'])
+    validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
+
+    obsIds = np.where(deformedSparseMesh.points[:, 2] > 0)[0]
+
+    constraintIds = np.intersect1d(obsIds, validVertsOnRestpose)
+    # validTargets = targetVerts[constraintIds, :]
+
+    intepolationMatrixNp = np.zeros((trianglesId.shape[0], deformedSMPLSH.points.shape[0]), dtype=np.float64)
+    for iC in range(intepolationMatrixNp.shape[0]):
+        if iC in constraintIds:
+            intepolationMatrixNp[iC, smplshFaces[trianglesId[iC], 0]] = barys[iC, 0]
+            intepolationMatrixNp[iC, smplshFaces[trianglesId[iC], 1]] = barys[iC, 1]
+            intepolationMatrixNp[iC, smplshFaces[trianglesId[iC], 2]] = barys[iC, 2]
+        else:
+            trianglesId[iC] = -1
+
+    np.save(outInterpoMatFile, intepolationMatrixNp.astype(np.float32))
+
+
+
 if __name__ == '__main__':
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.ply'
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.obj'
