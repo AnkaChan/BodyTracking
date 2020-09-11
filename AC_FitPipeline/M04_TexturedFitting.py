@@ -335,6 +335,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
                     outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
                     visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
                                                  outImgFile=join(outFolderForExperiment, outSilhouetteFile))
+            if cfg.outputErr:
                 # draw loss curve
                 fig, a_loss  = plt.subplots()
                 a_loss.plot(losses, linewidth=3)
@@ -685,7 +686,8 @@ def texturedPerVertexFitting(inputs, cfg, device):
                     outSilhouetteFile = join(outFolderForExperiment, 'Fig_silhouette_' + str(i).zfill(5) + '.png')
                     visualize2DSilhouetteResults(images, backGroundImages=silhouettes_crops_out,
                                                  outImgFile=join(outFolderForExperiment, outSilhouetteFile))
-
+            if cfg.outputErr:
+                plt.close('all')
                 # draw loss curve
                 fig, a_loss  = plt.subplots()
                 a_loss.plot(losses, linewidth=3)

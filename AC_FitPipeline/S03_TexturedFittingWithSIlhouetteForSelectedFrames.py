@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     cfg = Config()
     # cfg.skipPerVertFitting = True
-    cfg.skipPoseFitting = True
+    # cfg.skipPoseFitting = True
 
     cfg.texturedPoseFittingCfg.sigma = 1e-7
     cfg.texturedPoseFittingCfg.blurRange = 1e-7

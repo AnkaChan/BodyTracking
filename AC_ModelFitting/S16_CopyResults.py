@@ -29,7 +29,7 @@ if __name__ == '__main__':
     for iFrame in tqdm.tqdm(range(len(fittingFolders))):
         frameFolder = fittingFolders[iFrame]
         frameDataFolder = glob.glob(join(frameFolder, '*'))[-1]
-        meshFile =  glob.glob(join(frameDataFolder, 'Mesh', '*.ply'))[-1]
+        meshFile = glob.glob(join(frameDataFolder, 'Mesh', '*.ply'))[-1]
 
         shutil.copy(meshFile, join(outFolder, 'A' + os.path.basename(frameFolder) + '.ply'))
 

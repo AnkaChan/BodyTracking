@@ -3,31 +3,57 @@ from Utility import *
 from copy import copy
 from tqdm import tqdm
 import shutil
-
+from S01_RegisterSparsePointCloud import getInterpoMat
+from S13_GetPersonalShapeFromInterpolation import getPersonalShape
 class InputBundle:
-    def __init__(s):
-        # same over all frames
-        s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-        s.smplshExampleMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\SMPL_Socks\SMPLSH\SMPLSH.obj'
-        s.toSparsePCMat = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
-        s.smplshRegressorMatFile = r'C:\Code\MyRepo\ChbCapture\08_CNNs\Openpose\SMPLSHAlignToAdamWithHeadNoFemurHead\smplshRegressorNoFlatten.npy'
-        s.smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+    def __init__(s, datasetName=r'Lada_12/12/2019'):
+        if datasetName == r'Lada_12/12/2019':
+            # same over all frames
+            s.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+            s.smplshExampleMeshFile = r'..\SMPL_reimp\SMPLSH.obj'
+            s.toSparsePCMat = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\InterpolationMatrix.npy'
+            s.smplshRegressorMatFile = r'C:\Code\MyRepo\ChbCapture\08_CNNs\Openpose\SMPLSHAlignToAdamWithHeadNoFemurHead\smplshRegressorNoFlatten.npy'
+            s.smplshData = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
 
-        s.handIndicesFile = r'HandIndices.json'
-        s.HeadIndicesFile = r'HeadIndices.json'
-        s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
-        s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
+            s.handIndicesFile = r'HandIndices.json'
+            s.HeadIndicesFile = r'HeadIndices.json'
+            s.personalShapeFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\InitialFit\PersonalModel\PersonalShape.npy'
+            s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
 
-        # frame specific inputs
-        s.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\03067\silhouettes'
-        s.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
-        s.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\A00003067.obj'
+            # frame specific inputs
+            s.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\03067\silhouettes'
+            s.KeypointsFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\KepPoints\03067.obj'
+            s.sparsePointCloudFile = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03067\A00003067.obj'
 
-        s.compressedStorage = True
-        s.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03067.npz'
-        s.outputFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\03067'
-        # copy all the final result to this folder
-        s.finalOutputFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\Final'
+            s.compressedStorage = True
+            s.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03067.npz'
+            s.outputFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\03067'
+            # copy all the final result to this folder
+            s.finalOutputFolder = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\Final'
+        elif  datasetName == r'Katey_01/01/2020':
+            # same over all frames
+            s.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
+            s.smplshExampleMeshFile = r'..\SMPL_reimp\SMPLSH.obj'
+            s.toSparsePCMat = r''
+            s.smplshRegressorMatFile = r''
+            s.smplshData = r'..\SMPL_reimp\SmplshModel_f_noBun.npz'
+            s.skelDataFile = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
+
+            s.handIndicesFile = r'HandIndices.json'
+            s.HeadIndicesFile = r'HeadIndices.json'
+            s.personalShapeFile = r''
+            s.texturedMesh = r"..\Data\TextureMap\SMPLWithSocks.obj"
+
+            # frame specific inputs
+            s.imageFolder = None
+            s.KeypointsFile = None
+            s.sparsePointCloudFile = None
+
+            s.compressedStorage = True
+            s.initialFittingParamFile = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03067.npz'
+            s.outputFolder = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\03067'
+            # copy all the final result to this folder
+            s.finalOutputFolder = None
 
 from S05_InterpolateWithSparsePointCloud import interpolateWithSparsePointCloudSoftly
 
@@ -194,9 +220,9 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
     smplshMesh = Meshes([verts], [smplsh.faces.to(device)])
 
     # Build up the sparse point cloud constraint
-    interpoMat = np.load(inputs.toSparsePCMat)
-    registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
-    print("Number of registered corners:", registeredCornerIds.shape)
+    # interpoMat = np.load(inputs.toSparsePCMat)
+    # registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
+    # print("Number of registered corners:", registeredCornerIds.shape)
 
     # sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
     # sparsePC = np.array(sparsePC.points)
@@ -216,7 +242,7 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
     cam_params, cams_torch = load_cameras(inputs.camParamF, device, actual_img_shape)
     cams = init_camera_batches(cams_torch, device)
 
-    image_refs_out, crops_out = load_images(inputs.imageFolder, cropSize=1080, UndistImgs=undistortSilhouettes, camParamF=inputs.camParamF)
+    image_refs_out, crops_out = load_images(inputs.imageFolder, cropSize=cfg.imgSize, UndistImgs=undistortSilhouettes, camParamF=inputs.camParamF)
     outFolderForExperiment, outFolderMesh, = makeOutputFolder(inputs.outputFolder, cfg, Prefix='PoseFitting_')
     print('outFolderForExperiment:', outFolderForExperiment)
 
@@ -349,10 +375,10 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
     cam_params, cams_torch = load_cameras(inputs.camParamF, device, actual_img_shape)
 
     # Build up the sparse point cloud constraint
-    interpoMat = np.load(inputs.toSparsePCMat)
-
-    registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
-    print("Number of registered corners:", registeredCornerIds.shape)
+    # interpoMat = np.load(inputs.toSparsePCMat)
+    #
+    # registeredCornerIds = np.where(np.any(interpoMat, axis=1))[0]
+    # print("Number of registered corners:", registeredCornerIds.shape)
 
     # sparsePC = pv.PolyData(inputs.sparsePointCloudFile)
     # sparsePC = np.array(sparsePC.points)
@@ -508,12 +534,14 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
+
+
 if __name__ == '__main__':
     ### This is the firsting fitting to silhouette, before we have it register to sparse point cloud
     # before we have the texture
 
 
-    inputs = InputBundle()
+    inputs = InputBundle('Katey_01/01/2020')
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
 
@@ -522,20 +550,21 @@ if __name__ == '__main__':
     cfgPoseFitting.sigma = 1e-7
     cfgPoseFitting.blurRange = 1e-7
     # cfgPoseFitting.plotStep = 20
-    cfgPoseFitting.plotStep = 20
+    cfgPoseFitting.plotStep = 50
     cfgPoseFitting.numCams = 16
     # low learning rate for pose optimization
     cfgPoseFitting.learningRate = 1e-3
-    cfgPoseFitting.batchSize = 4
+    cfgPoseFitting.batchSize = 16
     # cfgPoseFitting.faces_per_pixel = 6 # for testing
     cfgPoseFitting.faces_per_pixel = 6 # for debugging
     # cfgPoseFitting.imgSize = 2160
-    cfgPoseFitting.imgSize = 1080
+    # cfgPoseFitting.imgSize = 1080
+    cfgPoseFitting.imgSize = 540
     cfgPoseFitting.terminateLoss = 0.1
     cfgPoseFitting.lpSmootherW = 0.000001
     # cfgPoseFitting.normalSmootherW = 0.1
     cfgPoseFitting.normalSmootherW = 0.0
-    cfgPoseFitting.numIterations = 500
+    cfgPoseFitting.numIterations = 300
     # cfgPoseFitting.numIterations = 20
     cfgPoseFitting.kpFixingWeight = 0.005
     cfgPoseFitting.bin_size = 256
@@ -556,29 +585,52 @@ if __name__ == '__main__':
     cfgPerVert.imgSize = 1080
     device = torch.device("cuda:0")
     cfgPerVert.terminateLoss = 0.1
-    cfgPerVert.lpSmootherW = 0.000001
+    # cfgPerVert.lpSmootherW = 0.000001
+    cfgPerVert.lpSmootherW = 0.0000001
     cfgPerVert.normalSmootherW = 0.0
-    cfgPerVert.numIterations = 500
+    # cfgPerVert.numIterations = 500
+    cfgPerVert.numIterations = 300
+    cfgPerVert.optimizePose = False
     # cfgPerVert.numIterations = 20
     cfgPerVert.bin_size = 256
 
-    frameName = '3052'
-    undistortSilhouette = False
+    # For Lada
+    # frameName = '3052'
+    # undistortSilhouette = False
+    #
+    # inputs.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\3052\Silhouette'
+    # # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
+    # inputs.outputFolder = join(r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
+    #
+    # inputs.compressedStorage = False
+    # inputs.initialFittingParamPoseFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
+    # inputs.initialFittingParamBetasFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
+    # inputs.initialFittingParamTranslationFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
+    #
+    # inputs.KeypointsFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\KepPoints\00352.obj'
 
-    inputs.imageFolder = r'F:\WorkingCopy2\2020_06_04_SilhouetteExtraction\3052\Silhouette'
+    # For Katey
+    frameName = '18411'
+    undistortSilhouette = True
+
+    inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Deformed\A00018411.obj'
+    inputs.imageFolder = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Silhouettes\Sihouettes_NoGlassese\18411'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
-    inputs.outputFolder = join(r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting', frameName)
-
+    inputs.outputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', frameName)
+    inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', 'Final')
     inputs.compressedStorage = False
-    inputs.initialFittingParamPoseFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
-    inputs.initialFittingParamBetasFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
-    inputs.initialFittingParamTranslationFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\NewInitialFitting\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
+    inputs.initialFittingParamPoseFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
+    inputs.initialFittingParamBetasFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
+    inputs.initialFittingParamTranslationFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedTranslation_ICPTriangle.npy'
+    inputs.outFittingParamFileWithPS =  r'..\Data\KateyBodyModel\FitParamsWithPersonalShape.npz'
 
-    inputs.KeypointsFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\KepPoints\00352.obj'
+    inputs.toSparsePCMat = '..\Data\KateyBodyModel\InterpolationMatrix.npy'
+
+    inputs.KeypointsFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Keypoints\18411.obj'
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device)
+    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()
@@ -591,9 +643,11 @@ if __name__ == '__main__':
         inputsPerVertFitting.imageFolder = inputs.imageFolder
 
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
+    inputsPerVertFitting.compressedStorage = True
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
     toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
-    perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder, cfgPerVert, Prefix='XYZRestpose_')
+    perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder,
+                                               cfgPerVert, Prefix='XYZRestpose_')
 
     # copy final data
     outFolderFinalData = join(inputs.finalOutputFolder, frameName)
@@ -608,15 +662,19 @@ if __name__ == '__main__':
     finalParamFile = fitParamFiles[-1]
     shutil.copy(finalParamFile, join(outFolderFinalData, 'FitParam_' + os.path.basename(finalParamFile)))
 
-    meshFiles = glob.glob(join(perVertFittingFolder, 'mesh', '*.vtk'))
+    meshFiles = glob.glob(join(perVertFittingFolder, 'mesh', '*.ply'))
     meshFiles.sort()
     finalMesh = meshFiles[-1]
     shutil.copy(finalMesh, join(outFolderFinalData, 'PerVertex_' + os.path.basename(finalMesh)))
 
     outIntepolatedMesh = join(outFolderFinalData, 'InterpolatedMesh.ply')
-    interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
-            '06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json', laplacianMatFile='SmplshRestposeLapMat.npy')
+    getInterpoMat(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile, )
 
+    interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
+            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100)
+    #'SmplshRestposeLapMat.npy'
+
+    getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)
 
 
 

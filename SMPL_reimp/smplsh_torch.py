@@ -25,7 +25,7 @@ class SMPLModel(Module):
     self.weights = torch.from_numpy(data['Weights']).type(torch.float64)
     self.posedirs = torch.from_numpy(data['PoseBlendShapes']).type(torch.float64)
     self.v_template = torch.from_numpy(data['VTemplate']).type(torch.float64)
-    self.shapedirs = torch.from_numpy(data['ShapeBlendShapes'])
+    self.shapedirs = torch.from_numpy(data['ShapeBlendShapes']).type(torch.float64)
     self.faces = data['Faces']
     self.parent = torch.from_numpy(data['ParentTable']).type(torch.int64)
     self.personalShape = personalShape

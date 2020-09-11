@@ -209,18 +209,21 @@ if __name__ == '__main__':
         model_data = pickle.load(smplh_file, encoding='latin1')
 
     # this should be aligned to smplh restpose
-    inSMPLSocksMesh = r'..\Data\BuildSmplsh_Female\\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_female.obj'
+    inSMPLSocksMesh = r'..\Data\BuildSmplsh_Female\\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_female_NoBun.obj'
+    # inSMPLSocksMeshMale = r'..\Data\BuildSmplsh_Female\\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_male.obj'
+    # inSMPLSocksMesh = r'..\Data\BuildSmplsh_Female\\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_male.obj'
     smplOriginAverageMeshOut = r'..\Data\BuildSmplsh_Female\Output\SMPLOriginAverage.obj'
 
     interpoDataOutFolder = r'..\Data\BuildSmplsh_Female\Output'
     outBlendShapeInterpoFolder = r'..\Data\BuildSmplsh_Female\Output\BlendShapes'
 
     # Data for building smplsh male
-    outSMPLSHNpzFile = join(interpoDataOutFolder, 'SmplshModel_f.npz')
+    outSMPLSHNpzFile = join(interpoDataOutFolder, 'SmplshModel_f_noBun.npz')
 
     SMPLSocksTranslatedOut = r'SMPLWithSocks_tri_translated.ply'
     outWeightVisFile = join(interpoDataOutFolder, 'WeightVisualization.vtk')
-
+    bunIdFile = r'BunIndices.json'
+    bunIds = json.load(open(bunIdFile))
 
     os.makedirs(interpoDataOutFolder, exist_ok=True)
     os.makedirs(outBlendShapeInterpoFolder, exist_ok=True)
@@ -256,6 +259,7 @@ if __name__ == '__main__':
     corrs, ds = searchForClosestPoints(smplSocks.points, tree)
 
     constraintIds = np.where(ds <= corrThreshold)[0]
+    constraintIds = np.setdiff1d(constraintIds, bunIds)
     goodCorrs = corrs[constraintIds]
 
     smplSToSmplCorrs = np.hstack([constraintIds.reshape(-1,1), goodCorrs.reshape(-1,1)])
@@ -292,25 +296,28 @@ if __name__ == '__main__':
     # visualizeInterpolation(smplSocks, newWeights, outWeightVisFile)
     #
     # outShapeBlendShapesFile = join(interpoDataOutFolder, 'ShapeBlendShapesInterpo.npy')
-    outShapeBlendShapesFile = join(interpoDataOutFolder, 'ShapeBlendShapesInterpo.npy')
+    outShapeBlendShapesFile = join(interpoDataOutFolder, 'ShapeBlendShapesInterpo_NoBun.npy')
     # # interpolate shape blend shapes
-    # numShapeParameter = model_data['shapedirs'].shape[2]
-    # # Shape blend shapes: nVerts x 3 x 10
-    # newSBS = np.zeros((nDimData, 3, model_data['shapedirs'].shape[2]))
-    # shapeBlendShapeOutFolder = join(outBlendShapeInterpoFolder, "ShapeBlendShapes")
-    # os.makedirs(shapeBlendShapeOutFolder, exist_ok=True)
-    # for iS in tqdm.tqdm(range(numShapeParameter), desc= 'Interpolating Pose Blend Shapes'):
-    #     for iDim in range(3):
-    #         newSBS[:, iDim, iS] = interpolateData(nDimData, model_data['shapedirs'][goodCorrs, iDim, iS], constraintIds, LNP)
-    #     verts = smplSocks.points + 3*newSBS[:, :, iS]
-    #     sbsMesh = pv.PolyData(inSMPLSocksMesh)
-    #     sbsMesh.points = verts
-    #     outBlendShapeFile = join(shapeBlendShapeOutFolder, 'SBS' + str(iS).zfill(3) + '.ply')
-    #     sbsMesh.save(outBlendShapeFile)
+    numShapeParameter = model_data['shapedirs'].shape[2]
+    # Shape blend shapes: nVerts x 3 x 10
+    newSBS = np.zeros((nDimData, 3, model_data['shapedirs'].shape[2]))
+    shapeBlendShapeOutFolder = join(outBlendShapeInterpoFolder, "ShapeBlendShapes")
+    os.makedirs(shapeBlendShapeOutFolder, exist_ok=True)
+    for iS in tqdm.tqdm(range(numShapeParameter), desc= 'Interpolating Shape Blend Shapes'):
+        for iDim in range(3):
+            newSBS[:, iDim, iS] = interpolateData(nDimData, model_data['shapedirs'][goodCorrs, iDim, iS], constraintIds, LNP)
+
+            # newSBS[bunIds, iDim, iS] = 0
+
+        verts = smplSocks.points + 3*newSBS[:, :, iS]
+        sbsMesh = pv.PolyData(inSMPLSocksMesh)
+        sbsMesh.points = verts
+        outBlendShapeFile = join(shapeBlendShapeOutFolder, 'SBS' + str(iS).zfill(3) + '.ply')
+        sbsMesh.save(outBlendShapeFile)
+
+    np.save(outShapeBlendShapesFile, newSBS)
     #
-    # np.save(outShapeBlendShapesFile, newSBS)
-    # #
-    # outPoseBlendShapesFile = join(interpoDataOutFolder, 'SMPLSH_PoseBlendShapes.npy')
+    outPoseBlendShapesFile = join(interpoDataOutFolder, 'SMPLSH_PoseBlendShapes.npy')
     # # interpolate pose blend shapes
     # numPoseParameter = model_data['posedirs'].shape[2]
     # # # Shape blend shapes: nVerts x 3 x 207

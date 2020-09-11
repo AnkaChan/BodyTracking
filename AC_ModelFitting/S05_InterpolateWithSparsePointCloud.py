@@ -319,10 +319,15 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
 
         interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
 
-    interpolatedVerts = smplshRestPoseVerts + interpolatedPtsDisplacement
+    interpolatedVerts = (smplshRestPoseVerts + interpolatedPtsDisplacement)
+
+    interpoDiff = (targetPts - (intepolationMatrixNp @ interpolatedVerts)[constraintIds, :])
+    interpoDis = np.sqrt(interpoDiff[:,0]**2 + interpoDiff[:,1]**2 + interpoDiff[:,2]**2)
+    print("Average interpolation distance: ", np.mean(interpoDis), "Max interpolation distance: ", np.max(interpoDis))
+
 
     deformedSMPLSH.points = interpolatedVerts
-    deformedSMPLSH.save(outInterpolatedFile)
+    deformedSMPLSH.save(outInterpolatedFile, binary=False)
 
 if __name__ == '__main__':
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.ply'
