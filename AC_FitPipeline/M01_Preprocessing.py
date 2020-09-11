@@ -70,11 +70,14 @@ def inverseConverGrayImg(grayImg, config=Configs()):
 
     return inverted
 
-def preprocessImg(inImgFile, outUndistRgbImgFile, camParam):
+def preprocessImg(inImgFile, outUndistRgbImgFile, camParam, outDistRgbFile=None):
     # convert to Rgb
     # Undist images
     img = cv2.imread(inImgFile, cv2.IMREAD_GRAYSCALE)
     imgColor = cv2.cvtColor(img, cv2.COLOR_BAYER_GB2BGR_EA )
+
+    if outDistRgbFile is not None:
+        cv2.imwrite(outDistRgbFile, imgColor)
 
     fx = camParam['fx']
     fy = camParam['fy']

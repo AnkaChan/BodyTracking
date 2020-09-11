@@ -19,6 +19,7 @@ class Config:
         s.kpReconCfg = M02_ReconstructionJointFromRealImagesMultiFolder.Config()
         s.kpReconCfg.doUndist = False
         s.kpReconCfg.convertToRGB = False
+        s.saveDistRgb = False
 
         s.toSparseFittingCfg = M03_ToSparseFitting.Config()
         s.initWithLastFrameParam=True
@@ -35,6 +36,10 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
     outFolderKp = join(outFolder, 'Keypoints')
     os.makedirs(outFolderKp, exist_ok=True)
 
+    if cfg.saveDistRgb:
+        outFolderDist = join(outFolder, 'PreprocessedDist')
+        os.makedirs(outFolderDist, exist_ok=True)
+
     for iF in tqdm.tqdm(range(len(frameNames)), desc='Preprocessing: '):
         frameName = frameNames[iF]
         inImgFilesCurFrame = [join(camFolders[iCam], camNames[iCam] + frameName + '.pgm') for iCam in range(len(camNames))]
@@ -45,11 +50,22 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
         rgbUndistFrameFiles = []
         for iCam, inImgF in enumerate(inImgFilesCurFrame):
             outImgFile = join(outFrameFolder, Path(inImgF).stem + '.png')
-            M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam])
+            if cfg.saveDistRgb:
+                outFrameFolderDist = join(outFolderDist, frameName)
+                os.makedirs(outFrameFolderDist, exist_ok=True)
+                outImgFileDist = join(outFrameFolderDist, Path(inImgF).stem + '.png')
+            else:
+                outImgFileDist = None
+
+            M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
             rgbUndistFrameFiles.append(outImgFile)
 
         outKpFile = join(outFolderKp, frameName + '.obj')
-        M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, )
+        if cfg.kpReconCfg.drawResults:
+            debugFolder = join(outFrameFolder, 'Debug')
+        else:
+            debugFolder = None
+        M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder)
 
 def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
