@@ -1195,6 +1195,8 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
 
     if cfg.outputErrs:
+        plt.close('all')
+
         fig, a_loss = plt.subplots()
         a_loss.plot(errs, linewidth=3)
         a_loss.set_yscale('log')
