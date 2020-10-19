@@ -180,7 +180,7 @@ def drawKeyPoints(outFile, img, keypoints, parentTable, keypointSize = 0.6, line
 
         if keypoints[iKP, 0] > 0 and keypoints[parantKPId, 0] > 0:
             linePId = [parantKPId, iKP]
-            ax.plot(keypoints[linePId, 0], keypoints[linePId, 1], lineWidth=lineWidth)
+            ax.plot(keypoints[linePId, 0], keypoints[linePId, 1], linewidth=lineWidth)
 
     ax.axis('off')
     fig.savefig(outFile, dpi=2000, bbox_inches='tight', pad_inches=0)

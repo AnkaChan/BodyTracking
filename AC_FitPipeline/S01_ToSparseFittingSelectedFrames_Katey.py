@@ -4,95 +4,7 @@
 # Fit to sparse point cloud and keypoint
 # Interpolate using sparse point cloud
 
-import M01_Preprocessing
-import M02_ReconstructionJointFromRealImagesMultiFolder
-import M03_ToSparseFitting
-from Utility import *
-import json
-import shutil
-from pathlib import Path
-import tqdm
-import copy
-
-class Config:
-    def __init__(s):
-        s.kpReconCfg = M02_ReconstructionJointFromRealImagesMultiFolder.Config()
-        s.kpReconCfg.doUndist = False
-        s.kpReconCfg.convertToRGB = False
-
-        s.toSparseFittingCfg = M03_ToSparseFitting.Config()
-        s.initWithLastFrameParam=True
-        s.learningRateFollowingFrame = 0.005
-
-def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Config()):
-    # Select input Fodler
-    camFolders = sorted(glob.glob(join(dataFolder, '*')))
-    camNames = [os.path.basename(camFolder) for camFolder in camFolders]
-    camParams = json.load(open(camParamF))['cam_params']
-    camParams = [camParams[str(i)] for i in range(len(camParams))]
-
-    outFolderUndist = join(outFolder, 'Preprocessed')
-    outFolderKp = join(outFolder, 'Keypoints')
-    os.makedirs(outFolderKp, exist_ok=True)
-
-    for iF in tqdm.tqdm(range(len(frameNames)), desc='Preprocessing: '):
-        frameName = frameNames[iF]
-        inImgFilesCurFrame = [join(camFolders[iCam], camNames[iCam] + frameName + '.pgm') for iCam in range(len(camNames))]
-
-        outFrameFolder = join(outFolderUndist, frameName)
-        os.makedirs(outFrameFolder, exist_ok=True)
-
-        rgbUndistFrameFiles = []
-        for iCam, inImgF in enumerate(inImgFilesCurFrame):
-            outImgFile = join(outFrameFolder, Path(inImgF).stem + '.png')
-            M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam])
-            rgbUndistFrameFiles.append(outImgFile)
-
-        outKpFile = join(outFolderKp, frameName + '.obj')
-        if cfg.kpReconCfg.drawResults:
-            debugFolder = join(outFrameFolder, 'Debug')
-        else:
-            debugFolder = None
-        M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder= debugFolder)
-
-def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
-    json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
-
-    for iF in tqdm.tqdm(range(len(frameNames)), desc='Fitting to Sparse: '):
-        frameName = frameNames[iF]
-        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
-        kpFile = join(inputs.inputKpFolder, frameName + '.obj')
-        outputFolderForFrame = join(inputs.outFolderAll, 'ToSparse', frameName)
-        os.makedirs(outputFolderForFrame, exist_ok=True)
-
-        cfgFrame = copy.copy(cfg)
-
-        if cfg.initWithLastFrameParam and iF:
-            outputFolderForLastFrame = join(inputs.outFolderAll, 'ToSparse', frameNames[iF-1])
-            fittingParamLastFrame = join(outputFolderForLastFrame, 'ToSparseFittingParams.npz')
-            cfgFrame.toSparseFittingCfg.learnrate_ph = cfgFrame.learningRateFollowingFrame
-        else:
-            fittingParamLastFrame = None
-
-        M03_ToSparseFitting.toSparseFittingNewRegressor(kpFile, deformedSparseMeshFile, outputFolderForFrame, inputs.skelDataFile, inputs.toSparsePCMat,
-                                                        inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=fittingParamLastFrame, cfg=cfgFrame.toSparseFittingCfg)
-
-def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
-    for iF in tqdm.tqdm(range(len(frameNames)), desc='Fitting to Sparse: '):
-        frameName = frameNames[iF]
-        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
-
-        frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
-        fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams.npz')
-        fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh.obj')
-        outInterpolatedMeshFile = join(frameFittingFolder, 'InterpolatedMesh.obj')
-        outInterpolatedParamsFile = join(frameFittingFolder, 'InterpolatedParams.npz')
-
-        M03_ToSparseFitting.getPersonalShapeFromInterpolation(fittedMeshFile, deformedSparseMeshFile, fitParamFile, outInterpolatedMeshFile, outInterpolatedParamsFile,
-            inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=inputs.laplacianMatFile, smplshData=inputs.SMPLSHNpzFile,\
-            handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
-            numRealCorners = 1487, fixHandAndHead = True, )
-
+from S01_ToSparseFittingSelectedFrames import *
 
 class InputBundle():
     def __init__(s):
@@ -132,12 +44,17 @@ if __name__ == '__main__':
     #               ]
 
     inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
-    inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\TPose'
+    # inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\TPose'
     inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose2\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step1_Overlap0\Deformed'
     inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
     inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
-    inputs.outFolderAll = inputs.dataFolder
-    frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
+    # inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters\cam_params.json'
+    # inputs.outFolderAll = inputs.dataFolder
+    inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
+
+    # frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
+    # Clean Plate
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(3280, 3281)]
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
     # inputs.outFolderAll = inputs.dataFolder
@@ -148,6 +65,7 @@ if __name__ == '__main__':
     # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
 
     cfg = Config()
+    cfg.saveDistRgb = True
     cfg.toSparseFittingCfg.learnrate_ph = 0.05
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
     # cfg.toSparseFittingCfg.learnrate_ph = 0.005
@@ -159,7 +77,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.outputErrs = True
 
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
-    cfg.kpReconCfg.drawResults = True
+    # cfg.kpReconCfg.drawResults = True
     cfg.kpReconCfg.debugFolder = join(inputs.preprocessOutFolder, 'Preprocessed', 'Debug')
 
     # camFolders = sortedGlob(join(dataFolder, '*'))
