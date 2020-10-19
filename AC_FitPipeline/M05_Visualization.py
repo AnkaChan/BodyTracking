@@ -123,6 +123,10 @@ def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False,
             mesh = pv.PolyData(deformedObjFile)
             mesh.save(join(outFolder, 'A' + frameName + '.ply'))
 
+def renderSilhouettes():
+    pass
+
+
 def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile, camParamF, outFolder, frameNames=None, cfg=RenderingCfg(),
                             inMeshExt='ply', convertToM=False, rendererType='RGB'):
     camNames = ['A', 'B', 'C', 'D', 'E', "F", 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
@@ -218,12 +222,13 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 
 
 if __name__ == '__main__':
-    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
-    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\ToSparse'
-    finalFittingFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
-    converObjsInFolder(finalFittingFolder, join(finalFittingFolder, 'ObjWithUV'), ext='ply', convertToMM=True)
+    toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
+    visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
 
-    # visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
+    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\ToSparse'
+    # finalFittingFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    # converObjsInFolder(finalFittingFolder, join(finalFittingFolder, 'ObjWithUV'), ext='ply', convertToMM=True)
+
 
     # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
     # # visualizeToSparseFitting(kpFolder, addUV=False)

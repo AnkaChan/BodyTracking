@@ -18,7 +18,8 @@ if __name__ == '__main__':
     smpl_model_female_path = r'C:\Code\MyRepo\03_capture\Smpl_SeriesData\models\smplh\SMPLH_female.pkl'
 
     outAlignedFemaleSmplshMeshFile = '..\Data\BuildSmplsh_Female\InterpolateFemaleShape\SMPLWithSocks_tri_Aligned_female_NoBun.ply'
-    bunIdFile = r'BunIndices.json'
+    # bunIdFile = r'BunIndices.json'
+    bunIdFile = r'BunIndices_Smaller.json'
     bunIds = json.load(open(bunIdFile))
 
 

@@ -142,7 +142,7 @@ def visualize2DSilhouetteResults(images, backGroundImages=None, outImgFile=None,
     with torch.no_grad():
         for iRow in range(rows):
             for iCol in range(numCols):
-                iCam = rows * iRow + iCol
+                iCam = numCols * iRow + iCol
                 imgAlpha = images[iCam, ..., 3]
 
                 if backGroundImages is not None:
@@ -274,6 +274,7 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
             smplshMesh = Meshes([verts], [smplsh.faces.to(device)])
 
             images = rendererSynth.renderer(smplshMesh, cameras=cams[iCam])
+            # Intersection over union loss
             loss = 1 - torch.norm(refImg * images[..., 3], p=1) / torch.norm(
                 refImg + images[..., 3] - refImg * images[..., 3], p=1)
 
@@ -567,7 +568,7 @@ if __name__ == '__main__':
     cfgPoseFitting.numIterations = 300
     # cfgPoseFitting.numIterations = 20
     cfgPoseFitting.kpFixingWeight = 0.005
-    cfgPoseFitting.bin_size = 256
+    cfgPoseFitting.bin_size = None
 
     cfgPerVert = RenderingCfg()
     cfgPerVert.sigma = 1e-7

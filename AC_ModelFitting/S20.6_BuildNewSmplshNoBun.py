@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
     SMPLSocksTranslatedOut = r'SMPLWithSocks_tri_translated.ply'
     outWeightVisFile = join(interpoDataOutFolder, 'WeightVisualization.vtk')
-    bunIdFile = r'BunIndices.json'
+    bunIdFile = r'BunIndices_Smaller.json'
     bunIds = json.load(open(bunIdFile))
 
     os.makedirs(interpoDataOutFolder, exist_ok=True)
