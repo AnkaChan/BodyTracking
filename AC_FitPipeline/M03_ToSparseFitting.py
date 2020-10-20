@@ -1319,6 +1319,9 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
     # Data.write_obj(join(outFolder, 'SmplshRestPoseJoints.obj'), smplshJoints)
 
     errs = []
+    keypointFitCostList = []
+    regularizerCostToKpList = []
+    fitCostToDenseList = []
 
     # Nonrigid ICP Procedure
     # print("Fit to sparse point clouds, initialCost:", sess.run(costICPToSparse))
@@ -1333,10 +1336,9 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
         else:
             feedDict = {}
 
-        # loop = tqdm.tqdm(range(cfg.numIterFitting))
+        loop = tqdm.tqdm(range(cfg.numIterFitting), position=0, leave=True)
         for i in range(cfg.numIterFitting):
             # sess.run(costICPToSparse)
-            sess.run(train_step_ICPToSparse, feed_dict = feedDict)
 
             errs.append(np.abs(sess.run(costICPToSparse, feed_dict = feedDict)))
 
@@ -1345,11 +1347,17 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
                 #       "keypointFitCost:", sess.run(keypointFitCost, ),
                 #       'regularizerCostToKp:', sess.run(regularizerCostToKp, ),
                 #       'LearningRate:', sess.run(rateICPToSparse, ))
+            keypointFitCostList.append(sess.run(keypointFitCost, ))
+            regularizerCostToKpList.append(sess.run(regularizerCostToKp, ))
+            fitCostToDenseList.append(sess.run(fitCostToDense, feed_dict=feedDict))
+
             desc = "Cost:" + str(errs[-1]) + \
-                      " keypointFitCost:" + str(sess.run(keypointFitCost, )) +\
-                      ' regularizerCostToKp:' + str(sess.run(regularizerCostToKp, )) +\
-                      ' LearningRate:' + str(sess.run(rateICPToSparse, )) + \
-                    ' To Dense: ' + str(sess.run(fitCostToDense, feed_dict=feedDict))
+                      " keypointFitCost:" + str(keypointFitCostList[-1])+\
+                      ' regularizerCostToKp:' + str(regularizerCostToKpList[-1]) +\
+                      ' LearningRate:' + str(sess.run(rateICPToSparse)) + \
+                    ' To Dense: ' + str(fitCostToDenseList[-1])
+
+            sess.run(train_step_ICPToSparse, feed_dict = feedDict)
 
             loop.set_description(desc)
 
@@ -1381,10 +1389,14 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
         plt.close('all')
 
         fig, a_loss = plt.subplots()
-        a_loss.plot(errs, linewidth=3)
+        a_loss.plot(errs, linewidth=1, label='TotalError')
+        a_loss.plot(keypointFitCostList, linewidth=1, label='keypointFitCost')
+        a_loss.plot(regularizerCostToKpList, linewidth=1, label='regularizerCost')
+        a_loss.plot(fitCostToDenseList, linewidth=1, label='fitCostToDense')
         a_loss.set_yscale('log')
         # a_loss.yscale('log')
         a_loss.set_title('losses: {}'.format(errs[-1]))
+        a_loss.legend()
         a_loss.grid()
         fig.savefig(join(outFolder,
                          'ErrCurve_' + '_LR' + str(cfg.learnrate_ph)  + '.png'),

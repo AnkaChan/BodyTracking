@@ -37,3 +37,4 @@ if __name__ == '__main__':
     M05_Visualization.renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile, camParamF, outFolder,
                                 frameNames=None, cfg=cfg,
                                 inMeshExt=ext, convertToM=False, rendererType='Silhouette')
+

@@ -2,6 +2,7 @@ from Utility import *
 import json
 from pathlib import Path
 import ComponentExtractor
+import cv2
 
 class ForegroundSubtractorCleanPlate:
     def __init__(s, cleanPlate):
@@ -80,8 +81,8 @@ def removeSmallBlackComponents( img, color = 255, whiteComponentsSizeLowerBound=
             # print("Remove components with size: ", len(component))
             img[coords] = 0
 
-def foregroundSubtractionNaive(img, bg, diffThre):
-    diffImg = np.abs((img.astype(np.float32) - bg.astype(np.float32)))
+def foregroundSubtractionNaive(img, imgCP, diffThre):
+    diffImg = np.abs((img.astype(np.float32) - imgCP    .astype(np.float32)))
 
     # cv2.imshow('Diff', diffImg.astype(np.uint8))
     # cv2.waitKey()
@@ -100,6 +101,49 @@ def foregroundSubtractionNaive(img, bg, diffThre):
     diffMask = np.zeros((diffImgNorm.shape), dtype=np.float32)
     diffMask[np.where(diffImgNorm > diffThre)] = 255
     return diffMask
+
+def cropSquare(img, cropSize=1080):
+    w = int(img.shape[0]) / 2
+
+    image = img
+    cx = image.shape[1] / 2
+
+    image = image[:, int(cx - w):int(cx + w)]
+    if not cropSize == img.shape[0]:
+        crop = cv2.resize(image, (cropSize, cropSize))
+
+    return crop
+
+def foregroundSubtractionNaiveWithNoiseRemoval(img, imgCP, diffThres, cropCenterSquare=False, cropSize=1080,):
+
+    if cropCenterSquare:
+        img = cropSquare(img)
+        imgCP = cropSquare(imgCP)
+
+    foreground = foregroundSubtractionNaive(img, imgCP, diffThres)
+    # cv2.imshow('Foreground before noise removal', foreground.astype(np.uint8))
+
+    # kernel = np.ones((3, 3), np.uint8)
+    #
+    # fgMask = cv2.dilate(foreground, kernel, iterations=2)
+    # fgMaskInverse = 255 - fgMask
+    # removeSmallBlackComponents(fgMaskInverse)
+    # fgMaskDenoised = 255 - fgMaskInverse
+    #
+    # fgMaskDenoised = cv2.erode(fgMaskDenoised, kernel, iterations=2)
+    # removeSmallBlackComponents(fgMaskDenoised, whiteComponentsSizeLowerBound=2000)
+
+    fgMask = foreground
+    removeSmallBlackComponents(fgMask, whiteComponentsSizeLowerBound=10)
+    fgMaskInverse = 255 - fgMask
+    removeSmallBlackComponents(fgMaskInverse, whiteComponentsSizeLowerBound=400)
+    fgMaskDenoised = 255 - fgMaskInverse
+
+    removeSmallBlackComponents(fgMaskDenoised, whiteComponentsSizeLowerBound=2000)
+
+
+
+    return fgMaskDenoised
 
 if __name__ == '__main__':
     import cv2

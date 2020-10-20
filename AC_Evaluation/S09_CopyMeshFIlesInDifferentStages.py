@@ -1,5 +1,7 @@
 import sys
 sys.path.append('../AC_FitPipeline')
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 from Utility import *
 import shutil
@@ -15,22 +17,25 @@ if __name__ == '__main__':
 
 
     cfg = M03_ToSparseFitting.Config()
-    cfg.learnrate_ph = 0.05
+    # cfg.learnrate_ph = 0.05
+    cfg.learnrate_ph = 0.01
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
     # cfg.toSparseFittingCfg.learnrate_ph = 0.005
     cfg.lrDecayStep = 200
     cfg.lrDecayRate = 0.96
-    cfg.numComputeClosest = 10
-    cfg.numIterFitting = 300
+    cfg.numComputeClosest = 5
+    cfg.numIterFitting = 100
     cfg.noBodyKeyJoint = False
-    cfg.betaRegularizerWeightToKP = 1000
+    cfg.betaRegularizerWeightToKP = 1
     cfg.outputErrs = True
     cfg.constantBeta = False
     # cfg.betaRegularizerWeightToKP = 0.1
     # cfg.jointRegressor = jointRegularizerWeight = 1e-5
     cfg.withDensePointCloud = True
     cfg.terminateLossStep = 1e-9
-    cfg.maxDistanceToClosestPt = 0.1
+    cfg.maxDistanceToClosestPt = 0.05
+
+    doCopyFile = False
 
 
     interpolationFolder = join(outFolder, "Interpolated")
@@ -51,9 +56,10 @@ if __name__ == '__main__':
         toTPFile = join(toSparseProcessedFolder, 'ToSparseMesh.obj')
         interpolatedFile = join(toSparseProcessedFolder, 'InterpolatedMesh.obj')
 
-        shutil.copy(finalMesh, join(ImageBasedFittingFolder, 'A' + frameName + '.ply'))
-        shutil.copy(toTPFile, join(toTrackingPointsFolder, 'A' + frameName + '.obj'))
-        shutil.copy(interpolatedFile, join(interpolationFolder, 'A' + frameName + '.obj'))
+        if doCopyFile:
+            shutil.copy(finalMesh, join(ImageBasedFittingFolder, 'A' + frameName + '.ply'))
+            shutil.copy(toTPFile, join(toTrackingPointsFolder, 'A' + frameName + '.obj'))
+            shutil.copy(interpolatedFile, join(interpolationFolder, 'A' + frameName + '.obj'))
 
         inputKeypoints = join(kpFolder, frameName + '.obj')
         betaFile = None
@@ -62,9 +68,13 @@ if __name__ == '__main__':
         initialPoseFile = join(toSparseProcessedFolder, 'ToSparseFittingParams.npz')
         densePointCloudFile = join(densePCFolder, frameName + '.ply')
 
-        M03_ToSparseFitting.toSparseFittingKeypoints(inputKeypoints, 'Cache', betaFile, personalShapeFile,
+        runningFolder = join(toDenseFolder, 'Running', frameName)
+        os.makedirs(runningFolder, exist_ok=True)
+
+        M03_ToSparseFitting.toSparseFittingKeypoints(inputKeypoints, runningFolder, betaFile, personalShapeFile,
                                                      smplshDataFile,
                                                      initialPoseFile=initialPoseFile,
                                                      inputDensePointCloudFile=densePointCloudFile, cfg=cfg)
 
-        shutil.copy(r'Cache\ToSparseMesh.obj', join(toDenseFolder, 'A' + frameName + '.obj'))
+        shutil.copy( join(runningFolder, r'ToSparseMesh.obj'), join(toDenseFolder, 'A' + frameName + '.obj'))
+
