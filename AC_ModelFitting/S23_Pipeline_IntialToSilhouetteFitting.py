@@ -5,6 +5,9 @@ from tqdm import tqdm
 import shutil
 from S01_RegisterSparsePointCloud import getInterpoMat
 from S13_GetPersonalShapeFromInterpolation import getPersonalShape
+
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 class InputBundle:
     def __init__(s, datasetName=r'Lada_12/12/2019'):
         if datasetName == r'Lada_12/12/2019':
@@ -566,8 +569,9 @@ if __name__ == '__main__':
     cfgPoseFitting.normalSmootherW = 0.0
     cfgPoseFitting.numIterations = 300
     # cfgPoseFitting.numIterations = 20
-    cfgPoseFitting.kpFixingWeight = 0.005
-    cfgPoseFitting.bin_size = 256
+    # cfgPoseFitting.kpFixingWeight = 0.005
+    cfgPoseFitting.kpFixingWeight = 0.01
+    cfgPoseFitting.bin_size = None
 
     cfgPerVert = RenderingCfg()
     cfgPerVert.sigma = 1e-7
@@ -630,7 +634,7 @@ if __name__ == '__main__':
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
+    # toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()
@@ -645,7 +649,7 @@ if __name__ == '__main__':
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
     inputsPerVertFitting.compressedStorage = True
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
+    # toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
     perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder,
                                                cfgPerVert, Prefix='XYZRestpose_')
 
@@ -671,7 +675,7 @@ if __name__ == '__main__':
     getInterpoMat(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile, )
 
     interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
-            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100)
+            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100, biLaplacian=True)
     #'SmplshRestposeLapMat.npy'
 
     getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)

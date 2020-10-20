@@ -7,10 +7,10 @@ import smplsh_torch
 import os
 import torch
 import matplotlib.pyplot as plt
-from skimage.io import imread
+# from skimage.io import imread
 import torch.nn as nn
 import numpy as np
-from skimage import img_as_ubyte
+# from skimage import img_as_ubyte
 import imageio
 import json
 import cv2

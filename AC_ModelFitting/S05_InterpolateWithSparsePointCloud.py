@@ -244,7 +244,7 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
 def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
     handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
-    numRealCorners = 1487, fixHandAndHead = True):
+    numRealCorners = 1487, fixHandAndHead = True, biLaplacian = False):
     handIndices = json.load(open(handIndicesFile))
     headIndices = json.load(open(HeadIndicesFile))
 
@@ -255,9 +255,10 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
 
     targetMesh = pv.PolyData(inSparseCloud)
     if laplacianMatFile is None:
-        LNP = getLaplacian(inMeshFile)
+        LNP = getLaplacian(inMeshFile, biLaplacian=biLaplacian)
     else:
         LNP = np.load(laplacianMatFile)
+
     # LNP
     # Define fit cost to dense point cloud
     skelData = json.load(open(skelDataFile))
