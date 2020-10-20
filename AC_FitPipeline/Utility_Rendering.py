@@ -351,6 +351,27 @@ def load_cameras(cam_path, device, actual_img_shape, unitM=False):
     out_for_torch = {'R': R_torch, 'T': T_torch, 'fl': focal_length, 'pp': principal_point}
     return cam_params, out_for_torch
 
+def load_image(img_dir, cropSize=1080, flipImg=False, normalize = False, cvtToRGB=False):
+    img = cv2.imread(img_dir)
+    if normalize:
+        img = img.astype(np.float32) / 255.0
+    if cvtToRGB:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    w = int(img.shape[0]) / 2
+
+
+    image = img
+    cx = image.shape[1] / 2
+
+    image = image[:, int(cx - w):int(cx + w)]
+    if not cropSize == img.shape[0]:
+        crop_out = cv2.resize(image, (cropSize, cropSize))
+    if flipImg:
+        crop_out = cv2.flip(crop_out, -1)
+
+    return img, crop_out
+
 
 def load_images(img_dir, UndistImgs=False, camParamF=None, cropSize=2160, imgExt='png', writeUndistorted=True,
                 normalize=True, flipImg=True, cvtToRGB=True):

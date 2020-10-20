@@ -1050,12 +1050,15 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
 
     if initialPoseFile is None:
         pose = None
-        betas = np.load(betaFile)
+        if betaFile is not None:
+            betas = np.load(betaFile)
+        else:
+            betas = None
         trans = np.array([0, 0, 0], dtype=np.float64)
     else:
         trans, pose, betas = loadCompressedFittingParam(initialPoseFile,)
 
-    personalShape = np.load(personalShapeFile) / 1000
+    personalShape = np.load(personalShapeFile) / 1000 if personalShapeFile is not None else None
 
     smplshtf = SMPLSH(pose=pose, trans=trans, betas=betas, constantBeta=cfg.constantBeta, personalShape=personalShape,
                       SMPLSHNpzFile=smplshDataFile)
@@ -1094,7 +1097,10 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
             )
         ))
 
-    betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))
+    if betas is not None:
+        betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))
+    else:
+        betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas))
     regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(smplshtf.pose))
 
     intepolationMatrixNp = np.load(toSparsePointCloudInterpoMatFile)
@@ -1202,6 +1208,195 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
         a_loss.set_yscale('log')
         # a_loss.yscale('log')
         a_loss.set_title('losses: {}'.format(errs[-1]))
+        a_loss.grid()
+        fig.savefig(join(outFolder,
+                         'ErrCurve_' + '_LR' + str(cfg.learnrate_ph)  + '.png'),
+                    dpi=256, transparent=False, bbox_inches='tight', pad_inches=0)
+
+        json.dump(errs, open(join(outFolder, 'Errs.json'), 'w'))
+
+def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeFile, smplshDataFile,
+                             inputDensePointCloudFile=None, initialPoseFile=None, cfg=Config()):
+    tf.reset_default_graph()
+
+    os.makedirs(outFolder, exist_ok=True)
+
+    if cfg.withDensePointCloud and inputDensePointCloudFile is not None:
+        densePointCloud = np.array(pv.PolyData(inputDensePointCloudFile).points).astype(np.float64) / 1000
+        tree = KDTree(densePointCloud)
+
+    targetKeypointsOP = np.array(pv.PolyData(inputKeypoints).points).astype(np.float64) / 1000
+
+    if initialPoseFile is None:
+        pose = None
+        if betaFile is not None:
+            betas = np.load(betaFile)
+        else:
+            betas = None
+        trans = np.array([0, 0, 0], dtype=np.float64)
+    else:
+        trans, pose, betas = loadCompressedFittingParam(initialPoseFile,)
+
+    if personalShapeFile is not None:
+        personalShape = np.load(personalShapeFile) / 1000
+    else:
+        personalShape = None
+
+
+    smplshtf = SMPLSH(pose=pose, trans=trans, betas=betas, constantBeta=cfg.constantBeta, personalShape=personalShape,
+                      SMPLSHNpzFile=smplshDataFile)
+    smplshtf.skeletonJointsToFixToDense = []
+
+    smplFaces = np.array(smplshtf.smplFaces)
+
+    jointConverter = VertexToOpJointsConverter()
+    opJoints = jointConverter(smplshtf.smplVerts[None, ...], smplshtf.smplJoints[None, ...])[0, ...]
+
+    for iKp in range(targetKeypointsOP.shape[0]):
+        if np.any(targetKeypointsOP[iKp, 2] < 0):
+            targetKeypointsOP[iKp, :] = [0, 0, -1]
+
+    # Remove the cost for unobserved key points
+    bodyJoints = [i for i in range(cfg.numBodyJoint)  if i not in cfg.headJointsId]
+
+    if cfg.noBodyKeyJoint:
+        jointsNoBody = [i for i in range(targetKeypointsOP.shape[0]) if i not in bodyJoints]
+        keypointFitCost = tf.reduce_mean(tf.square(
+            tf.gather(tf.multiply(
+                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
+                opJoints - targetKeypointsOP
+            ), jointsNoBody)
+        ))
+    else:
+        keypointFitCost = tf.reduce_mean(tf.square(
+            tf.multiply(
+                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
+                opJoints - targetKeypointsOP
+            )
+        ))
+
+    if betas is not  None:
+        betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))
+    else:
+        betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas))
+
+    regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(smplshtf.pose))
+
+
+    # obsIds = np.where(targetVertsPH[:, 2] >0)[0]
+    skelFixCost = 0
+    for iJoint in cfg.skeletonJointsToFix:
+        skelFixCost = skelFixCost + 100 * tf.reduce_mean(tf.square(smplshtf.pose[(iJoint * 3):(iJoint * 3 + 3)]))
+
+    costICPToSparse =  cfg.keypointFitWeightInToDenseICP * keypointFitCost + regularizerCostToKp + betaRegularizerCostToKp
+    costICPToSparse = costICPToSparse + skelFixCost
+
+    if cfg.withDensePointCloud:
+        closestPtsSetDense = tf.placeholder(dtype=np.float64, shape=smplshtf.smplVerts.shape, name="closestPtsSet")
+        fitCostToDense = tf.reduce_mean(tf.square(
+            tf.multiply(
+                tf.nn.relu(tf.sign(closestPtsSetDense[:, 2:3])),
+                tf.gather(smplshtf.smplVerts, cfg.indicesVertsToOptimize) - tf.gather(closestPtsSetDense,
+                                                                                      cfg.indicesVertsToOptimize)
+            )))
+        costICPToSparse = costICPToSparse + cfg.densePointCloudWeight * fitCostToDense
+
+    stepICPToSparse = tf.Variable(0, trainable=False)
+    rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep, cfg.lrDecayRate)
+    train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=rateICPToSparse).minimize(costICPToSparse,
+                                                                                            global_step=stepICPToSparse)
+
+    # train_step_ICPToSparse = tf.train.GradientDescentOptimizer(learning_rate=rateICPToSparse).minimize(costICPToSparse,
+    #                                                                                         global_step=stepICPToSparse)
+
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    smplshInitialVerts = sess.run(smplshtf.smplVerts)
+    # smplshJoints = sess.run(smplshtf.smplJoints)
+    Data.write_obj(join(outFolder, 'SmplshInitial.obj'), smplshInitialVerts * 1000, smplshtf.smplFaces)
+    # Data.write_obj(join(outFolder, 'SmplshRestPoseJoints.obj'), smplshJoints)
+
+    errs = []
+    keypointFitCostList = []
+    regularizerCostToKpList = []
+    fitCostToDenseList = []
+
+    # Nonrigid ICP Procedure
+    # print("Fit to sparse point clouds, initialCost:", sess.run(costICPToSparse))
+    finished = False
+    for i in range(cfg.numComputeClosest):
+        if cfg.withDensePointCloud:
+            verts = sess.run(smplshtf.smplVerts)
+            closestPtsNp, dis = searchForClosestPoints(verts, densePointCloud, tree)
+            # neglect points that are too far away
+            closestPtsNp[np.where(dis > cfg.maxDistanceToClosestPt)[0], :] = [0, 0, -1]
+            feedDict = {closestPtsSetDense : closestPtsNp}
+        else:
+            feedDict = {}
+
+        loop = tqdm.tqdm(range(cfg.numIterFitting), position=0, leave=True)
+        for i in range(cfg.numIterFitting):
+            # sess.run(costICPToSparse)
+
+            errs.append(np.abs(sess.run(costICPToSparse, feed_dict = feedDict)))
+
+            # if not i % cfg.printStep:
+                # print("Cost:", errs[-1],
+                #       "keypointFitCost:", sess.run(keypointFitCost, ),
+                #       'regularizerCostToKp:', sess.run(regularizerCostToKp, ),
+                #       'LearningRate:', sess.run(rateICPToSparse, ))
+            keypointFitCostList.append(sess.run(keypointFitCost, ))
+            regularizerCostToKpList.append(sess.run(regularizerCostToKp, ))
+            fitCostToDenseList.append(sess.run(fitCostToDense, feed_dict=feedDict))
+
+            desc = "Cost:" + str(errs[-1]) + \
+                      " keypointFitCost:" + str(keypointFitCostList[-1])+\
+                      ' regularizerCostToKp:' + str(regularizerCostToKpList[-1]) +\
+                      ' LearningRate:' + str(sess.run(rateICPToSparse)) + \
+                    ' To Dense: ' + str(fitCostToDenseList[-1])
+
+            sess.run(train_step_ICPToSparse, feed_dict = feedDict)
+
+            loop.set_description(desc)
+
+            if sess.run(costICPToSparse, feed_dict=feedDict) < cfg.terminateLoss:
+                print("Stop optimization because current loss is: ", sess.run(costICPToSparse,), ' less than: ', cfg.terminateLoss)
+                finished = True
+
+                break
+
+            if i > 0 :
+                errStep = np.abs(errs[-1] - errs[-2])
+                if errStep < cfg.terminateLossStep:
+                    print("Stop optimization because current step is: ", errStep, ' less than: ', cfg.terminateLossStep)
+                    finished = True
+                    break
+        if finished:
+            break
+    transVal = sess.run(smplshtf.trans)
+    poseVal = sess.run(smplshtf.pose)
+    betaVal = sess.run(smplshtf.betas)
+
+    outParamFile = join(outFolder, 'ToSparseFittingParams.npz')
+    np.savez(outParamFile, trans=transVal, pose=poseVal, beta=betaVal)
+
+    outFile = join(outFolder, 'ToSparseMesh.obj')
+    Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
+
+    if cfg.outputErrs:
+        plt.close('all')
+
+        fig, a_loss = plt.subplots()
+        a_loss.plot(errs, linewidth=1, label='TotalError')
+        a_loss.plot(keypointFitCostList, linewidth=1, label='keypointFitCost')
+        a_loss.plot(regularizerCostToKpList, linewidth=1, label='regularizerCost')
+        a_loss.plot(fitCostToDenseList, linewidth=1, label='fitCostToDense')
+        a_loss.set_yscale('log')
+        # a_loss.yscale('log')
+        a_loss.set_title('losses: {}'.format(errs[-1]))
+        a_loss.legend()
         a_loss.grid()
         fig.savefig(join(outFolder,
                          'ErrCurve_' + '_LR' + str(cfg.learnrate_ph)  + '.png'),

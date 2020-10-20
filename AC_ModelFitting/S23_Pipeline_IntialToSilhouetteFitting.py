@@ -5,9 +5,6 @@ from tqdm import tqdm
 import shutil
 from S01_RegisterSparsePointCloud import getInterpoMat
 from S13_GetPersonalShapeFromInterpolation import getPersonalShape
-
-# os.environ["CUDA_VISIBLE_DEVICES"]="0"
-
 class InputBundle:
     def __init__(s, datasetName=r'Lada_12/12/2019'):
         if datasetName == r'Lada_12/12/2019':
@@ -145,7 +142,7 @@ def visualize2DSilhouetteResults(images, backGroundImages=None, outImgFile=None,
     with torch.no_grad():
         for iRow in range(rows):
             for iCol in range(numCols):
-                iCam = rows * iRow + iCol
+                iCam = numCols * iRow + iCol
                 imgAlpha = images[iCam, ..., 3]
 
                 if backGroundImages is not None:
@@ -277,6 +274,7 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
             smplshMesh = Meshes([verts], [smplsh.faces.to(device)])
 
             images = rendererSynth.renderer(smplshMesh, cameras=cams[iCam])
+            # Intersection over union loss
             loss = 1 - torch.norm(refImg * images[..., 3], p=1) / torch.norm(
                 refImg + images[..., 3] - refImg * images[..., 3], p=1)
 
@@ -569,8 +567,7 @@ if __name__ == '__main__':
     cfgPoseFitting.normalSmootherW = 0.0
     cfgPoseFitting.numIterations = 300
     # cfgPoseFitting.numIterations = 20
-    # cfgPoseFitting.kpFixingWeight = 0.005
-    cfgPoseFitting.kpFixingWeight = 0.01
+    cfgPoseFitting.kpFixingWeight = 0.005
     cfgPoseFitting.bin_size = None
 
     cfgPerVert = RenderingCfg()
@@ -634,7 +631,7 @@ if __name__ == '__main__':
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
-    # toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
+    toSilhouettePoseInitalFitting(inputsPose, cfgPoseFitting, device, undistortSilhouettes=undistortSilhouette)
     poseFittingParamFolder, _ = makeOutputFolder(inputsPose.outputFolder, cfgPoseFitting, Prefix='PoseFitting_')
     paramFiles = glob.glob(join(poseFittingParamFolder, 'FitParam', '*.npz'))
     paramFiles.sort()
@@ -649,7 +646,7 @@ if __name__ == '__main__':
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
     inputsPerVertFitting.compressedStorage = True
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    # toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
+    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
     perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder,
                                                cfgPerVert, Prefix='XYZRestpose_')
 
@@ -675,7 +672,7 @@ if __name__ == '__main__':
     getInterpoMat(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile, )
 
     interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
-            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100, biLaplacian=True)
+            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100)
     #'SmplshRestposeLapMat.npy'
 
     getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)
