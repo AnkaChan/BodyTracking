@@ -13,8 +13,8 @@ if __name__ == '__main__':
     outFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Evaluation'
     kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
     densePCFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Dense'
-    frames = [str(frameId) for frameId in range(10459, 10459 + 300)]
-
+    # frames = [str(frameId) for frameId in range(10459, 10459 + 300)]
+    frames = [str(i).zfill(5) for i in range(8564, 8564 + 300)]
 
     cfg = M03_ToSparseFitting.Config()
     # cfg.learnrate_ph = 0.05
@@ -35,7 +35,8 @@ if __name__ == '__main__':
     cfg.terminateLossStep = 1e-9
     cfg.maxDistanceToClosestPt = 0.05
 
-    doCopyFile = False
+    # doCopyFile = False
+    doCopyFile = True
 
 
     interpolationFolder = join(outFolder, "Interpolated")
@@ -71,10 +72,10 @@ if __name__ == '__main__':
         runningFolder = join(toDenseFolder, 'Running', frameName)
         os.makedirs(runningFolder, exist_ok=True)
 
-        M03_ToSparseFitting.toSparseFittingKeypoints(inputKeypoints, runningFolder, betaFile, personalShapeFile,
-                                                     smplshDataFile,
-                                                     initialPoseFile=initialPoseFile,
-                                                     inputDensePointCloudFile=densePointCloudFile, cfg=cfg)
-
-        shutil.copy( join(runningFolder, r'ToSparseMesh.obj'), join(toDenseFolder, 'A' + frameName + '.obj'))
-
+        # M03_ToSparseFitting.toSparseFittingKeypoints(inputKeypoints, runningFolder, betaFile, personalShapeFile,
+        #                                              smplshDataFile,
+        #                                              initialPoseFile=initialPoseFile,
+        #                                              inputDensePointCloudFile=densePointCloudFile, cfg=cfg)
+        #
+        # shutil.copy( join(runningFolder, r'ToSparseMesh.obj'), join(toDenseFolder, 'A' + frameName + '.obj'))
+        #

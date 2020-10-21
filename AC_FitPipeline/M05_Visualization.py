@@ -223,7 +223,8 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
     # load cameras
     actual_img_shape = (2160, 4000)
     cam_params, cams_torch = load_cameras(camParamF, device, actual_img_shape, unitM=True)
-    cams = init_camera_batches(cams_torch, device, batchSize=cfg.batchSize)
+    # cams = init_camera_batches(cams_torch, device, batchSize=cfg.batchSize)
+    cams = init_camera_batches(cams_torch, device, batchSize=cfg.batchSize, withoutExtrinsics=cfg.extrinsicsOutsideCamera)
 
     backgrounds = []
     for iBatch in range(len(cams)):
@@ -273,11 +274,12 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
             meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
             images = []
             for iCam in range(len(cams)):
+                meshesTransformed = updataMeshes(meshes, cams_torch, iCam, cfg)
                 # if device is not None:
                 #     showCudaMemUsage(device)
                 blend_params = BlendParams(
                     rendererSynth.blend_params.sigma, rendererSynth.blend_params.gamma, background_color=backgrounds[iCam])
-                image_cur = rendererSynth.renderer(meshes, cameras=cams[iCam], blend_params=blend_params)
+                image_cur = rendererSynth.renderer(meshesTransformed, cameras=cams[iCam], blend_params=blend_params)
 
                 images.append(image_cur.cpu().detach().numpy())
             images = np.concatenate(images, axis=0)
