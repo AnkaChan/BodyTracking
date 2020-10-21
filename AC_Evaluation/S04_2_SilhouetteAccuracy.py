@@ -16,7 +16,8 @@ if __name__ == '__main__':
 
     # frames = [str(i) for i in range(10459, 10459 + 50)]
     # frames = [str(i) for i in range(10459, 10459 + 230)]
-    frames = [str(i) for i in range(10459, 10459 + 200)]
+    # frames = [str(i) for i in range(10459, 10459 + 200)]
+    frames = [str(i) for i in range(10459, 10459 + 10)]
 
     folders = [ ToTrackingPointsFolder, ToKpAndDensefolder, InterpolatedFolder, ImageBasedFittingFolder]
 
@@ -26,7 +27,15 @@ if __name__ == '__main__':
     IOUFinal = []
 
     statistics = [IOUToTP, IOUToDense, IOUInterpo, IOUFinal]
-    Gen = False
+    # Gen = False
+    Gen = True
+
+    dataNames = ['LBSToTrackingPoints_'+ frames[0] + '_' + frames[-1] +'.npy',
+                 'LBSToDense_' + frames[0] + '_' + frames[-1] + '.npy',
+                 'Interpolated_' + frames[0] + '_' + frames[-1] + '.npy',
+                 'AfterDiffRenderer' + frames[0] + '_' + frames[-1] + '.npy',
+                 ]
+
     if Gen:
         for frameName in tqdm.tqdm(frames):
             refSilsFodler = join(silhouettesFolder, frameName, 'FinalSils')
@@ -50,16 +59,16 @@ if __name__ == '__main__':
 
         dataOutFolder = 'Data'
 
-        np.save(join(dataOutFolder, 'LBSToTrackingPoints.npy'), np.array(IOUToTP), )
-        np.save(join(dataOutFolder, 'LBSToDense.npy'), np.array(IOUToDense), )
-        np.save(join(dataOutFolder, 'Interpolated.npy'), np.array(IOUInterpo), )
-        np.save(join(dataOutFolder, 'AfterDiffRenderer.npy'), np.array(IOUFinal), )
+        np.save(join(dataOutFolder, dataNames[0]), np.array(IOUToTP), )
+        np.save(join(dataOutFolder, dataNames[1]), np.array(IOUToDense), )
+        np.save(join(dataOutFolder, dataNames[2]), np.array(IOUInterpo), )
+        np.save(join(dataOutFolder, dataNames[3]), np.array(IOUFinal), )
     else:
         dataOutFolder = 'Data'
-        IOUToTP = np.load(join(dataOutFolder, 'LBSToTrackingPoints.npy'))
-        IOUToDense = np.load(join(dataOutFolder, 'LBSToDense.npy') )
-        IOUInterpo = np.load(join(dataOutFolder, 'Interpolated.npy'))
-        IOUFinal = np.load(join(dataOutFolder, 'AfterDiffRenderer.npy'), )
+        IOUToTP = np.load(join(dataOutFolder, dataNames[0]))
+        IOUToDense = np.load(join(dataOutFolder, dataNames[1]) )
+        IOUInterpo = np.load(join(dataOutFolder, dataNames[2]))
+        IOUFinal = np.load(join(dataOutFolder, dataNames[3]), )
 
     t = list(range(0,len(frames)))
     # t = list(range(20))
