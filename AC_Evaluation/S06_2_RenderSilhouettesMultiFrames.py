@@ -30,7 +30,7 @@ if __name__ == '__main__':
     InterpolatedFolder = join(fittingFolder, 'Interpolated')
     ImageBasedFittingFolder = join(fittingFolder, 'ImageBasedFitting')
 
-    frames = [str(i) for i in range(10459 , 10459 + 300)]
+    frames = [str(i) for i in range(10459 , 10459 + 10)]
 
     folders = [ToKpAndDensefolder, ToTrackingPointsFolder, InterpolatedFolder, ImageBasedFittingFolder]
     convertToMs = [ True,True, True, False]
