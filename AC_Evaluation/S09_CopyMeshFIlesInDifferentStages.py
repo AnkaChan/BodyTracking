@@ -8,13 +8,19 @@ import shutil
 import M03_ToSparseFitting
 
 if __name__ == '__main__':
-    toSparseFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
-    finalFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
-    outFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Evaluation'
-    kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
-    densePCFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Dense'
-    frames = [str(frameId) for frameId in range(10459, 10459 + 300)]
+    # toSparseFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
+    # finalFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    # outFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Evaluation'
+    # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    # densePCFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Dense'
+    # frames = [str(frameId) for frameId in range(10459, 10459 + 300)]
 
+    toSparseFolder = r'Z:\2020_07_28_TexturedFitting_Lada\ToSparse'
+    finalFolder = r'Z:\2020_07_28_TexturedFitting_Lada\Final\Mesh'
+    outFolder = r'Z:\2020_07_28_TexturedFitting_Lada\Evaluation'
+    kpFolder = r'Z:\2020_07_28_TexturedFitting_Lada\Keypoints'
+    densePCFolder = r'Z:\2020_07_28_TexturedFitting_Lada\Dense'
+    frames = [str(frameId).zfill(5) for frameId in range(8564, 8564 + 300)]
 
     cfg = M03_ToSparseFitting.Config()
     # cfg.learnrate_ph = 0.05
@@ -36,6 +42,7 @@ if __name__ == '__main__':
     cfg.maxDistanceToClosestPt = 0.05
 
     doCopyFile = False
+    # doCopyFile = True
 
 
     interpolationFolder = join(outFolder, "Interpolated")
@@ -57,13 +64,16 @@ if __name__ == '__main__':
         interpolatedFile = join(toSparseProcessedFolder, 'InterpolatedMesh.obj')
 
         if doCopyFile:
-            shutil.copy(finalMesh, join(ImageBasedFittingFolder, 'A' + frameName + '.ply'))
-            shutil.copy(toTPFile, join(toTrackingPointsFolder, 'A' + frameName + '.obj'))
-            shutil.copy(interpolatedFile, join(interpolationFolder, 'A' + frameName + '.obj'))
+            try:
+                shutil.copy(finalMesh, join(ImageBasedFittingFolder, 'A' + frameName + '.ply'))
+                shutil.copy(toTPFile, join(toTrackingPointsFolder, 'A' + frameName + '.obj'))
+                shutil.copy(interpolatedFile, join(interpolationFolder, 'A' + frameName + '.obj'))
+            except:
+                pass
 
         inputKeypoints = join(kpFolder, frameName + '.obj')
         betaFile = None
-        personalShapeFile = None
+        personalShapeFile = r'Z:\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
         smplshDataFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
         initialPoseFile = join(toSparseProcessedFolder, 'ToSparseFittingParams.npz')
         densePointCloudFile = join(densePCFolder, frameName + '.ply')
