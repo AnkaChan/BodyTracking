@@ -50,6 +50,7 @@ if __name__ == '__main__':
     inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
     # inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters\cam_params.json'
     # inputs.outFolderAll = inputs.dataFolder
+    # inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
     inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
 
     frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
