@@ -45,17 +45,17 @@ if __name__ == '__main__':
 
     inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
     # inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose2\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step1_Overlap0\Deformed'
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequenceInpaintedFull2\SLap_SBiLap_True_TLap_50_JTW_5000_JBiLap_0_Step200_Overlap100\Deformed_Weight1'
     inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
+    inputs.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
     # inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters\cam_params.json'
-    # inputs.outFolderAll = inputs.dataFolder
+    inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick'
     # inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
-    inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
+    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_09_10_CleanPlateKatey'
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
+    # frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
     # Clean Plate
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(3280, 3281)]
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(17438, 17439)]
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
     # inputs.outFolderAll = inputs.dataFolder
@@ -90,12 +90,12 @@ if __name__ == '__main__':
     #     for imgF, camFolder in zip(imgFs, camFolders):
     #         shutil.copy(imgF, join(camFolder, os.path.basename(imgF)))
     # # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
     interpolateToSparseMeshSelectedFrame(inputs, frameNames)
