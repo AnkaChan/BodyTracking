@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # inputs.outFolderAll = inputs.dataFolder
     inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
 
-    # frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
+    frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
     # Clean Plate
     frameNames = [str(iFrame).zfill(5) for iFrame in range(3280, 3281)]
 

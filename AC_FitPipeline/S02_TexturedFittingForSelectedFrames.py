@@ -124,7 +124,7 @@ if __name__ == '__main__':
     cfg.texturedPoseFittingCfg.inputImgExt = 'png'
     cfg.texturedPoseFittingCfg.terminateStep = 1e-6
     cfg.texturedPoseFittingCfg.withSilhouette = True
-    c
+    # c
 
     cfg.texturedPerVertexFittingCfg.sigma = 1e-7
     cfg.texturedPerVertexFittingCfg.blurRange = 1e-7

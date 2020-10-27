@@ -404,6 +404,18 @@ def smpl_to_openpose(model_type='smplx', use_hands=True, use_face=True,
                                           40, 41, 42, 70, 46, 47, 48, 71, 43,
                                           44, 45, 72], dtype=np.int32)
                 mapping += [lhand_mapping, rhand_mapping]
+
+            if use_face:
+                corrs = [
+                    [75, 3161],  # middle chin
+                    [115, 3510],  # right mouth corner
+                    [121, 69],  # left mouth corner
+                    [74, 3544],
+                    [76, 285],
+
+                ]
+
+
             return np.concatenate(mapping)
         # SMPLX
         elif model_type == 'smplx':
@@ -545,6 +557,20 @@ class VertexToOpJointsConverter:
 
         return joint_mapped
 
+def faceKpLosstf(smplshVerts, keypoints):
+    corrs =np.array( [
+        [75, 3161],  # middle chin
+        [115, 3510],  # right mouth corner
+        [121, 69],  # left mouth corner
+        [74, 3544],
+        [76, 102],
+
+    ])
+
+
+    return tf.reduce_mean((tf.gather(smplshVerts, corrs[:,1]) - keypoints[corrs[:,0]])**2)
+
+
 if __name__ == '__main__':
     corseMeshToSMPLSHCorrs = [
         [641, 5315],
@@ -617,7 +643,7 @@ if __name__ == '__main__':
     # inFittingParam = r'F:\WorkingCopy2\2020_06_14_FitToMultipleCams\FitToSparseCloud\FittingParams\03052.npz'
 
     # Data for katey
-    SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f.npz'
+    SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
     skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
 
     # outFolder = r'SMPLSHFit\LadaOldSuit_WithOPKeypoints'
@@ -648,6 +674,9 @@ if __name__ == '__main__':
     headJointsId = [0, 15, 16, 17, 18]
 
     bodyJoints = [i for i in range(numBodyJoint)  if i not in headJointsId]
+    keypointFitWeightInToDenseICP = 1
+
+    withFaceKp = True
 
     numIterToKp = 3000
     printStep = 50
@@ -655,7 +684,6 @@ if __name__ == '__main__':
     indicesVertsToOptimize = list(range(6750))
 
     # keypointFitWeightInToDenseICP = 0.1
-    keypointFitWeightInToDenseICP = 1
     # keypointFitWeightInToDenseICP = 0.0
     constantBeta = False
     betaRegularizerWeightToKP = 0
@@ -710,20 +738,23 @@ if __name__ == '__main__':
 
     # Remove the cost for unobserved key points
     if noBodyKeyJoint:
-        jointsNoBody = [i for i in range(targetKeypointsOP.shape[0])  if i not in bodyJoints]
+        jointsNoBody = [i for i in range(opJoints.shape[0])  if i not in bodyJoints]
         keypointFitCost = tf.reduce_mean(tf.square(
             tf.gather(tf.multiply(
-                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
-                opJoints - targetKeypointsOP
+                tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+                opJoints - targetKeypointsOP[:opJoints.shape[0], :]
             ), jointsNoBody)
         ))
     else:
         keypointFitCost = tf.reduce_mean(tf.square(
             tf.multiply(
-                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
-                opJoints - targetKeypointsOP
+                tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+                opJoints - targetKeypointsOP[opJoints.shape[0], :]
             )
         ))
+
+    if withFaceKp:
+        keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP )
 
     betaRegularizerCostToKp = betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))
 
