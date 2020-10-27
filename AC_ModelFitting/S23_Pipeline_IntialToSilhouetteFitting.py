@@ -190,6 +190,18 @@ def visualize2DResults(images, backGroundImages=None, outImgFile=None, rows=2, s
         if outImgFile is not None:
             fig.savefig(outImgFile, dpi=512, transparent=True, bbox_inches='tight', pad_inches=0)
 
+def faceKpLossTorch(smplshVerts, keypoints):
+    corrs =np.array( [
+        [75, 3161],  # middle chin
+        [115, 3510],  # right mouth corner
+        [121, 69],  # left mouth corner
+        [74, 3544],
+        [76, 285],
+
+    ])
+
+    return torch.mean(((smplshVerts[corrs[:,1], :]) - keypoints[corrs[:,0]])**2)
+
 def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=False):
     OPHeadKeypoints = [0, 15, 16, 17, 18]
     smplshExampleMesh = pv.PolyData(inputs.smplshExampleMeshFile)
@@ -252,6 +264,8 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
     # initial image
     images = renderImages(cams, rendererSynth, smplshMesh, )
     visualize2DSilhouetteResults(images, backGroundImages = crops_out, outImgFile=join(outFolderForExperiment, 'Fit0_Initial.png'))
+    saveVTK(join(outFolderMesh, 'Fit0_Initial.ply'), verts.cpu().detach().numpy(),
+            smplshExampleMesh)
 
     losses = []
     optimizer = torch.optim.Adam([trans, pose, betas], lr=cfg.learningRate)
@@ -423,6 +437,8 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
     meshes = join_meshes_as_batch([smplshMesh for i in range(cfg.batchSize)])
     images = renderImages(cams, rendererSynth, meshes, )
     visualize2DSilhouetteResults(images, backGroundImages = crops_out, outImgFile=join(outFolderForExperiment, 'Fit0_Initial.png'))
+    saveVTK(join(outFolderMesh, 'Fit0_Initial.ply'), verts.cpu().detach().numpy(),
+            smplshExampleMesh)
 
     # initial diff image
     outFolderDiffImage = join(outFolderForExperiment, 'DiffImg')
@@ -554,7 +570,7 @@ if __name__ == '__main__':
     cfgPoseFitting.plotStep = 50
     cfgPoseFitting.numCams = 16
     # low learning rate for pose optimization
-    cfgPoseFitting.learningRate = 1e-3
+    cfgPoseFitting.learningRate = 1e-4
     cfgPoseFitting.batchSize = 16
     # cfgPoseFitting.faces_per_pixel = 6 # for testing
     cfgPoseFitting.faces_per_pixel = 6 # for debugging
@@ -565,7 +581,8 @@ if __name__ == '__main__':
     cfgPoseFitting.lpSmootherW = 0.000001
     # cfgPoseFitting.normalSmootherW = 0.1
     cfgPoseFitting.normalSmootherW = 0.0
-    cfgPoseFitting.numIterations = 300
+    # cfgPoseFitting.numIterations = 300
+    cfgPoseFitting.numIterations = 500
     # cfgPoseFitting.numIterations = 20
     cfgPoseFitting.kpFixingWeight = 0.005
     cfgPoseFitting.bin_size = None
@@ -665,7 +682,7 @@ if __name__ == '__main__':
 
     meshFiles = glob.glob(join(perVertFittingFolder, 'mesh', '*.ply'))
     meshFiles.sort()
-    finalMesh = meshFiles[-1]
+    finalMesh = meshFiles[-2]
     shutil.copy(finalMesh, join(outFolderFinalData, 'PerVertex_' + os.path.basename(finalMesh)))
 
     outIntepolatedMesh = join(outFolderFinalData, 'InterpolatedMesh.ply')

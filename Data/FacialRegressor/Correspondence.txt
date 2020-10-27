@@ -1,0 +1,8 @@
+[
+[75, 3161], # middle chin
+[115, 3510], # right mouth corner
+[121, 69], # left mouth corner
+[74, 3544],
+[76, 102],
+
+]

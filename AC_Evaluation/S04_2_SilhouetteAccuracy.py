@@ -15,9 +15,9 @@ if __name__ == '__main__':
     silhouettesFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Silhouettes'
 
     # frames = [str(i) for i in range(10459, 10459 + 50)]
-    # frames = [str(i) for i in range(10459, 10459 + 230)]
+    frames = [str(i) for i in range(10459, 10459 + 230)]
     # frames = [str(i) for i in range(10459, 10459 + 200)]
-    frames = [str(i) for i in range(10459, 10459 + 10)]
+    # frames = [str(i) for i in range(10459, 10459 + 20)]
 
     folders = [ ToTrackingPointsFolder, ToKpAndDensefolder, InterpolatedFolder, ImageBasedFittingFolder]
 
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     IOUFinal = []
 
     statistics = [IOUToTP, IOUToDense, IOUInterpo, IOUFinal]
-    # Gen = False
-    Gen = True
+    Gen = False
+    # Gen = True
 
     dataNames = ['LBSToTrackingPoints_'+ frames[0] + '_' + frames[-1] +'.npy',
                  'LBSToDense_' + frames[0] + '_' + frames[-1] + '.npy',
@@ -72,12 +72,17 @@ if __name__ == '__main__':
 
     t = list(range(0,len(frames)))
     # t = list(range(20))
+    figure = plt.figure('SillouettesAccuracy')
     plt.plot(t, np.array(IOUToTP), label='Pure LBS - Keypoinits + Tracking Points')
     plt.plot(t, np.array(IOUToDense), label='Pure LBS   - Keypoinits + OpenMVS Point Clouds ')
     plt.plot(t, np.array(IOUInterpo), label='DTI - Keypoinits + Tracking Points')
     plt.plot(t, np.array(IOUFinal), label='DTI + DTF - Keypoinits + Tracking Points')
     plt.legend()
-    plt.savefig('SillouettesAccuracy.pdf')
+    plt.xlabel('Frames')
+    plt.ylabel('IoU')
+    figure.set_size_inches(10, 4.5)
+    # plt.savefig("sample.png", dpi=100)
+    plt.savefig('SillouettesAccuracy.png', dpi=300)
     plt.show()
-    plt.waitforbuttonpress()
+    # plt.waitforbuttonpress()
 

@@ -272,7 +272,7 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
 
     intepolationMatrixNp = np.load(interpoMatFile)
 
-    smplshRestPoseVerts = np.array(deformedSMPLSH.points)
+    smplshVerts = np.array(deformedSMPLSH.points)
 
     # Deform to Sparse Point Cloud
     # only interpolate the points that is actually a corner
@@ -280,12 +280,12 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
 
     targetPts = targetMesh.points[constraintIds, :]
     partialInterpolation = intepolationMatrixNp[constraintIds, :]
-    displacement = targetPts - partialInterpolation @ smplshRestPoseVerts
+    displacement = targetPts - partialInterpolation @ smplshVerts
 
-    interpolatedPtsDisplacement = np.zeros(smplshRestPoseVerts.shape)
-    nDimData = smplshRestPoseVerts.shape[0]
+    interpolatedPtsDisplacement = np.zeros(smplshVerts.shape)
+    nDimData = smplshVerts.shape[0]
 
-    fixHandMat = np.zeros((len(indicesToFix), smplshRestPoseVerts.shape[0]), dtype=np.float64)
+    fixHandMat = np.zeros((len(indicesToFix), smplshVerts.shape[0]), dtype=np.float64)
     for iRow, handVId in enumerate(indicesToFix):
         fixHandMat[iRow, handVId] = 1
 
@@ -320,7 +320,7 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
 
         interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
 
-    interpolatedVerts = (smplshRestPoseVerts + interpolatedPtsDisplacement)
+    interpolatedVerts = (smplshVerts + interpolatedPtsDisplacement)
 
     interpoDiff = (targetPts - (intepolationMatrixNp @ interpolatedVerts)[constraintIds, :])
     interpoDis = np.sqrt(interpoDiff[:,0]**2 + interpoDiff[:,1]**2 + interpoDiff[:,2]**2)
