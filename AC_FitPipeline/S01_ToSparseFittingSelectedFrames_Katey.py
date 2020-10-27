@@ -9,7 +9,7 @@ from S01_ToSparseFittingSelectedFrames import *
 class InputBundle():
     def __init__(s):
         s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
-        s.skelDataFile = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+        s.skelDataFile = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
 
         s.inputDensePointCloudFile = None
         s.toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
@@ -87,10 +87,11 @@ if __name__ == '__main__':
     cfg.kpReconCfg.numMostConfidentToPick = 3
     # cfg.kpReconCfg.debugFolder =
     cfg.kpReconCfg.drawResults = False
+    cfg.kpReconCfg.detecHead = False
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
     # preprocess
-    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

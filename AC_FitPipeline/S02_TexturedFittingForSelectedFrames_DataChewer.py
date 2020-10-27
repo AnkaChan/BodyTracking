@@ -64,7 +64,7 @@ if __name__ == '__main__':
     cfg.texturedPoseFittingCfg.batchSize = 2
     cfg.texturedPoseFittingCfg.faces_per_pixel = 2  # for debugging
     # cfg.imgSize = 2160
-    cfg.texturedPoseFittingCfg.imgSize = 1080
+    cfg.texturedPoseFittingCfg.imgSize = 540
     cfg.texturedPoseFittingCfg.terminateLoss = 0.1
     cfg.texturedPoseFittingCfg.lpSmootherW = 1e-10
     # cfg.normalSmootherW = 0.1
