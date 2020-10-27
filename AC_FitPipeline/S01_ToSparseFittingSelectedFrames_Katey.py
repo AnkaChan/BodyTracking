@@ -8,14 +8,14 @@ from S01_ToSparseFittingSelectedFrames import *
 
 class InputBundle():
     def __init__(s):
-        s.SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+        s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
         s.skelDataFile = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
         s.inputDensePointCloudFile = None
-        s.toSparsePCMat = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
-        s.personalShapeFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
-        s.betaFile = r'Z:\shareZ\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
-        s.camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
+        s.toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
+        s.personalShapeFile = r'..\Data\KateyBodyModel\PersonalShape.npy'
+        s.betaFile = r'..\Data\KateyBodyModel\beta.npy'
+        s.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
 
         s.dataFolder = None
         s.deformedSparseMeshFolder = None
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # params for KeteyLongSeq
     inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
-    inputs.deformedSparseMeshFolder = r'Z:\2020_01_22_FinalAnimations\Animations\Katey_LongSeq\Final_Smoothed1'
+    inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
     inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\JumpKick'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
@@ -61,11 +61,11 @@ if __name__ == '__main__':
     # inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\Backbend'
 
     inputs.preprocessOutFolder = inputs.outFolderAll
-    inputs.laplacianMatFile = r'SmplshRestposeLapMat.npy'
+    inputs.laplacianMatFile = r'SmplshRestposeLapMat_Katey.npy'
 
     inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
-    frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
+    frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
     # frameNames = ['16755']
     # frameNames = ['16755']
@@ -80,15 +80,17 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
     cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    cfg.toSparseFittingCfg.withFaceKp = False
+
 
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
     cfg.kpReconCfg.numMostConfidentToPick = 3
     # cfg.kpReconCfg.debugFolder =
-    cfg.kpReconCfg.drawResults = True
+    cfg.kpReconCfg.drawResults = False
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
     # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

@@ -67,6 +67,8 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             debugFolder = None
         M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder)
 
+
+
 def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
