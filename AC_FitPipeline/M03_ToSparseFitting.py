@@ -597,6 +597,7 @@ class Config:
         # s.numBodyJoint = 22 - 9
         s.numBodyJoint = 25
         s.headJointsId = [0, 15, 16, 17, 18]
+        s.withFaceKp = False
 
         s.numIterFitting = 6000
         s.printStep = 500
@@ -1036,6 +1037,20 @@ def toSparseFitting(dataFolder, objFile, outFolder, skelDataFile, toSparsePointC
     outFile = join(outFolder, Path(dataFolder).stem + '.obj')
     Data.write_obj(outFile, sess.run(smplshtf.smplVerts) * 1000, smplFaces)
 
+def faceKpLosstf(smplshVerts, keypoints):
+    corrs =np.array( [
+        [75, 3161],  # middle chin
+        [115, 3510],  # right mouth corner
+        [121, 69],  # left mouth corner
+        [74, 3544],
+        [76, 102],
+
+    ])
+    return tf.reduce_mean(tf.multiply(
+        tf.nn.relu(tf.sign(keypoints[corrs[:,0], 2:3])),
+        (tf.gather(smplshVerts, corrs[:,1]) - keypoints[corrs[:,0]])**2))
+
+
 def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skelDataFile, toSparsePointCloudInterpoMatFile,
                     betaFile, personalShapeFile, smplshDataFile, inputDensePointCloudFile=None, initialPoseFile=None, cfg=Config()):
     tf.reset_default_graph()
@@ -1081,21 +1096,25 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     # Remove the cost for unobserved key points
     bodyJoints = [i for i in range(cfg.numBodyJoint)  if i not in cfg.headJointsId]
 
+    # Remove the cost for unobserved key points
     if cfg.noBodyKeyJoint:
-        jointsNoBody = [i for i in range(targetKeypointsOP.shape[0]) if i not in bodyJoints]
+        jointsNoBody = [i for i in range(opJoints.shape[0]) if i not in bodyJoints]
         keypointFitCost = tf.reduce_mean(tf.square(
             tf.gather(tf.multiply(
-                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
-                opJoints - targetKeypointsOP
+                tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+                opJoints - targetKeypointsOP[:opJoints.shape[0], :]
             ), jointsNoBody)
         ))
     else:
         keypointFitCost = tf.reduce_mean(tf.square(
             tf.multiply(
-                tf.nn.relu(tf.sign(targetKeypointsOP[:, 2:3])),
-                opJoints - targetKeypointsOP
+                tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+                opJoints - targetKeypointsOP[opJoints.shape[0], :]
             )
         ))
+
+    if cfg.withFaceKp:
+        keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP)
 
     if betas is not None:
         betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))

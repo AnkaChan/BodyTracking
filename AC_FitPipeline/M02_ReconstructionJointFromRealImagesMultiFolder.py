@@ -175,7 +175,7 @@ def drawKeyPoints(outFile, img, keypoints, parentTable, keypointSize = 0.6, line
     ax.imshow(im_rgb, vmin=0, vmax=255, interpolation='nearest')
 
     ax.plot(keypoints[:, 0], keypoints[:, 1], 'x', color='green', markeredgewidth=0.1, markersize=keypointSize)
-    for iKP in range(1, keypoints.shape[0]):
+    for iKP in range(1, keypoints[:67,0].shape[0]):
         parantKPId = parentTable[iKP]
 
         if keypoints[iKP, 0] > 0 and keypoints[parantKPId, 0] > 0:
@@ -457,6 +457,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
 
     numBodypts = 25
     numHandpts = 21
+    numFacepts = 70
 
     if cfg.convertToRGB:
         examplePngFiles = glob.glob(join('ExampleFiles', '*.dng'))
@@ -553,6 +554,16 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             handKeyPointsRight = np.zeros((numHandpts, 3))
 
         keypoints = np.vstack([bodyKeyPoints, handKeyPointsLeft, handKeyPointsRight])
+
+        # reconstruct facial keypoints
+        if cfg.detecHead:
+            faceKeyPoints = getFirstPersonKp(datum.faceKeypoints)
+            if len(faceKeyPoints.shape) and faceKeyPoints.shape[0] == numFacepts:
+                faceKeyPoints = filterOutUnconfidentRecog(faceKeyPoints, cfg.confidenceThreshold)
+            else:
+                faceKeyPoints = np.zeros((numBodypts, 3))
+
+            keypoints = np.vstack([keypoints,faceKeyPoints])
 
         if cfg.rescale:
             goodKpIds = np.where(keypoints[:,0]>=0)[0]

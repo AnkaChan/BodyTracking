@@ -67,6 +67,8 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             debugFolder = None
         M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder)
 
+
+
 def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
@@ -107,15 +109,26 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
 
 
 class InputBundle():
-    def __init__(s):
-        s.SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-        s.skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    def __init__(s, datasetName=r'Lada_12/12/2019'):
+        if datasetName == r'Lada_12/12/2019':
+            s.SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+            s.skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
-        s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
-        s.inputDensePointCloudFile = None
-        s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
-        s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
-        s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+            s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
+            s.inputDensePointCloudFile = None
+            s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
+            s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
+            s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+
+        elif datasetName == r'Katey_01/01/2020_Remote':
+            s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun'
+            s.skelDataFile = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
+
+            s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
+            s.inputDensePointCloudFile = None
+            s.toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
+            s.personalShapeFile = r'..\Data\KateyBodyModel\\PersonalShape.npy'
+            s.betaFile = r'..\Data\KateyBodyModel\Beta.npy'
 
         s.dataFolder = None
         s.deformedSparseMeshFolder = None
@@ -127,21 +140,21 @@ class InputBundle():
 if __name__ == '__main__':
     inputs = InputBundle()
 
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.deformedSparseMeshFolder = r''
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.outFolderAll = inputs.dataFolder
-    frameNames = [
-    #              '03067',
-                  # '03990',
-                  # '04735', '04917',
-                  # '06250',
-                  '06550',
-                  #  '06950'
-                  ]
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.deformedSparseMeshFolder = r''
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    # inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.outFolderAll = inputs.dataFolder
+    # frameNames = [
+    # #              '03067',
+    #               # '03990',
+    #               # '04735', '04917',
+    #               # '06250',
+    #               '06550',
+    #               #  '06950'
+    #               ]
 
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
@@ -151,6 +164,17 @@ if __name__ == '__main__':
     # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
 
     # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
+
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    inputs.deformedSparseMeshFolder = r''
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
+    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inputs.outFolderAll = inputs.dataFolder
+    frameNames = [
+            '16755'
+                  ]
 
     cfg = Config()
     cfg.toSparseFittingCfg.learnrate_ph = 0.05
