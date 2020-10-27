@@ -122,6 +122,7 @@ class RenderingCfg:
         s.doPlot = True
         s.outputErr = True
 
+        s.lapMatFile = r'SmplshRestposeLapMat_Katey.npy'
 class Renderer:
     def __init__(s, device, cfg=RenderingCfg()):
         s.cfg = cfg
