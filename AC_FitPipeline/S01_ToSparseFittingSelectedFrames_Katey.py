@@ -50,11 +50,11 @@ if __name__ == '__main__':
     # cfg.toSparseFittingCfg.
 
     # params for KeteyLongSeq
-    inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_01_01_KateyCapture\Converted'
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
-    inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequenceInpaintedFull2\SLap_SBiLap_True_TLap_50_JTW_5000_JBiLap_0_Step200_Overlap100\Deformed'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\JumpKick'
+    inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
 
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     inputs.preprocessOutFolder = inputs.outFolderAll
     inputs.laplacianMatFile = r'SmplshRestposeLapMat_Katey.npy'
 
-    inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
+    inputs.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
     frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.withFaceKp = False
 
 
-    cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
+    # cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
     cfg.kpReconCfg.numMostConfidentToPick = 3
     # cfg.kpReconCfg.debugFolder =
     cfg.kpReconCfg.drawResults = False
@@ -91,16 +91,16 @@ if __name__ == '__main__':
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
     # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
+    # inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
     # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

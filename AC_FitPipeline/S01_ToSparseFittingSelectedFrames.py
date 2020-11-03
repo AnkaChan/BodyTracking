@@ -157,24 +157,26 @@ if __name__ == '__main__':
     #               ]
 
 
-    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
-    # inputs.outFolderAll = inputs.dataFolder
-    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
-    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
-
-    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
-
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.deformedSparseMeshFolder = r''
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
     inputs.outFolderAll = inputs.dataFolder
-    frameNames = [
-            '16755'
-                  ]
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
+
+
+
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    # inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+    # frameNames = [
+    #         '16755'
+    #               ]
 
     cfg = Config()
     cfg.toSparseFittingCfg.learnrate_ph = 0.05
@@ -186,6 +188,9 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    cfg.toSparseFittingCfg.noHandAndHead = True
+    cfg.toSparseFittingCfg.skeletonJointsToFix = [10, 11, 12,  15, 21, 20]
 
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
 
@@ -198,10 +203,11 @@ if __name__ == '__main__':
     #     for imgF, camFolder in zip(imgFs, camFolders):
     #         shutil.copy(imgF, join(camFolder, os.path.basename(imgF)))
     # # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
+    os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 

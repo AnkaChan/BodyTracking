@@ -594,6 +594,7 @@ class Config:
         s.lrDecayRate = 0.97
 
         s.noBodyKeyJoint = True
+        s.noHandAndHead = False
         # s.numBodyJoint = 22 - 9
         s.numBodyJoint = 25
         s.headJointsId = [0, 15, 16, 17, 18]
@@ -1058,7 +1059,6 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
     os.makedirs(outFolder, exist_ok=True)
 
     targetKeypointsOP = np.array(pv.PolyData(inputKeypoints).points).astype(np.float64) / 1000
-    skeletonJointsToFix = [10, 11]
 
     if cfg.withDensePointCloud:
         densePointCloud = np.array(pv.PolyData(inputDensePointCloudFile).points).astype(np.float64) / 1000
@@ -1098,13 +1098,16 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
 
     # Remove the cost for unobserved key points
     if cfg.noBodyKeyJoint:
-        jointsNoBody = [i for i in range(opJoints.shape[0]) if i not in bodyJoints]
-        keypointFitCost = tf.reduce_mean(tf.square(
-            tf.gather(tf.multiply(
-                tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
-                opJoints - targetKeypointsOP[:opJoints.shape[0], :]
-            ), jointsNoBody)
-        ))
+        if not cfg.noHandAndHead:
+            jointsNoBody = [i for i in range(opJoints.shape[0]) if i not in bodyJoints]
+            keypointFitCost = tf.reduce_mean(tf.square(
+                tf.gather(tf.multiply(
+                    tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+                    opJoints - targetKeypointsOP[:opJoints.shape[0], :]
+                ), jointsNoBody)
+            ))
+        else:
+            keypointFitCost = 0
     else:
         keypointFitCost = tf.reduce_mean(tf.square(
             tf.multiply(
@@ -1113,8 +1116,8 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
             )
         ))
 
-    if cfg.withFaceKp:
-        keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP)
+        if cfg.withFaceKp:
+            keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP)
 
     if betas is not None:
         betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))
@@ -1194,7 +1197,7 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
             #       'regularizerCostToKp:', sess.run(regularizerCostToKp, ),
             #       'LearningRate:', sess.run(rateICPToSparse, ))
         desc = "Cost:" + str(errs[-1]) + \
-                  " keypointFitCost:" + str(sess.run(keypointFitCost, )) +\
+                  " keypointFitCost:" + str(sess.run(keypointFitCost, ) if not cfg.noHandAndHead else 0) +\
                   ' regularizerCostToKp:' + str(sess.run(regularizerCostToKp, )) +\
                   ' LearningRate:' + str(sess.run(rateICPToSparse, ))
         loop.set_description(desc)
