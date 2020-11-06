@@ -25,6 +25,10 @@ class Config:
         s.initWithLastFrameParam=True
         s.learningRateFollowingFrame = 0.005
 
+        s.softConstraintWeight = 100
+
+        s.converImg = True
+
 def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Config()):
     # Select input Fodler
     camFolders = sorted(glob.glob(join(dataFolder, '*')))
@@ -57,8 +61,10 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             else:
                 outImgFileDist = None
 
-            M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
-            rgbUndistFrameFiles.append(outImgFile)
+            if cfg.converImg:
+                M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
+
+        rgbUndistFrameFiles = sortedGlob(join(outFrameFolder,  '*.png'))
 
         outKpFile = join(outFolderKp, frameName + '.obj')
         if cfg.kpReconCfg.drawResults:
@@ -86,7 +92,7 @@ def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
             fittingParamLastFrame = join(outputFolderForLastFrame, 'ToSparseFittingParams.npz')
             cfgFrame.toSparseFittingCfg.learnrate_ph = cfgFrame.learningRateFollowingFrame
         else:
-            fittingParamLastFrame = None
+            fittingParamLastFrame = inputs.fittingParamFile
 
         M03_ToSparseFitting.toSparseFittingNewRegressor(kpFile, deformedSparseMeshFile, outputFolderForFrame, inputs.skelDataFile, inputs.toSparsePCMat,
                                                         inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=fittingParamLastFrame, cfg=cfgFrame.toSparseFittingCfg)
@@ -104,7 +110,7 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
 
         M03_ToSparseFitting.getPersonalShapeFromInterpolation(fittedMeshFile, deformedSparseMeshFile, fitParamFile, outInterpolatedMeshFile, outInterpolatedParamsFile,
             inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=inputs.laplacianMatFile, smplshData=inputs.SMPLSHNpzFile,\
-            handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
+            handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = cfg.softConstraintWeight,
             numRealCorners = 1487, fixHandAndHead = True, )
 
 
@@ -135,7 +141,7 @@ class InputBundle():
         s.inputKpFolder = None
         s.outFolderAll = None
         s.laplacianMatFile = None
-
+        s.fittingParamFile = None
 
 if __name__ == '__main__':
     inputs = InputBundle()
@@ -157,24 +163,26 @@ if __name__ == '__main__':
     #               ]
 
 
-    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
-    # inputs.outFolderAll = inputs.dataFolder
-    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
-    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
-
-    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
-
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    inputs.deformedSparseMeshFolder = r''
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
     inputs.outFolderAll = inputs.dataFolder
-    frameNames = [
-            '16755'
-                  ]
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
+
+
+
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
+    # inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+    # frameNames = [
+    #         '16755'
+    #               ]
 
     cfg = Config()
     cfg.toSparseFittingCfg.learnrate_ph = 0.05
@@ -186,8 +194,12 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
-
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    cfg.toSparseFittingCfg.noHandAndHead = True
+    cfg.toSparseFittingCfg.skeletonJointsToFix = [10, 11, 12,  15, 21, 20]
+    cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
+
 
     # camFolders = sortedGlob(join(dataFolder, '*'))
     # imgFolders = sortedGlob(r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\*')
@@ -198,10 +210,11 @@ if __name__ == '__main__':
     #     for imgF, camFolder in zip(imgFs, camFolders):
     #         shutil.copy(imgF, join(camFolder, os.path.basename(imgF)))
     # # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
+    os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 

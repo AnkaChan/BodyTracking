@@ -25,7 +25,7 @@ from matplotlib import pyplot as plt
 class Config:
     def __init__(s):
         s.extName = 'png'
-        s.confidenceThreshold = 0.30
+        s.confidenceThreshold = 0.50
         # number of to pick
         s.numMostConfidentToPick = 3
         # numMostConfidentToPick = -1
@@ -404,7 +404,7 @@ def reconstructKeypoints(imgFolder, calibrationDataFile, cfg=Config()):
             selectedCamProjMats = [selectedCamProjMats[i] for i in selecedIds]
 
         try:
-            keyPoint3D, errs = Triangulation.mulCamsDLT(camPts, selectedCamProjMats)
+            keyPoint3D, errs = Triangulation.mulCamsRansac(camPts, selectedCamProjMats)
 
             # print(errs.shape[0], errs)
 
@@ -633,7 +633,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             selectedCamProjMats = [selectedCamProjMats[i] for i in selecedIds]
 
         try:
-            keyPoint3D, errs = Triangulation.mulCamsDLT(camPts, selectedCamProjMats)
+            keyPoint3D, errs = Triangulation.mulCamsRansac(camPts, selectedCamProjMats, computeErrOnAllCam=True)
 
             # print(errs.shape[0], errs)
 

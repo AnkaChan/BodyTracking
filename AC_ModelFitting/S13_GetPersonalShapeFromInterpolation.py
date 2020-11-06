@@ -83,7 +83,9 @@ def getPersonalShape(interpolatedMeshFile, inFittingParamFile, outFittingParamFi
 
     param = np.load(inFittingParamFile)
     # personalShapeFinal = param['personalShape']
-    trans = param['trans'] * 1000
+    # trans = param['trans'] * 1000
+    # the trans is in melimeter
+    trans = param['trans']
     pose = param['pose']
     beta = param['beta']
 

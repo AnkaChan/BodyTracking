@@ -36,7 +36,7 @@ with open(vt_path, 'r') as f:
 # print(len(fs))
 
 
-def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=False):
+def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=False, withMtl = False,  textureFile=''):
     os.makedirs(out_dir, exist_ok=True)
 
     in_paths = glob.glob(obj_dir + '/*.' + ext)
@@ -47,10 +47,10 @@ def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=Fals
         else:
             out_path = out_dir + '/{}.obj'.format(obj_name)
 
-        convertObjFile(in_path, out_path, convertToMM, )
+        convertObjFile(in_path, out_path, convertToMM, withMtl=withMtl, textureFile=textureFile)
 
 
-def convertObjFile(inFile, outFile, convertToMM=False,):
+def convertObjFile(inFile, outFile, convertToMM=False, withMtl=False, textureFile=None):
     # obj_name = in_path.split('\\')[-1]
 
     extName = Path(inFile).suffix
@@ -74,8 +74,26 @@ def convertObjFile(inFile, outFile, convertToMM=False,):
 
     # write new
     with open(outFile, 'w+') as f:
+        fp = Path(outFile)
+        outMtlFile = join(str(fp.parent), fp.stem + '.mtl')
+        if withMtl:
+            f.write('mtllib ./' + fp.stem + '.mtl\n')
+            with open(outMtlFile, 'w') as fMtl:
+                mtlStr = '''newmtl material_0
+Ka 0.200000 0.200000 0.200000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Tr 1.000000
+illum 2
+Ns 0.000000
+map_Kd '''
+                mtlStr += textureFile
+                fMtl.write(mtlStr)
+
+
         for i, v in enumerate(vs):
             vn = vns[i]
+
             f.write('vn {} {} {}\n'.format(vn[0], vn[1], vn[2]))
             if convertToMM:
                 v[0] = 1000*v[0]
@@ -84,6 +102,9 @@ def convertObjFile(inFile, outFile, convertToMM=False,):
             f.write('v {} {} {}\n'.format(v[0], v[1], v[2]))
         for vt in vts:
             f.write('vt {} {}\n'.format(vt[0], vt[1]))
+
+        if withMtl:
+            f.write('usemtl material_0\n')
         for face in fs:
             f.write('f')
             for fi in face:
@@ -106,9 +127,13 @@ if __name__ == '__main__':
     # obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\IniitalTexture\Meshes'
     # out_dir = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\FinalObj\WithTextureCoord'
     # obj_dir = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
-    obj_dir = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese\Final\18411'
+    # obj_dir = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese\Final\18411'
+    obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
+    texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
+    ext = 'obj'
+    withMtl = True
     rename = False
-    plyFiles = glob.glob(join(obj_dir, '*.ply'))
+    plyFiles = glob.glob(join(obj_dir, '*.' + ext))
     if rename:
         for plyF in plyFiles:
             fName = os.path.basename(plyF)
@@ -118,7 +143,7 @@ if __name__ == '__main__':
                 # print(plyF, newFileName)
 
     out_dir = os.path.join(obj_dir, 'WithTextureCoord')
-    converObjsInFolder(obj_dir, out_dir, ext='ply', addA=False)
+    converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture)
     objFilesToPly(out_dir, join(obj_dir, 'PlyWithTextureCoord'))
 
     # inFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
