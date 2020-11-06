@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\JumpKick'
+    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\All'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
 
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
@@ -65,7 +65,10 @@ if __name__ == '__main__':
 
     inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
-    frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
+    # frameNames = [str(i).zfill(5) for i in range(14946 , 17745)]
+    # frameNames = [str(i).zfill(5) for i in range(16270 , 17745)]
+    frameNames = [str(i).zfill(5) for i in range(16659 , 10873)]
+
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
     # frameNames = ['16755']
     # frameNames = ['16755']
@@ -80,14 +83,17 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
     cfg.toSparseFittingCfg.terminateLossStep = 1e-8
-    cfg.toSparseFittingCfg.withFaceKp = False
+    cfg.toSparseFittingCfg.withFaceKp = True
 
 
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
-    cfg.kpReconCfg.numMostConfidentToPick = 3
+    cfg.kpReconCfg.numMostConfidentToPick =2
     # cfg.kpReconCfg.debugFolder =
-    cfg.kpReconCfg.drawResults = False
-    cfg.kpReconCfg.detecHead = False
+    # cfg.kpReconCfg.drawResults = False
+    cfg.kpReconCfg.drawResults = True
+    cfg.kpReconCfg.detecHead = True
+    cfg.kpReconCfg.rescale = True
+    cfg.kpReconCfg.reprojectErrThreshold = 30
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
     # preprocess
@@ -95,7 +101,7 @@ if __name__ == '__main__':
 
     # to sparse fitting
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
     # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 

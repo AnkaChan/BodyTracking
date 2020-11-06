@@ -597,7 +597,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             os.makedirs(detectionDrawFolder, exist_ok=True)
             # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
             outResultOImgFile = join(detectionDrawFolder, Path(imgFiles[iCam]).stem + '.png')
-            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints, cfg.keypointSkeletonParentTable)
+            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints * cfg.rescaleLvl, cfg.keypointSkeletonParentTable)
 
             # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
             # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
