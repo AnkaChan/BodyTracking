@@ -243,8 +243,17 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
     return np.array(closestPts), np.array(barycentrics), np.array(trianglesId)
 
+def getCornerRegistration(inDenseMeshFile, inSparseMesh, registrationTIdFile, registrationBarysFile):
+    deformedSMPLSH = pv.PolyData(inDenseMeshFile)
+    deformedSparseMesh = pv.PolyData(inSparseMesh)
+    closestPtsNp, barys, trianglesId = searchForClosestPointsOnTriangleWithBarycentric(deformedSparseMesh.points,
+                                                                                       deformedSMPLSH.points,
+                                                                                       smplshFaces)
+    np.save(registrationTIdFile, trianglesId)
+    np.save(registrationBarysFile, barys)
+
 def getInterpoMat(inDenseMeshFile, inSparseMesh, outInterpoMatFile, skelDataFile, handIndicesFile='HandIndices.json', HeadIndicesFile=r'HeadIndices.json',softConstraintWeight = 100,
-    numRealCorners = 1487, fixHandAndHead = True):
+    numRealCorners = 1487, fixHandAndHead = True, minValInterpoMat=0):
     # os.makedirs(outFolder, exist_ok=True)
 
     handIndices = json.load(open(handIndicesFile))
@@ -276,6 +285,13 @@ def getInterpoMat(inDenseMeshFile, inSparseMesh, outInterpoMatFile, skelDataFile
     constraintIds = np.intersect1d(obsIds, validVertsOnRestpose)
     # validTargets = targetVerts[constraintIds, :]
 
+    if minValInterpoMat:
+        for iC in range(len(barys)):
+            for iTV in range(barys.shape[1]):
+                if barys[iC, iTV] < minValInterpoMat:
+                    barys[iC, iTV] = barys[iC, iTV] + minValInterpoMat
+                barys[iC, :] = barys[iC, :] / np.sum(barys[iC, :])
+
     intepolationMatrixNp = np.zeros((trianglesId.shape[0], deformedSMPLSH.points.shape[0]), dtype=np.float64)
     for iC in range(intepolationMatrixNp.shape[0]):
         if iC in constraintIds:
@@ -287,7 +303,109 @@ def getInterpoMat(inDenseMeshFile, inSparseMesh, outInterpoMatFile, skelDataFile
 
     np.save(outInterpoMatFile, intepolationMatrixNp.astype(np.float32))
 
+def getInterpoMatSubdivision(inDenseMeshFile, inSparseMesh, outInterpoMatFile, skelDataFile, outSubdivisionCorrFile, outSubdivisionMeshFile,
+    handIndicesFile='HandIndices.json', HeadIndicesFile=r'HeadIndices.json',softConstraintWeight = 100,
+    numRealCorners = 1487, fixHandAndHead = True, minValInterpoMat=0):
+    # os.makedirs(outFolder, exist_ok=True)
 
+    handIndices = json.load(open(handIndicesFile))
+    headIndices = json.load(open(HeadIndicesFile))
+
+    indicesToFix = copy.copy(handIndices)
+    indicesToFix.extend(headIndices)
+
+    deformedSMPLSH = pv.PolyData(inDenseMeshFile)
+    deformedSparseMesh = pv.PolyData(inSparseMesh)
+    # deformedSparseMesh.points = deformedSparseMesh.points[:1487, :]
+
+    smplshFaces = deformedSMPLSH.faces.reshape((-1, 4))[:, 1:]
+    print(smplshFaces.shape)
+
+    closestPtsNp, barys, trianglesId = searchForClosestPointsOnTriangleWithBarycentric(deformedSparseMesh.points,
+                                                                                       deformedSMPLSH.points,
+                                                                                       smplshFaces)
+    # triVIds = []
+    # for i in range(len(trianglesId)):
+    #     triVIds.append([smplshFaces[trianglesId[iC], 0], smplshFaces[trianglesId[iC], 1], smplshFaces[trianglesId[iC], 2]] )
+
+    triVIds = np.array([[smplshFaces[trianglesId[iC], 0], smplshFaces[trianglesId[iC], 1], smplshFaces[trianglesId[iC], 2]] for iC in range(len(trianglesId))])
+    subdivideMesh(deformedSMPLSH, triVIds[:numRealCorners,:], barys[:numRealCorners, :], outSubdivisionCorrFile, outSubdivisionMeshFile, minBarycentricsNp=minValInterpoMat)
+
+def subdivideMesh(mesh, triVidsNp, barycentricsNp, outSubdivisionCorrFile, outSubdivisionMeshFile, minBarycentricsNp=0):
+    sVs = mesh.points
+    sFs = mesh.faces.reshape(mesh.n_faces, -1)[:, 1:4]
+
+    intepolationMatrixNp = np.zeros((triVidsNp.shape[0], sVs.shape[0]), dtype=np.float64)
+    for iC in range(intepolationMatrixNp.shape[0]):
+        intepolationMatrixNp[iC, triVidsNp[iC, 0]] = barycentricsNp[iC, 0]
+        intepolationMatrixNp[iC, triVidsNp[iC, 1]] = barycentricsNp[iC, 1]
+        intepolationMatrixNp[iC, triVidsNp[iC, 2]] = barycentricsNp[iC, 2]
+
+    projectedCornesrs =  intepolationMatrixNp @ sVs
+    print(projectedCornesrs[0:20, :])
+
+    newSVs = np.vstack([sVs, projectedCornesrs])
+    newSFs = copy.copy(sFs)
+    numOldVs = sVs.shape[0]
+    np.savetxt(outSubdivisionCorrFile, np.array(range(sVs.shape[0], newSVs.shape[0])).astype(np.int32), fmt='%d')
+
+    # Subdivide the SMPL mesh
+    for iC in range(triVidsNp.shape[0]):
+        if not iC % 10:
+            print("Processing corner: ", iC)
+
+        v = projectedCornesrs[iC, :]
+
+        triangles = [Triangle_3(toP(newSVs[f[0], :]), toP(newSVs[f[1], :]), toP(newSVs[f[2], :])) for f in newSFs]
+        tree = AABB_tree_Triangle_3_soup(triangles)
+        p, tid = tree.closest_point_and_primitive(toP(v))
+
+        t = newSFs[tid, :]
+        tp1 = newSVs[t[0], :]
+        tv1 = newSVs[t[1], :] - tp1
+        tv2 = newSVs[t[2], :] - tp1
+        c = barycentric_coordinates_of_projection(fromP(p), tp1, tv1, tv2)
+
+        # projected points can still be very bad on target new triangle, so we need to correct it
+        c = c[0]
+        if minBarycentricsNp:
+            for iTV in range(len(c)):
+                c[iTV] = minBarycentricsNp + c[iTV]*(1 - 3*minBarycentricsNp)
+
+        # c = np.array(c[0])
+        # if minBarycentricsNp:
+        #     for iTV in range(len(c)):
+        #         if c[iTV] < minBarycentricsNp:
+        #             c[iTV] = c[iTV] + minBarycentricsNp
+        #     c = c / np.sum(c)
+
+        v = c[0] * newSVs[t[0], :] + c[1] * newSVs[t[1], :] + c[2] * newSVs[t[2], :]
+        newSVs[numOldVs + iC, :] = v
+
+        # there is a bug, more than one corners can actually project to one same triangle
+        newts = np.array([
+            [numOldVs + iC, t[2], t[0]],
+            [numOldVs + iC, t[0], t[1]],
+            [numOldVs + iC, t[1], t[2]],
+        ])
+
+        newSFs = np.delete(newSFs, tid, 0)
+
+        newSFs = np.vstack([newSFs, newts])
+
+    #remove old triangles
+
+    # indices = []
+    #
+    # for (i, f) in enumerate(newSFs):
+    #     if any(np.equal(triVidsNp,f).all(1)):
+    #         indices.append(i)
+    # print(indices)
+    #
+    # newSFs = np.delete(newSFs, indices, 0)
+
+    subDivMesh = pv.PolyData(newSVs, np.hstack([3*np.ones((newSFs.shape[0], 1), dtype=np.int64), newSFs]))
+    subDivMesh.save(outSubdivisionMeshFile, binary=False)
 
 if __name__ == '__main__':
     # inMeshFile = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\Output\RealDataSilhouette\HandHeadFix_Sig_1e-07_BR1e-07_Fpp15_NCams16ImS1080_LR0.4_LW1_NW1\FinalMesh.ply'

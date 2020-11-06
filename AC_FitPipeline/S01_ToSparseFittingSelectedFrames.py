@@ -25,6 +25,10 @@ class Config:
         s.initWithLastFrameParam=True
         s.learningRateFollowingFrame = 0.005
 
+        s.softConstraintWeight = 100
+
+        s.converImg = True
+
 def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Config()):
     # Select input Fodler
     camFolders = sorted(glob.glob(join(dataFolder, '*')))
@@ -57,8 +61,10 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             else:
                 outImgFileDist = None
 
-            M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
-            rgbUndistFrameFiles.append(outImgFile)
+            if cfg.converImg:
+                M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
+
+        rgbUndistFrameFiles = sortedGlob(join(outFrameFolder,  '*.png'))
 
         outKpFile = join(outFolderKp, frameName + '.obj')
         if cfg.kpReconCfg.drawResults:
@@ -86,7 +92,7 @@ def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
             fittingParamLastFrame = join(outputFolderForLastFrame, 'ToSparseFittingParams.npz')
             cfgFrame.toSparseFittingCfg.learnrate_ph = cfgFrame.learningRateFollowingFrame
         else:
-            fittingParamLastFrame = None
+            fittingParamLastFrame = inputs.fittingParamFile
 
         M03_ToSparseFitting.toSparseFittingNewRegressor(kpFile, deformedSparseMeshFile, outputFolderForFrame, inputs.skelDataFile, inputs.toSparsePCMat,
                                                         inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=fittingParamLastFrame, cfg=cfgFrame.toSparseFittingCfg)
@@ -104,7 +110,7 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
 
         M03_ToSparseFitting.getPersonalShapeFromInterpolation(fittedMeshFile, deformedSparseMeshFile, fitParamFile, outInterpolatedMeshFile, outInterpolatedParamsFile,
             inputs.skelDataFile, inputs.toSparsePCMat, laplacianMatFile=inputs.laplacianMatFile, smplshData=inputs.SMPLSHNpzFile,\
-            handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
+            handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = cfg.softConstraintWeight,
             numRealCorners = 1487, fixHandAndHead = True, )
 
 
@@ -135,7 +141,7 @@ class InputBundle():
         s.inputKpFolder = None
         s.outFolderAll = None
         s.laplacianMatFile = None
-
+        s.fittingParamFile = None
 
 if __name__ == '__main__':
     inputs = InputBundle()
@@ -191,8 +197,9 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.terminateLossStep = 1e-8
     cfg.toSparseFittingCfg.noHandAndHead = True
     cfg.toSparseFittingCfg.skeletonJointsToFix = [10, 11, 12,  15, 21, 20]
-
+    cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
+
 
     # camFolders = sortedGlob(join(dataFolder, '*'))
     # imgFolders = sortedGlob(r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\*')

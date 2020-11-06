@@ -22,6 +22,7 @@ class InputBundle():
         s.inputKpFolder = None
         s.outFolderAll = None
         s.laplacianMatFile = None
+        s.fittingParamFile = None
 
 if __name__ == '__main__':
     inputs = InputBundle()
@@ -62,6 +63,7 @@ if __name__ == '__main__':
 
     inputs.preprocessOutFolder = inputs.outFolderAll
     inputs.laplacianMatFile = r'SmplshRestposeLapMat_Katey.npy'
+    inputs.fittingParamFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick\ToSparse\17438\ToSparseFittingParams_NoHH.npz'
 
     inputs.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
@@ -77,30 +79,39 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
     cfg.toSparseFittingCfg.numIterFitting = 6000
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
-    cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
+    cfg.toSparseFittingCfg.withFaceKp = True
+    # cfg.toSparseFittingCfg.noHandAndHead = True
+    # cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
+    cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 0
     cfg.toSparseFittingCfg.outputErrs = True
-    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
-    cfg.toSparseFittingCfg.withFaceKp = False
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-9
+    cfg.toSparseFittingCfg.skeletonJointsToFix = [12]
+    # cfg.toSparseFittingCfg.withFaceKp = True
+    cfg.softConstraintWeight = 10
 
-
-    # cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
-    cfg.kpReconCfg.numMostConfidentToPick = 3
-    # cfg.kpReconCfg.debugFolder =
-    cfg.kpReconCfg.drawResults = False
-    cfg.kpReconCfg.detecHead = False
+    cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
+    cfg.kpReconCfg.numMostConfidentToPick = 5
+    # cfg.kpReconCfg.debugFolder =
+    cfg.kpReconCfg.drawResults = False
+    cfg.kpReconCfg.detecHead = True
+    # cfg.kpReconCfg.reprojectErrThreshold = 10
+
+
     # preprocess
-    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    # inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
-    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
+    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequence\TriangulationType1Only'
+
+    # interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

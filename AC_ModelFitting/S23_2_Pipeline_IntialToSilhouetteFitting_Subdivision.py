@@ -3,8 +3,10 @@ from Utility import *
 from copy import copy
 from tqdm import tqdm
 import shutil
-from S01_RegisterSparsePointCloud import getInterpoMat
+from S01_RegisterSparsePointCloud import getInterpoMatSubdivision
 from S13_GetPersonalShapeFromInterpolation import getPersonalShape
+from S05_InterpolateWithSparsePointCloud import interpolateSubdivMesh
+
 class InputBundle:
     def __init__(s, datasetName=r'Lada_12/12/2019'):
         if datasetName == r'Lada_12/12/2019':
@@ -551,7 +553,15 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
+def getRestposeLapMat(subdivMesh, restposeMesh, outSubdivCorr, registrationTId, registrationBarys, outRestposeLapMat):
+    restposeMesh = pv.PolyData(restposeMesh)
+    subdivMesh = pv.PolyData(subdivMesh)
 
+    subdivMesh.points[restposeMesh.points.shape[0], :] = restposeMesh.points
+
+    outSubdivCorr = 0
+
+    pass
 
 if __name__ == '__main__':
     ### This is the firsting fitting to silhouette, before we have it register to sparse point cloud
@@ -635,7 +645,7 @@ if __name__ == '__main__':
     inputs.imageFolder = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Silhouettes\Sihouettes_NoGlassese\18411'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
     inputs.outputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', frameName)
-    inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', 'Final')
+    inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', 'FinalSubdiv')
     inputs.compressedStorage = False
     inputs.initialFittingParamPoseFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
     inputs.initialFittingParamBetasFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
@@ -687,18 +697,27 @@ if __name__ == '__main__':
     shutil.copy(finalMesh, join(outFolderFinalData, 'PerVertex_' + os.path.basename(finalMesh)))
 
     outIntepolatedMesh = join(outFolderFinalData, 'InterpolatedMesh.ply')
-    getInterpoMat(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile, minValInterpoMat=0.1)
+    outSubdivMesh = join(outFolderFinalData, 'Subdivied.ply')
+    outSubdivCorr = join(outFolderFinalData, 'SubdivCorrs.txt')
 
-    LNP = getLaplacian(inRestposeSMPLSHMesh)
-    laplacianMatFile = 'SmplshRestposeLapMat_Katey.npy'
-    np.save(laplacianMatFile, LNP)
-    interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
-            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100 , numRealCorners=1487)
+    # getInterpoMat(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile, minValInterpoMat=0.1)
+    # getInterpoMatSubdivision(finalMesh, inputs.sparsePointCloudFile, inputs.toSparsePCMat, inputs.skelDataFile,
+    #                          outSubdivCorr, outSubdivMesh, minValInterpoMat=0.3)
+
+
+    registrationTIdFile = join(outFolderFinalData, 'RegistrationTId.npy')
+    registrationBarysFile = join(outFolderFinalData, 'RegistrationBarys.npy')
+    outRestposeLapMat = join(outFolderFinalData, 'RestposeLapMat.npy')
+
+    # getRestposeLapMat(outSubdivMesh, outSubdivCorr, registrationTIdFile, registrationBarysFile, outRestposeLapMat)
+
+    interpolateSubdivMesh(outSubdivMesh, inputs.sparsePointCloudFile, outIntepolatedMesh, inputs.skelDataFile, outSubdivCorr,
+             laplacianMatFile=None, biLaplacian=False, interpolateDisplacement=True)
     #'SmplshRestposeLapMat.npy'
 
     getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)
 
+    # should do it in the restpose
 
-    #Average interpolation distance:  0.33720867020700174 Max interpolation distance:  3.6268618055634265
 
 

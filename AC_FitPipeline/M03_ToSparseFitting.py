@@ -1116,8 +1116,8 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
             )
         ))
 
-        if cfg.withFaceKp:
-            keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP)
+    if cfg.withFaceKp:
+        keypointFitCost = keypointFitCost + faceKpLosstf(smplshtf.smplVerts, targetKeypointsOP)
 
     if betas is not None:
         betaRegularizerCostToKp = cfg.betaRegularizerWeightToKP * tf.reduce_sum(tf.square(smplshtf.betas - betas))

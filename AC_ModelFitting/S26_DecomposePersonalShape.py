@@ -22,4 +22,4 @@ if __name__ == '__main__':
     pose, trans, betas, personalShape = loadCompressedFittingParam(inParamNpz, True)
 
     np.save(betaFile, betas, )
-    np.save(personalShapeFile, personalShape, )
+    np.save(personalShapeFile, personalShape * 1000, )

@@ -244,6 +244,7 @@ def searchForClosestPointsOnTriangleWithBarycentric(sourceVs, targetVs, targetFs
 
 def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
     handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
+    cornerNotUsed = [1625, 1624], # 2 vertex added on the middle of wrist
     numRealCorners = 1487, fixHandAndHead = True, biLaplacian = False):
     handIndices = json.load(open(handIndicesFile))
     headIndices = json.load(open(HeadIndicesFile))
@@ -258,6 +259,13 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
         LNP = getLaplacian(inMeshFile, biLaplacian=biLaplacian)
     else:
         LNP = np.load(laplacianMatFile)
+
+    # wash the Laplacian Mat
+    LNP[np.where(np.logical_and(LNP < 0.01, LNP >0) )] = 0.01
+    LNP[np.where(np.logical_and(LNP > -0.01, LNP < 0) )] = -0.01
+    LNP = LNP + 0.01 * np.eye(LNP.shape[0])
+    # LNP[np.where(LNP)] = 1
+    # print('Condition number of LNP:', np.linalg.cond(LNP))
 
     # LNP
     # Define fit cost to dense point cloud
@@ -277,6 +285,7 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     # Deform to Sparse Point Cloud
     # only interpolate the points that is actually a corner
     constraintIds = constraintIds[np.where(constraintIds < numRealCorners)]
+    constraintIds = np.setdiff1d(constraintIds, cornerNotUsed)
 
     targetPts = targetMesh.points[constraintIds, :]
     partialInterpolation = intepolationMatrixNp[constraintIds, :]
@@ -295,7 +304,6 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
         displacement = np.vstack([displacement, handDisplacement])
         partialInterpolation = np.vstack([partialInterpolation, fixHandMat])
 
-    # displacement = 0*displacement + 10
     # We should interpolate displacement
     # Change this to soft soft constraint
     # nConstraints = constraintIds.shape[0]
@@ -326,6 +334,105 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     interpoDis = np.sqrt(interpoDiff[:,0]**2 + interpoDiff[:,1]**2 + interpoDiff[:,2]**2)
     print("Average interpolation distance: ", np.mean(interpoDis), "Max interpolation distance: ", np.max(interpoDis))
 
+
+    deformedSMPLSH.points = interpolatedVerts
+    deformedSMPLSH.save(outInterpolatedFile, binary=False)
+
+def buildKKT(L, D, e):
+    nDimX = L.shape[0]
+    nConstraints = D.shape[0]
+
+    KKTMat = np.zeros((nDimX + nConstraints, nDimX + nConstraints))
+    KKTMat[0:nDimX, 0:nDimX] = L
+    KKTMat[nDimX:nConstraints + nDimX, 0:nDimX] = D
+    KKTMat[0:nDimX, nDimX:nConstraints + nDimX] = np.transpose(D)
+
+    KKTRes = np.zeros((nDimX + nConstraints,1))
+    KKTRes[nDimX:nDimX + nConstraints,0] = e[:,0]
+
+    return KKTMat, KKTRes
+
+
+def interpolateSubdivMesh(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, inSubDivCorrFile, laplacianMatFile=None, \
+    handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json',
+    numRealCorners = 1487, fixHandAndHead = True, biLaplacian = False, interpolateDisplacement = True):
+    handIndices = json.load(open(handIndicesFile))
+    headIndices = json.load(open(HeadIndicesFile))
+
+    indicesToFix = copy.copy(handIndices)
+    indicesToFix.extend(headIndices)
+
+    deformedSMPLSH = pv.PolyData(inMeshFile)
+
+    targetMesh = pv.PolyData(inSparseCloud)
+    if laplacianMatFile is None:
+        LNP = getLaplacian(inMeshFile, biLaplacian=biLaplacian)
+    else:
+        LNP = np.load(laplacianMatFile)
+
+    LNP[np.where(np.logical_and(LNP < 0.01, LNP >0) )] = 0.01
+    LNP[np.where(np.logical_and(LNP > -0.01, LNP < 0) )] = -0.01
+    LNP = LNP + 0.01 * np.eye(LNP.shape[0])
+    # LNP[np.where(LNP)] = 1
+    print('Condition number of LNP:', np.linalg.cond(LNP))
+
+    # LNP
+    # Define fit cost to dense point cloud
+    skelData = json.load(open(skelDataFile))
+    coarseMeshPts = np.array(skelData['VTemplate'])
+    validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
+
+    obsIds = np.where(targetMesh.points[:, 2] > 0)[0]
+
+    constraintIds = np.intersect1d(obsIds, validVertsOnRestpose)
+    # validTargets = targetVerts[constraintIds, :]
+
+    smplshVerts = np.array(deformedSMPLSH.points)
+
+    # Deform to Sparse Point Cloud
+    # only interpolate the points that is actually a corner
+    constraintIds = constraintIds[np.where(constraintIds < numRealCorners)]
+
+    targetPts = targetMesh.points[constraintIds, :]
+
+    interpolatedPtsDisplacement = np.zeros(smplshVerts.shape)
+    nDimData = smplshVerts.shape[0]
+
+    subdivCorrs = np.loadtxt(inSubDivCorrFile, dtype=np.int64)
+    vSelectionMat = np.zeros((len(constraintIds), smplshVerts.shape[0]), dtype=np.float64)
+    for iRow, vId in enumerate(constraintIds):
+        vSelectionMat[iRow, subdivCorrs[vId]] = 1
+    if interpolateDisplacement:
+        displacement = targetPts - vSelectionMat @ smplshVerts
+    else:
+        displacement = targetPts
+
+    fixHandMat = np.zeros((len(indicesToFix), smplshVerts.shape[0]), dtype=np.float64)
+    for iRow, handVId in enumerate(indicesToFix):
+        fixHandMat[iRow, handVId] = 1
+
+    if interpolateDisplacement:
+        handDisplacement = np.zeros((len(indicesToFix), 3))
+    else:
+        handDisplacement = smplshVerts[indicesToFix, :]
+
+    if fixHandAndHead:
+        displacement = np.vstack([displacement, handDisplacement])
+        vSelectionMat = np.vstack([vSelectionMat, fixHandMat])
+
+    for iDim in range(3):
+        x = displacement[:, iDim:iDim+1]
+
+        kMat, KRes = buildKKT(LNP, vSelectionMat, x)
+        # print('Condition number of kMat:', np.linalg.cond(kMat))
+
+        xInterpo = np.linalg.solve(kMat, KRes)
+        interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData, 0]
+
+    if interpolateDisplacement:
+        interpolatedVerts = (smplshVerts + interpolatedPtsDisplacement)
+    else:
+        interpolatedVerts = interpolatedPtsDisplacement
 
     deformedSMPLSH.points = interpolatedVerts
     deformedSMPLSH.save(outInterpolatedFile, binary=False)
