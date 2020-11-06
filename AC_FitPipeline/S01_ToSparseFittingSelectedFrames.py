@@ -73,8 +73,6 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             debugFolder = None
         M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder)
 
-
-
 def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
@@ -103,8 +101,8 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
         deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
 
         frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
-        fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams.npz')
-        fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh.obj')
+        fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams_withHH.npz')
+        fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh_withHH.obj')
         outInterpolatedMeshFile = join(frameFittingFolder, 'InterpolatedMesh.obj')
         outInterpolatedParamsFile = join(frameFittingFolder, 'InterpolatedParams.npz')
 
@@ -113,6 +111,15 @@ def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
             handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = cfg.softConstraintWeight,
             numRealCorners = 1487, fixHandAndHead = True, )
 
+def figureOutHandAndHead(inputs, frameNames, cfg):
+    for iF in tqdm.tqdm(range(len(frameNames)), desc='Figuring out hands and head: '):
+        frameName = frameNames[iF]
+        frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
+        interpolatedParamsFile = join(frameFittingFolder, 'ToSparseFittingParams.npz')
+        kpFile = join(inputs.inputKpFolder, frameName + '.obj')
+
+        frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
+        M03_ToSparseFitting.figureOutHandHeadPoses(interpolatedParamsFile, kpFile, inputs.SMPLSHNpzFile, frameFittingFolder, cfg=cfg.toSparseFittingCfg, personalShapeFile=inputs.personalShapeFile)
 
 class InputBundle():
     def __init__(s, datasetName=r'Lada_12/12/2019'):
@@ -171,7 +178,6 @@ if __name__ == '__main__':
     inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
 
     frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
-
 
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'

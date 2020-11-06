@@ -80,7 +80,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.numIterFitting = 6000
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
     cfg.toSparseFittingCfg.withFaceKp = True
-    # cfg.toSparseFittingCfg.noHandAndHead = True
+    cfg.toSparseFittingCfg.noHandAndHead = True
     # cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 0
     cfg.toSparseFittingCfg.outputErrs = True
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
 
     # preprocess
-    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
@@ -108,10 +108,12 @@ if __name__ == '__main__':
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
     toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
+    figureOutHandAndHead(inputs, frameNames, cfg)
+
     # intepolate to sparse mesh
     inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequence\TriangulationType1Only'
 
-    # interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg)
+    interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

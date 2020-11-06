@@ -891,7 +891,7 @@ class SMPLSH:
         # self.smplVerts, self.smplFaces = smplsh_model.smplsh_model(SMPLSHNpzFile, self.betas, self.pose, self.trans,
         #                                     personalShape = personalShape, unitMM=False, )
         self.smplVerts, self.smplJoints, self.smplFaces = smplsh_model.smplsh_model(SMPLSHNpzFile, self.betas, self.pose,
-                                                                        self.trans,personalShape = personalShape, unitMM=False, returnDeformedJoints=True)
+                                                                        self.trans, personalShape = personalShape, unitMM=False, returnDeformedJoints=True)
 
 
         self.skeletonJointsToFix = []
@@ -1050,6 +1050,101 @@ def faceKpLosstf(smplshVerts, keypoints):
     return tf.reduce_mean(tf.multiply(
         tf.nn.relu(tf.sign(keypoints[corrs[:,0], 2:3])),
         (tf.gather(smplshVerts, corrs[:,1]) - keypoints[corrs[:,0]])**2))
+
+def figureOutHandHeadPoses(initialPoseFile, inputKeypoints, smplshDataFile, outFolder, cfg=Config(), numBodyJoints=20,
+                           writeInitial = True, personalShapeFile=None):
+    tf.reset_default_graph()
+    os.makedirs(outFolder, exist_ok=True)
+
+    targetKeypointsOP = np.array(pv.PolyData(inputKeypoints).points).astype(np.float64) / 1000
+    transl, pose, betas,  = loadCompressedFittingParam(initialPoseFile, readPersonalShape=False)
+    personalShape  = np.load(personalShapeFile) / 1000 if personalShapeFile is not None else None
+
+    # personalShape = personalShape / 1000
+    betas = tf.constant(betas, name='betas', dtype=tf.float64)
+    transl = tf.constant(transl, name='transl', dtype=tf.float64)
+    poseBody = tf.constant(pose[:3 * numBodyJoints], name='poseBody', dtype=tf.float64)
+    personalShape = tf.constant(personalShape, name="personalShape", dtype=tf.float64)
+
+    poseHandHead = tf.get_variable("pose", shape=[3 * (52 - numBodyJoints)], initializer=tf.initializers.zeros(), dtype=tf.float64)
+
+    pose = tf.concat([poseBody, poseHandHead], axis=0)
+    smplVerts, smplJoints, smplFaces = smplsh_model.smplsh_model(smplshDataFile, betas, pose, transl, personalShape = personalShape,
+                                                                 unitMM=False, returnDeformedJoints=True)
+
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    if writeInitial:
+        smplshInitialVerts = sess.run(smplVerts)
+        # smplshJoints = sess.run(smplJoints)
+        Data.write_obj(join(outFolder, 'SmplshInitial_beforeHH.obj'), smplshInitialVerts * 1000, smplFaces)
+
+    jointConverter = VertexToOpJointsConverter()
+    opJoints = jointConverter(smplVerts[None, ...], smplJoints[None, ...])[0, ...]
+    # opJointsNp = sess.run(opJoints)
+    # Data.write_obj(join(outFolder, 'SmplshRestPoseOpJoints.obj'), opJointsNp)
+    # targetKeypointsOP[2, 2] = -1
+    # targetKeypoints = (OP2AdamJointMat @ targetKeypointsOP).astype(np.float64)
+
+    for iKp in range(targetKeypointsOP.shape[0]):
+        if np.any(targetKeypointsOP[iKp, 2] < 0):
+            targetKeypointsOP[iKp, :] = [0, 0, -1]
+
+    bodyJoints = [i for i in range(cfg.numBodyJoint)  if i not in cfg.headJointsId]
+    jointsNoBody = [i for i in range(opJoints.shape[0]) if i not in bodyJoints]
+    keypointFitCost = tf.reduce_mean(tf.square(
+        tf.gather(tf.multiply(
+            tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+            opJoints - targetKeypointsOP[:opJoints.shape[0], :]
+        ), jointsNoBody)
+    ))
+    regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(poseHandHead))
+
+    fittingCost = keypointFitCost + regularizerCostToKp
+
+    stepICPToSparse = tf.Variable(0, trainable=False)
+    rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep, cfg.lrDecayRate)
+    train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=rateICPToSparse).minimize(fittingCost, global_step=stepICPToSparse)
+
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    errs = []
+    loop = tqdm.tqdm(range(cfg.numIterFitting))
+    for i in loop:
+        # sess.run(costICPToSparse)
+        sess.run(train_step_ICPToSparse, )
+
+        errs.append(np.abs(sess.run(fittingCost, )))
+
+        if i% 50:
+            desc = "Cost:" + str(errs[-1]) + \
+                   " keypointFitCost:" + str(sess.run(keypointFitCost, ) if not cfg.noHandAndHead else 0) + \
+                   ' regularizerCostToKp:' + str(sess.run(regularizerCostToKp, )) + \
+                   ' LearningRate:' + str(sess.run(rateICPToSparse, ))
+            loop.set_description(desc)
+
+        if sess.run(fittingCost, ) < cfg.terminateLoss:
+            print("Stop optimization because current loss is: ", sess.run(fittingCost, ), ' less than: ',
+                  cfg.terminateLoss)
+            break
+
+        if i > 0:
+            errStep = np.abs(errs[-1] - errs[-2])
+            if errStep < cfg.terminateLossStep:
+                print("Stop optimization because current step is: ", errStep, ' less than: ', cfg.terminateLossStep)
+                break
+    transVal = sess.run(transl)
+    poseVal = sess.run(pose)
+    betaVal = sess.run(betas)
+
+    outParamFile = join(outFolder, 'ToSparseFittingParams_withHH.npz')
+    np.savez(outParamFile, trans=transVal, pose=poseVal, beta=betaVal)
+
+    outFile = join(outFolder, 'ToSparseMesh_withHH.obj')
+    Data.write_obj(outFile, sess.run(smplVerts) * 1000, smplFaces)
 
 
 def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skelDataFile, toSparsePointCloudInterpoMatFile,
