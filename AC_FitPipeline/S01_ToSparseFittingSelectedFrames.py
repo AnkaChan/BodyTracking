@@ -129,9 +129,9 @@ class InputBundle():
 
             s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
             s.inputDensePointCloudFile = None
-            s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
-            s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
-            s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+            s.toSparsePCMat = r'..\Data\InterpolationMatrix.npy'
+            s.personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
+            s.betaFile = r'..\Data\PersonalModel_Lada\BetaFile.npy'
 
         elif datasetName == r'Katey_01/01/2020_Remote':
             s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun'
