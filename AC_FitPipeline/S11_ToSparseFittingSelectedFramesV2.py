@@ -73,27 +73,11 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
             debugFolder = None
         M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder)
 
-def toSparseFittingSelectedFrame(inputs, frameNames, cfg=Config()):
+def toSparseFittingSelectedFrameV2(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
-    for iF in tqdm.tqdm(range(len(frameNames)), desc='Fitting to Sparse: '):
-        frameName = frameNames[iF]
-        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
-        kpFile = join(inputs.inputKpFolder, frameName + '.obj')
-        outputFolderForFrame = join(inputs.outFolderAll, 'ToSparse', frameName)
-        os.makedirs(outputFolderForFrame, exist_ok=True)
-
-        cfgFrame = copy.copy(cfg)
-
-        if cfg.initWithLastFrameParam and iF:
-            outputFolderForLastFrame = join(inputs.outFolderAll, 'ToSparse', frameNames[iF-1])
-            fittingParamLastFrame = join(outputFolderForLastFrame, 'ToSparseFittingParams.npz')
-            cfgFrame.toSparseFittingCfg.learnrate_ph = cfgFrame.learningRateFollowingFrame
-        else:
-            fittingParamLastFrame = inputs.fittingParamFile
-
-        M03_ToSparseFitting.toSparseFittingNewRegressor(kpFile, deformedSparseMeshFile, outputFolderForFrame, inputs.skelDataFile, inputs.toSparsePCMat,
-                                                        inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=fittingParamLastFrame, cfg=cfgFrame.toSparseFittingCfg)
+    M03_ToSparseFitting.toSparseFittingNewRegressorV2(frameNames, inputs.inputKpFolder, inputs.deformedSparseMeshFolder, inputs.outFolderAll, inputs.skelDataFile, inputs.toSparsePCMat,
+                        inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=inputs.fittingParamFile, cfg=cfg.toSparseFittingCfg)
 
 def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
     for iF in tqdm.tqdm(range(len(frameNames)), desc='Interpolating meshes: '):
@@ -170,15 +154,24 @@ if __name__ == '__main__':
     #               ]
 
 
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
+    # inputs.outFolderAll = inputs.dataFolder
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    # inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+    #
+    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
+
+    # Lada ground
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
     inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
     inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
-
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+100)]
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
     # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
@@ -191,18 +184,16 @@ if __name__ == '__main__':
     #               ]
 
     cfg = Config()
-    cfg.toSparseFittingCfg.learnrate_ph = 0.05
+    # cfg.toSparseFittingCfg.learnrate_ph = 0.05
+    cfg.toSparseFittingCfg.learnrate_ph = 0.1
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
     # cfg.toSparseFittingCfg.learnrate_ph = 0.005
     cfg.toSparseFittingCfg.lrDecayStep = 200
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
-    cfg.toSparseFittingCfg.numIterFitting = 6000
-    cfg.toSparseFittingCfg.noBodyKeyJoint = True
-    cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
-    cfg.toSparseFittingCfg.outputErrs = True
-    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
-    cfg.toSparseFittingCfg.noHandAndHead = True
-    cfg.toSparseFittingCfg.skeletonJointsToFix = [10, 11, 12,  15, 21, 20]
+    cfg.toSparseFittingCfg.numIterFitting = 10000
+    cfg.toSparseFittingCfg.terminateLoss = 1e-5
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-10
+    cfg.toSparseFittingCfg.skeletonJointsToFix = [12, 15,]
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
 
@@ -222,7 +213,7 @@ if __name__ == '__main__':
 
     os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
