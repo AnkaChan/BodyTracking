@@ -154,15 +154,24 @@ if __name__ == '__main__':
     #               ]
 
 
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
+    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
+    # inputs.outFolderAll = inputs.dataFolder
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    # inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+    #
+    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
+
+    # Lada ground
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
     inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
     inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
-
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+100)]
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
     # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
@@ -183,7 +192,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
     cfg.toSparseFittingCfg.numIterFitting = 10000
     cfg.toSparseFittingCfg.terminateLoss = 1e-5
-    cfg.toSparseFittingCfg.terminateLossStep = 1e-9
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-10
     cfg.toSparseFittingCfg.skeletonJointsToFix = [12, 15,]
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"

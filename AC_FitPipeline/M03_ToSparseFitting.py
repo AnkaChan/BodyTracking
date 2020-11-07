@@ -1053,6 +1053,9 @@ def faceKpLosstf(smplshVerts, keypoints):
 
 def figureOutHandHeadPoses(initialPoseFile, inputKeypoints, smplshDataFile, outFolder, cfg=Config(), numBodyJoints=20,
                            writeInitial = True, personalShapeFile=None):
+
+    jointsToFix = [i for i in range(numBodyJoints) if i not in [15,]]
+
     tf.reset_default_graph()
     os.makedirs(outFolder, exist_ok=True)
 
@@ -1063,12 +1066,14 @@ def figureOutHandHeadPoses(initialPoseFile, inputKeypoints, smplshDataFile, outF
     # personalShape = personalShape / 1000
     betas = tf.constant(betas, name='betas', dtype=tf.float64)
     transl = tf.constant(transl, name='transl', dtype=tf.float64)
-    poseBody = tf.constant(pose[:3 * numBodyJoints], name='poseBody', dtype=tf.float64)
     personalShape = tf.constant(personalShape, name="personalShape", dtype=tf.float64)
 
-    poseHandHead = tf.get_variable("pose", shape=[3 * (52 - numBodyJoints)], initializer=tf.initializers.zeros(), dtype=tf.float64)
+    # I am not doing this because to adjust head you need to adjust joint 12 and 15
+    # poseBody = tf.constant(pose[:3 * numBodyJoints], name='poseBody', dtype=tf.float64)
+    # poseHandHead = tf.get_variable("pose", shape=[3 * (52 - numBodyJoints)], initializer=tf.initializers.zeros(), dtype=tf.float64)
+    # pose = tf.concat([poseBody, poseHandHead], axis=0)
+    pose = tf.get_variable("pose", initializer=pose, dtype=tf.float64)
 
-    pose = tf.concat([poseBody, poseHandHead], axis=0)
     smplVerts, smplJoints, smplFaces = smplsh_model.smplsh_model(smplshDataFile, betas, pose, transl, personalShape = personalShape,
                                                                  unitMM=False, returnDeformedJoints=True)
 
@@ -1100,7 +1105,114 @@ def figureOutHandHeadPoses(initialPoseFile, inputKeypoints, smplshDataFile, outF
             opJoints - targetKeypointsOP[:opJoints.shape[0], :]
         ), jointsNoBody)
     ))
-    regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(poseHandHead))
+    regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(pose))
+
+    fittingCost = keypointFitCost + regularizerCostToKp
+
+    stepICPToSparse = tf.Variable(0, trainable=False)
+    rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep, cfg.lrDecayRate)
+    train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=rateICPToSparse).minimize(fittingCost, global_step=stepICPToSparse)
+
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    errs = []
+    loop = tqdm.tqdm(range(cfg.numIterFitting))
+    for i in loop:
+        # sess.run(costICPToSparse)
+        sess.run(train_step_ICPToSparse, )
+
+        errs.append(np.abs(sess.run(fittingCost, )))
+
+        if i% 50:
+            desc = "Cost:" + str(errs[-1]) + \
+                   " keypointFitCost:" + str(sess.run(keypointFitCost, ) if not cfg.noHandAndHead else 0) + \
+                   ' regularizerCostToKp:' + str(sess.run(regularizerCostToKp, )) + \
+                   ' LearningRate:' + str(sess.run(rateICPToSparse, ))
+            loop.set_description(desc)
+
+        if sess.run(fittingCost, ) < cfg.terminateLoss:
+            print("Stop optimization because current loss is: ", sess.run(fittingCost, ), ' less than: ',
+                  cfg.terminateLoss)
+            break
+
+        if i > 0:
+            errStep = np.abs(errs[-1] - errs[-2])
+            if errStep < cfg.terminateLossStep:
+                print("Stop optimization because current step is: ", errStep, ' less than: ', cfg.terminateLossStep)
+                break
+    transVal = sess.run(transl)
+    poseVal = sess.run(pose)
+    betaVal = sess.run(betas)
+
+    outParamFile = join(outFolder, 'ToSparseFittingParams_withHH.npz')
+    np.savez(outParamFile, trans=transVal, pose=poseVal, beta=betaVal)
+
+    outFile = join(outFolder, 'ToSparseMesh_withHH.obj')
+    Data.write_obj(outFile, sess.run(smplVerts) * 1000, smplFaces)
+
+def figureOutHandHeadPosesV2(frameNames, toSparseFitFolder, inputKeypointsFolder, smplshDataFile, outFolderAll, personalShapeFile, betaFile, cfg=Config(), numBodyJoints=20,
+                           writeInitial = True,):
+
+    jointsToFix = [i for i in range(numBodyJoints) if i not in [15,]]
+
+    tf.reset_default_graph()
+    os.makedirs(outFolderAll, exist_ok=True)
+
+    personalShape  = np.load(personalShapeFile) / 1000 if personalShapeFile is not None else None
+    betas = np.load(betaFile)
+
+    translInitPH = tf.placeholder(tf.float64, name="translInitPH", shape=[3], )
+    personalShape = tf.constant(personalShape, name="personalShape", dtype=tf.float64)
+    betas = tf.constant(betas, name='betas', dtype=tf.float64)
+
+    # I am not doing this because to adjust head you need to adjust joint 12 and 15
+    # poseBody = tf.constant(pose[:3 * numBodyJoints], name='poseBody', dtype=tf.float64)
+    # poseHandHead = tf.get_variable("pose", shape=[3 * (52 - numBodyJoints)], initializer=tf.initializers.zeros(), dtype=tf.float64)
+    # pose = tf.concat([poseBody, poseHandHead], axis=0)
+    pose = tf.get_variable("pose", initializer=tf.initializers.zeros(), shape=[3*52], dtype=tf.float64)
+
+    smplVerts, smplJoints, smplFaces = smplsh_model.smplsh_model(smplshDataFile, betas, pose, translInitPH, personalShape = personalShape,
+                                                                 unitMM=False, returnDeformedJoints=True)
+
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    loop = tqdm.tqdm(range(len(frameNames)))
+    for iF in loop:
+        frameName = frameNames[iF]
+        deformedSparseMeshFile = join(sparsePCObjFolder, 'A'+frameName.zfill(8) + '.obj')
+        outputFolderForFrame = join(outFolderAll, 'ToSparse', frameName)
+        os.makedirs(outputFolderForFrame, exist_ok=True)
+
+
+
+    if writeInitial:
+        smplshInitialVerts = sess.run(smplVerts)
+        # smplshJoints = sess.run(smplJoints)
+        Data.write_obj(join(outFolder, 'SmplshInitial_beforeHH.obj'), smplshInitialVerts * 1000, smplFaces)
+
+    jointConverter = VertexToOpJointsConverter()
+    opJoints = jointConverter(smplVerts[None, ...], smplJoints[None, ...])[0, ...]
+    # opJointsNp = sess.run(opJoints)
+    # Data.write_obj(join(outFolder, 'SmplshRestPoseOpJoints.obj'), opJointsNp)
+    # targetKeypointsOP[2, 2] = -1
+    # targetKeypoints = (OP2AdamJointMat @ targetKeypointsOP).astype(np.float64)
+
+    for iKp in range(targetKeypointsOP.shape[0]):
+        if np.any(targetKeypointsOP[iKp, 2] < 0):
+            targetKeypointsOP[iKp, :] = [0, 0, -1]
+
+    bodyJoints = [i for i in range(cfg.numBodyJoint)  if i not in cfg.headJointsId]
+    jointsNoBody = [i for i in range(opJoints.shape[0]) if i not in bodyJoints]
+    keypointFitCost = tf.reduce_mean(tf.square(
+        tf.gather(tf.multiply(
+            tf.nn.relu(tf.sign(targetKeypointsOP[:opJoints.shape[0], 2:3])),
+            opJoints - targetKeypointsOP[:opJoints.shape[0], :]
+        ), jointsNoBody)
+    ))
+    regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(pose))
 
     fittingCost = keypointFitCost + regularizerCostToKp
 
@@ -1362,9 +1474,13 @@ class PoseLossBody():
 
         s.regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(s.pose))
 
-        s.costICPToSparse = s.costICPToSparse + s.regularizerCostToKp
+        s.skelFixCost = 0
+        for iJoint in cfg.skeletonJointsToFix:
+            s.skelFixCost = s.skelFixCost + 100 * tf.reduce_mean(tf.square(s.pose[(iJoint * 3):(iJoint * 3 + 3)]))
 
-        stepICPToSparse = tf.Variable(0, trainable=False)
+        s.costICPToSparse = s.costICPToSparse + s.regularizerCostToKp + s.skelFixCost
+
+        stepICPToSparse = tf.get_variable("stepICPToSparse", initializer=tf.initializers.zeros(), shape=[], dtype=tf.int64)
         s.rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep,
                                                      cfg.lrDecayRate)
         s.train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=s.rateICPToSparse).minimize(s.costICPToSparse,
@@ -1391,12 +1507,11 @@ def toSparseFittingNewRegressorV2(frameNames, inputKeypointFolder, sparsePCObjFo
     validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
 
     # Define Loss
-    lossPose = PoseLossBody(betas, personalShape, interpoMat, smplshDataFile)
+    lossPose = PoseLossBody(betas, personalShape, interpoMat, smplshDataFile, cfg=cfg)
 
     sess = tf.Session()
     init = tf.global_variables_initializer()
 
-    errs = []
     loop = tqdm.tqdm(range(len(frameNames)))
     for iF in loop:
         frameName = frameNames[iF]
@@ -1411,7 +1526,7 @@ def toSparseFittingNewRegressorV2(frameNames, inputKeypointFolder, sparsePCObjFo
 
         # init with previous frame
         sess.run(init, feed_dict = {lossPose.translInitPH:transl, lossPose.poseInitPH:pose})
-
+        errs = []
         feedDict = {lossPose.targetVertsPH:targetVerts, lossPose.constraintIdPH:constraintIds}
         for i in range(cfg.numIterFitting):
             sess.run(lossPose.train_step_ICPToSparse, feed_dict=feedDict)

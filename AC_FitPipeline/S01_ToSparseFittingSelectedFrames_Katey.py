@@ -87,7 +87,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 0
     cfg.toSparseFittingCfg.outputErrs = True
     cfg.toSparseFittingCfg.terminateLossStep = 1e-9
-    cfg.toSparseFittingCfg.skeletonJointsToFix = [12]
+    cfg.toSparseFittingCfg.skeletonJointsToFix = [15]
     # cfg.toSparseFittingCfg.withFaceKp = True
     cfg.softConstraintWeight = 10
 
