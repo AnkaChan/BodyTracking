@@ -590,6 +590,8 @@ class Config:
         # jointRegularizerWeight = 0.0000001
         # jointRegularizerWeight = 0
         s.learnrate_ph = 0.05
+        s.learnrate_fisrt = 0.05
+        s.learnrate_following = 0.005
         s.lrDecayStep = 200
         s.lrDecayRate = 0.97
 
@@ -1182,7 +1184,7 @@ def figureOutHandHeadPosesV2(frameNames, toSparseFitFolder, inputKeypointsFolder
     loop = tqdm.tqdm(range(len(frameNames)))
     for iF in loop:
         frameName = frameNames[iF]
-        deformedSparseMeshFile = join(sparsePCObjFolder, 'A'+frameName.zfill(8) + '.obj')
+        kpFile = join(sparsePCObjFolder, 'A'+frameName.zfill(8) + '.obj')
         outputFolderForFrame = join(outFolderAll, 'ToSparse', frameName)
         os.makedirs(outputFolderForFrame, exist_ok=True)
 
@@ -1479,9 +1481,10 @@ class PoseLossBody():
             s.skelFixCost = s.skelFixCost + 100 * tf.reduce_mean(tf.square(s.pose[(iJoint * 3):(iJoint * 3 + 3)]))
 
         s.costICPToSparse = s.costICPToSparse + s.regularizerCostToKp + s.skelFixCost
+        s.lrPH = tf.placeholder(tf.float64, name="lrPH", shape=[])
 
         stepICPToSparse = tf.get_variable("stepICPToSparse", initializer=tf.initializers.zeros(), shape=[], dtype=tf.int64)
-        s.rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep,
+        s.rateICPToSparse = tf.train.exponential_decay(s.lrPH, stepICPToSparse, cfg.lrDecayStep,
                                                      cfg.lrDecayRate)
         s.train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=s.rateICPToSparse).minimize(s.costICPToSparse,
                                                                                                 global_step=stepICPToSparse)
@@ -1527,15 +1530,19 @@ def toSparseFittingNewRegressorV2(frameNames, inputKeypointFolder, sparsePCObjFo
         # init with previous frame
         sess.run(init, feed_dict = {lossPose.translInitPH:transl, lossPose.poseInitPH:pose})
         errs = []
-        feedDict = {lossPose.targetVertsPH:targetVerts, lossPose.constraintIdPH:constraintIds}
+        feedDict = {lossPose.targetVertsPH: targetVerts, lossPose.constraintIdPH: constraintIds,
+                    lossPose.lrPH: cfg.learnrate_first}
+
         for i in range(cfg.numIterFitting):
+            if  i:
+                feedDict[lossPose.lrPH] = cfg.learnrate_following
             sess.run(lossPose.train_step_ICPToSparse, feed_dict=feedDict)
 
             if not i % 5:
                 errs.append(np.abs(sess.run(lossPose.costICPToSparse, feed_dict=feedDict)))
                 desc = "Iter:" + str(i) + " Cost:" + str(errs[-1]) + \
                        ' regularizerCostToKp:' + str(sess.run(lossPose.regularizerCostToKp, )) + \
-                       ' LearningRate:' + str(sess.run(lossPose.rateICPToSparse, ))
+                       ' LearningRate:' + str(sess.run(lossPose.rateICPToSparse, feed_dict=feedDict, ))
                 loop.set_description(desc)
 
                 if errs[-1] < cfg.terminateLoss:

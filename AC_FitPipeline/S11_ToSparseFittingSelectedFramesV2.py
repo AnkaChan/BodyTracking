@@ -185,7 +185,8 @@ if __name__ == '__main__':
 
     cfg = Config()
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
-    cfg.toSparseFittingCfg.learnrate_ph = 0.1
+    cfg.toSparseFittingCfg.learnrate_first = 0.1
+    cfg.toSparseFittingCfg.learnrate_following = 0.02
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
     # cfg.toSparseFittingCfg.learnrate_ph = 0.005
     cfg.toSparseFittingCfg.lrDecayStep = 200
