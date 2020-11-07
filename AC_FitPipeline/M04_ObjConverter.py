@@ -66,7 +66,7 @@ def convertObjFile(inFile, outFile, convertToMM=False, withMtl=False, textureFil
                 if l[0] == 'v':
                     vs.append([l[1], l[2], l[3].split('\n')[0]])
                 elif l[0] == 'vt' or l[0] == 'vn':
-                    assert (False)
+                    continue
             f.close()
     else:
         mesh = pv.PolyData(inFile)
@@ -128,7 +128,8 @@ if __name__ == '__main__':
     # out_dir = r'E:\WorkingCopy\2020_06_30_AC_ConsequtiveTexturedFitting2\FinalObj\WithTextureCoord'
     # obj_dir = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
     # obj_dir = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese\Final\18411'
-    obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
+    # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
+    obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
     ext = 'obj'
     withMtl = True

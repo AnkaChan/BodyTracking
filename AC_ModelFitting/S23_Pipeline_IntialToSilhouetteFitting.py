@@ -357,9 +357,16 @@ def toSilhouettePoseInitalFitting(inputs, cfg, device, undistortSilhouettes=Fals
             saveVTK(join(outFolderMesh, 'Fit' + str(i).zfill(5) + '.ply'), verts.cpu().detach().numpy(),
                     smplshExampleMesh)
 
-def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
-    handIndices = json.load(open(inputs.handIndicesFile))
-    headIndices = json.load(open(inputs.HeadIndicesFile))
+def toSilhouettePerVertexInitialFitting(inputs, cfg, device,):
+    if inputs.handIndicesFile is not None:
+        handIndices = json.load(open(inputs.handIndicesFile))
+    else:
+        handIndices = []
+
+    if inputs.HeadIndicesFile is not None:
+        headIndices = json.load(open(inputs.HeadIndicesFile))
+    else:
+        headIndices = []
 
     indicesToFix = copy(handIndices)
     indicesToFix.extend(headIndices)
@@ -508,9 +515,13 @@ def toSilhouettePerVertexInitialFitting(inputs, cfg, device):
         # toSparseCloudLoss = loss.item()
 
         # fixing loss
-        loss = cfg.vertexFixingWeight * torch.sum(xyzShift[indicesToFix, :] ** 2)
-        loss.backward()
-        hhFixingLoss = loss.item()
+        if len(indicesToFix):
+            loss = cfg.vertexFixingWeight * torch.sum(xyzShift[indicesToFix, :] ** 2)
+            loss.backward()
+            hhFixingLoss = loss.item()
+        else:
+            hhFixingLoss = 0
+
         # recordData
         losses.append(lossVal)
 
@@ -590,7 +601,7 @@ if __name__ == '__main__':
     cfgPerVert = RenderingCfg()
     cfgPerVert.sigma = 1e-7
     cfgPerVert.blurRange = 1e-7
-    cfgPerVert.plotStep = 20
+    cfgPerVert.plotStep = 50
     # cfgPerVert.plotStep = 5
     cfgPerVert.numCams = 16
     cfgPerVert.learningRate = 0.1
@@ -632,10 +643,15 @@ if __name__ == '__main__':
     undistortSilhouette = True
 
     inputs.sparsePointCloudFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Deformed\A00018411.obj'
-    inputs.imageFolder = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Silhouettes\Sihouettes_NoGlassese\18411'
+    inputs.imageFolder = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Silhouettes\Sihouettes\18411'
     # inputs.outputFolder = join(r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\Output', frameName)
-    inputs.outputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', frameName)
+    # inputs.outputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', frameName)
     inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', 'Final')
+    inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese', 'FinalNotFixingHH')
+
+    # inputs.outputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_WithGlassese', frameName)
+    # inputs.finalOutputFolder = join(r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_WithGlassese', 'Final')
+
     inputs.compressedStorage = False
     inputs.initialFittingParamPoseFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedPoses_ICPTriangle.npy'
     inputs.initialFittingParamBetasFile = r'..\Data\KateyBodyModel\InitialRegistration\OptimizedBetas_ICPTriangle.npy'
@@ -646,6 +662,9 @@ if __name__ == '__main__':
     inputs.toSparsePCMat = '..\Data\KateyBodyModel\InterpolationMatrix.npy'
 
     inputs.KeypointsFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\TPose\Keypoints\18411.obj'
+
+    # inputs.handIndicesFile = None
+    # inputs.HeadIndicesFile = None
 
     inputsPose = copy(inputs)
     inputsPose.outputFolder = join(inputs.outputFolder, 'SilhouettePose')
@@ -664,7 +683,7 @@ if __name__ == '__main__':
     inputsPerVertFitting.outputFolder = join(inputs.outputFolder, 'SilhouettePerVert')
     inputsPerVertFitting.compressedStorage = True
     inputsPerVertFitting.initialFittingParamFile = finalPoseFile
-    # toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
+    toSilhouettePerVertexInitialFitting(inputsPerVertFitting, cfgPerVert, device)
     perVertFittingFolder, _ = makeOutputFolder(inputsPerVertFitting.outputFolder,
                                                cfgPerVert, Prefix='XYZRestpose_')
 
@@ -693,10 +712,11 @@ if __name__ == '__main__':
     laplacianMatFile = 'SmplshRestposeLapMat_Katey.npy'
     np.save(laplacianMatFile, LNP)
     interpolateWithSparsePointCloudSoftly(finalMesh, inputs.sparsePointCloudFile, outIntepolatedMesh,
-            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100 , numRealCorners=1487)
+            inputs.skelDataFile, inputs.toSparsePCMat,  laplacianMatFile=None, softConstraintWeight=100 , numRealCorners=1487,
+            fixHandAndHead=False)
     #'SmplshRestposeLapMat.npy'
 
-    getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)
+    # getPersonalShape(outIntepolatedMesh, finalParamFile, inputs.outFittingParamFileWithPS, inputs.smplshData)
 
 
     #Average interpolation distance:  0.33720867020700174 Max interpolation distance:  3.6268618055634265

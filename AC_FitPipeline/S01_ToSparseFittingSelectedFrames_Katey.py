@@ -55,7 +55,8 @@ if __name__ == '__main__':
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequenceInpaintedFull2\SLap_SBiLap_True_TLap_50_JTW_5000_JBiLap_0_Step200_Overlap100\Deformed'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick'
+    # inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick'
+    inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Rolling'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
 
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
@@ -67,7 +68,8 @@ if __name__ == '__main__':
 
     inputs.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
-    frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
+    # frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
+    frameNames = [str(i).zfill(5) for i in range(17126 , 17127)]
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
     # frameNames = ['16755']
     # frameNames = ['16755']

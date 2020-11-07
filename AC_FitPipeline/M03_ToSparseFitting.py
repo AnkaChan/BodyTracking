@@ -1332,6 +1332,122 @@ def toSparseFittingNewRegressor(inputKeypoints, sparsePCObjFile, outFolder, skel
 
         json.dump(errs, open(join(outFolder, 'Errs.json'), 'w'))
 
+class PoseLossBody():
+    def __init__(s, betas, personalShape, intepolationMatrix, smplshDataFile, numBodyJoints=20, cfg=Config()):
+        # personalShape = personalShape / 1000
+        betas = tf.constant(betas, name='betas', dtype=tf.float64)
+        personalShape = tf.constant(personalShape, name="personalShape", dtype=tf.float64)
+
+        poseHandHead = tf.constant(np.zeros((3 * (52 - numBodyJoints), )), name="poseHandHead", dtype=tf.float64)
+
+        s.translInitPH = tf.placeholder(tf.float64, name="translInitPH", shape=[3],)
+        s.poseInitPH = tf.placeholder(tf.float64, name="poseInitPH", shape=[3* numBodyJoints],)
+
+        s.poseBody = tf.get_variable("poseBody", initializer=s.poseInitPH, dtype=tf.float64)
+        s.transl = tf.get_variable("transl",  initializer=s.translInitPH, dtype=tf.float64)
+
+        s.pose = tf.concat([s.poseBody, poseHandHead], axis=0)
+        s.smplVerts, s.smplFaces = smplsh_model.smplsh_model(smplshDataFile, betas, s.pose, s.transl,
+                                                                     personalShape=personalShape,
+                                                                     unitMM=False, returnDeformedJoints=False)
+        s.intepolationMatrix = tf.constant(intepolationMatrix, dtype=np.float64, name="intepolationMatrix")
+
+        numTarget = intepolationMatrix.shape[0]
+        s.targetVertsPH = tf.placeholder(tf.float64, name="poseInitPH", shape=[numTarget, 3])
+
+        s.constraintIdPH = tf.placeholder(tf.int64, shape=[None])
+        # Define loss
+        s.costICPToSparse = tf.reduce_mean(
+            tf.square(tf.gather(s.targetVertsPH  - tf.matmul(intepolationMatrix, s.smplVerts), s.constraintIdPH)))
+
+        s.regularizerCostToKp = cfg.jointRegularizerWeight * tf.reduce_sum(tf.square(s.pose))
+
+        s.costICPToSparse = s.costICPToSparse + s.regularizerCostToKp
+
+        stepICPToSparse = tf.Variable(0, trainable=False)
+        s.rateICPToSparse = tf.train.exponential_decay(cfg.learnrate_ph, stepICPToSparse, cfg.lrDecayStep,
+                                                     cfg.lrDecayRate)
+        s.train_step_ICPToSparse = tf.train.AdamOptimizer(learning_rate=s.rateICPToSparse).minimize(s.costICPToSparse,
+                                                                                                global_step=stepICPToSparse)
+
+
+def toSparseFittingNewRegressorV2(frameNames, inputKeypointFolder, sparsePCObjFolder, outFolderAll, skelDataFile, toSparsePointCloudInterpoMatFile,
+                    betaFile, personalShapeFile, smplshDataFile, numbodyJoints=20, initialPoseFile=None, cfg=Config()):
+    tf.reset_default_graph()
+    os.makedirs(outFolderAll, exist_ok=True)
+
+    personalShape  = np.load(personalShapeFile) / 1000
+    interpoMat = np.load(toSparsePointCloudInterpoMatFile)
+    betas = np.load(betaFile)
+
+    if initialPoseFile is not None:
+        transl, pose, _,  = loadCompressedFittingParam(initialPoseFile, readPersonalShape=False)
+    else:
+        transl = np.zeros((3,), dtype=np.float64)
+        pose = np.zeros((3 * numbodyJoints,), dtype=np.float64)
+
+    skelData = json.load(open(skelDataFile))
+    coarseMeshPts = np.array(skelData['VTemplate'])
+    validVertsOnRestpose = np.where(coarseMeshPts[2, :] != -1)[0]
+
+    # Define Loss
+    lossPose = PoseLossBody(betas, personalShape, interpoMat, smplshDataFile)
+
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+
+    errs = []
+    loop = tqdm.tqdm(range(len(frameNames)))
+    for iF in loop:
+        frameName = frameNames[iF]
+        deformedSparseMeshFile = join(sparsePCObjFolder, 'A'+frameName.zfill(8) + '.obj')
+        outputFolderForFrame = join(outFolderAll, 'ToSparse', frameName)
+        os.makedirs(outputFolderForFrame, exist_ok=True)
+
+        # Prepare data
+        targetVerts = np.array(pv.PolyData(deformedSparseMeshFile).points, np.float64) / 1000
+        obsIds = np.where(targetVerts[:cfg.numRealCorners, 2] > 0)[0]
+        constraintIds = np.intersect1d(obsIds, validVertsOnRestpose)
+
+        # init with previous frame
+        sess.run(init, feed_dict = {lossPose.translInitPH:transl, lossPose.poseInitPH:pose})
+
+        feedDict = {lossPose.targetVertsPH:targetVerts, lossPose.constraintIdPH:constraintIds}
+        for i in range(cfg.numIterFitting):
+            sess.run(lossPose.train_step_ICPToSparse, feed_dict=feedDict)
+
+            if not i % 5:
+                errs.append(np.abs(sess.run(lossPose.costICPToSparse, feed_dict=feedDict)))
+                desc = "Iter:" + str(i) + " Cost:" + str(errs[-1]) + \
+                       ' regularizerCostToKp:' + str(sess.run(lossPose.regularizerCostToKp, )) + \
+                       ' LearningRate:' + str(sess.run(lossPose.rateICPToSparse, ))
+                loop.set_description(desc)
+
+                if errs[-1] < cfg.terminateLoss:
+                    print("Stop optimization because current loss is: ", errs[-1], ' less than: ',
+                          cfg.terminateLoss)
+                    break
+
+                if i > 0:
+                    errStep = np.abs(errs[-1] - errs[-2])
+                    if errStep < cfg.terminateLossStep:
+                        print("Stop optimization because current step is: ", errStep, ' less than: ', cfg.terminateLossStep)
+                        break
+
+        transl = sess.run(lossPose.transl)
+        pose = sess.run(lossPose.pose)
+
+        outParamFile = join(outputFolderForFrame, 'ToSparseFittingParams.npz')
+        np.savez(outParamFile, trans=transl, pose=pose, beta=betas)
+        pose = pose[:3*numbodyJoints]
+
+        outFile = join(outputFolderForFrame, 'ToSparseMesh.obj')
+        Data.write_obj(outFile, sess.run(lossPose.smplVerts) * 1000, lossPose.smplFaces)
+
+
+
+
+
 def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeFile, smplshDataFile,
                              inputDensePointCloudFile=None, initialPoseFile=None, cfg=Config()):
     tf.reset_default_graph()
