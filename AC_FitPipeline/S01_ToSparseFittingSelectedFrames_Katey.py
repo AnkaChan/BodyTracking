@@ -54,7 +54,8 @@ if __name__ == '__main__':
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\All'
+    # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\All'
+    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Rolling'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
 
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
@@ -67,7 +68,8 @@ if __name__ == '__main__':
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
     # frameNames = [str(i).zfill(5) for i in range(14946 , 17745)]
     # frameNames = [str(i).zfill(5) for i in range(16270 , 17745)]
-    frameNames = [str(i).zfill(5) for i in range(16659 , 10873)]
+    # frameNames = [str(i).zfill(5) for i in range(16659 , 17745)]
+    frameNames = [str(i).zfill(5) for i in range(17126 , 17127)] # back rolling, showing the sole
 
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
     # frameNames = ['16755']
@@ -85,15 +87,15 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.terminateLossStep = 1e-8
     cfg.toSparseFittingCfg.withFaceKp = True
 
-
+    cfg.saveDistRgb = True
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
     cfg.kpReconCfg.numMostConfidentToPick =2
     # cfg.kpReconCfg.debugFolder =
     # cfg.kpReconCfg.drawResults = False
-    cfg.kpReconCfg.drawResults = True
+    # cfg.kpReconCfg.drawResults = True
     cfg.kpReconCfg.detecHead = True
     cfg.kpReconCfg.rescale = True
-    cfg.kpReconCfg.reprojectErrThreshold = 30
+    cfg.kpReconCfg.reprojectErrThreshold = 10
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
     # preprocess
