@@ -22,7 +22,6 @@ class InputBundle():
         s.inputKpFolder = None
         s.outFolderAll = None
         s.laplacianMatFile = None
-        s.fittingParamFile = None
 
 if __name__ == '__main__':
     inputs = InputBundle()
@@ -51,12 +50,12 @@ if __name__ == '__main__':
     # cfg.toSparseFittingCfg.
 
     # params for KeteyLongSeq
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_01_01_KateyCapture\Converted'
+    inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
     # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequenceInpaintedFull2\SLap_SBiLap_True_TLap_50_JTW_5000_JBiLap_0_Step200_Overlap100\Deformed'
+    inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    # inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick'
-    inputs.outFolderAll = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\Rolling'
+    # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\All'
+    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Rolling'
     # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
 
     # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
@@ -64,12 +63,14 @@ if __name__ == '__main__':
 
     inputs.preprocessOutFolder = inputs.outFolderAll
     inputs.laplacianMatFile = r'SmplshRestposeLapMat_Katey.npy'
-    inputs.fittingParamFile = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\JumpKick\ToSparse\17438\ToSparseFittingParams_NoHH.npz'
 
-    inputs.camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
+    inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
-    # frameNames = [str(i).zfill(5) for i in range(17438 , 17439)]
-    frameNames = [str(i).zfill(5) for i in range(17126 , 17127)]
+    # frameNames = [str(i).zfill(5) for i in range(14946 , 17745)]
+    # frameNames = [str(i).zfill(5) for i in range(16270 , 17745)]
+    # frameNames = [str(i).zfill(5) for i in range(16659 , 17745)]
+    frameNames = [str(i).zfill(5) for i in range(17126 , 17127)] # back rolling, showing the sole
+
     # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
     # frameNames = ['16755']
     # frameNames = ['16755']
@@ -81,41 +82,33 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
     cfg.toSparseFittingCfg.numIterFitting = 6000
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
-    cfg.toSparseFittingCfg.withFaceKp = True
-    cfg.toSparseFittingCfg.noHandAndHead = True
-    # cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
-    cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 0
+    cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
-    cfg.toSparseFittingCfg.terminateLossStep = 1e-9
-    cfg.toSparseFittingCfg.skeletonJointsToFix = [15]
-    # cfg.toSparseFittingCfg.withFaceKp = True
-    cfg.softConstraintWeight = 10
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    cfg.toSparseFittingCfg.withFaceKp = True
 
+    cfg.saveDistRgb = True
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
+    cfg.kpReconCfg.numMostConfidentToPick =2
+    # cfg.kpReconCfg.debugFolder =
+    # cfg.kpReconCfg.drawResults = False
+    # cfg.kpReconCfg.drawResults = True
+    cfg.kpReconCfg.detecHead = True
+    cfg.kpReconCfg.rescale = True
+    cfg.kpReconCfg.reprojectErrThreshold = 10
     # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
-    cfg.kpReconCfg.numMostConfidentToPick = 5
-    # cfg.kpReconCfg.debugFolder =
-    cfg.kpReconCfg.drawResults = False
-    cfg.kpReconCfg.detecHead = True
-    # cfg.kpReconCfg.reprojectErrThreshold = 10
-
-
     # preprocess
-    # preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
-    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
-
-    figureOutHandAndHead(inputs, frameNames, cfg)
+    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_01_13_FinalAnimations\Katey_NewPipeline\LongSequence\TriangulationType1Only'
-
-    interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg)
+    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
 
 """Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
 Traceback (most recent call last):

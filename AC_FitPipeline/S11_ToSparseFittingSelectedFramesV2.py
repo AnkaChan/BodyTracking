@@ -109,13 +109,13 @@ class InputBundle():
     def __init__(s, datasetName=r'Lada_12/12/2019'):
         if datasetName == r'Lada_12/12/2019':
             s.SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-            s.skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+            s.skelDataFile = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
             s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
             s.inputDensePointCloudFile = None
-            s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
-            s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
-            s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+            s.toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+            s.personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
+            s.betaFile = r'..\Data\PersonalModel_Lada\BetaFile.npy'
 
         elif datasetName == r'Katey_01/01/2020_Remote':
             s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun'
@@ -166,12 +166,12 @@ if __name__ == '__main__':
     # Lada ground
     inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
     inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
     inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
     inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+100)]
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
 
     # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
     # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'

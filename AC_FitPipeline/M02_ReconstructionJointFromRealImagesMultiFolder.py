@@ -597,7 +597,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             os.makedirs(detectionDrawFolder, exist_ok=True)
             # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
             outResultOImgFile = join(detectionDrawFolder, Path(imgFiles[iCam]).stem + '.png')
-            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints, cfg.keypointSkeletonParentTable)
+            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints * cfg.rescaleLvl, cfg.keypointSkeletonParentTable)
 
             # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
             # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
@@ -615,15 +615,21 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
 
     # triangulate using python code
     triangulations = []
+    if len(corrs) == 0:
+        return
     for i in range(len(corrs[0])):
         camPts = []
         selectedCamProjMats = []
         confidence = []
         for iCam in range(len(camProjMats)):
-            if corrs[iCam][i][0] != -1:
-                camPts.append(corrs[iCam][i])
-                confidence.append(corrs[iCam][i][2])
-                selectedCamProjMats.append(camProjMats[iCam])
+            if i < len(corrs[iCam]):
+                # camPts.append(corrs[iCam][i])
+                # confidence.append(corrs[iCam][i][2])
+                # selectedCamProjMats.append(camProjMats[iCam])
+                if corrs[iCam][i][0] != -1:
+                    camPts.append(corrs[iCam][i])
+                    confidence.append(corrs[iCam][i][2])
+                    selectedCamProjMats.append(camProjMats[iCam])
 
         if cfg.numMostConfidentToPick != -1:
             sortedId = np.argsort(-np.array(confidence))
