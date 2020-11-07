@@ -1531,11 +1531,11 @@ def toSparseFittingNewRegressorV2(frameNames, inputKeypointFolder, sparsePCObjFo
         sess.run(init, feed_dict = {lossPose.translInitPH:transl, lossPose.poseInitPH:pose})
         errs = []
         feedDict = {lossPose.targetVertsPH: targetVerts, lossPose.constraintIdPH: constraintIds,
-                    lossPose.lrPH: cfg.learnrate_first}
+                    lossPose.lrPH: cfg.learnrate_following if iF else cfg.learnrate_first}
+        # if iF:
+        #     feedDict[lossPose.lrPH] = cfg.learnrate_following
 
         for i in range(cfg.numIterFitting):
-            if  i:
-                feedDict[lossPose.lrPH] = cfg.learnrate_following
             sess.run(lossPose.train_step_ICPToSparse, feed_dict=feedDict)
 
             if not i % 5:
