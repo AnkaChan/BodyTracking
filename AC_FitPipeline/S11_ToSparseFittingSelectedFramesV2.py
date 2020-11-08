@@ -168,12 +168,11 @@ if __name__ == '__main__':
     # frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
 
     # Lada ground
-    inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
-    inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    inputs.dataFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround'
+    inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
-    inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
+    inputs.inputKpFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\Keypoints'
+    inputs.outFolderAll = join(r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody')
 
     frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
 
@@ -199,6 +198,7 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.terminateLoss = 1e-5
     cfg.toSparseFittingCfg.terminateLossStep = 1e-10
     cfg.toSparseFittingCfg.skeletonJointsToFix = [12, 15,]
+    cfg.toSparseFittingCfg.withFaceKp = False
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
 

@@ -1790,6 +1790,8 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
         LNP = getLaplacian(inMeshFile)
     else:
         LNP = np.load(laplacianMatFile)
+
+
     # LNP
     # Define fit cost to dense point cloud
     skelData = json.load(open(skelDataFile))
@@ -1831,26 +1833,44 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     # We should interpolate displacement
     # Change this to soft soft constraint
     # nConstraints = constraintIds.shape[0]
-    for iDim in range(3):
-        x = displacement[:, iDim]
-        # # Build Constraint
-        D = partialInterpolation
-        # e = np.zeros((nConstraints, 1))
-        # for i, vId in enumerate(constraintIds):
-        #     # D[i, vId] = 1
-        #     e[i, 0] = x[i]
-        #
-        # kMat, KRes = buildKKT(LNP, D, e)
-        kMat = LNP + softConstraintWeight * D.transpose() @ D
-        KRes = softConstraintWeight * D.transpose() @ x
-        xInterpo = np.linalg.solve(kMat, KRes)
+    # for iDim in range(3):
+    #     x = displacement[:, iDim]
+    #     # # Build Constraint
+    #     D = partialInterpolation
+    #     # e = np.zeros((nConstraints, 1))
+    #     # for i, vId in enumerate(constraintIds):
+    #     #     # D[i, vId] = 1
+    #     #     e[i, 0] = x[i]
+    #     #
+    #     # kMat, KRes = buildKKT(LNP, D, e)
+    #     kMat = LNP + softConstraintWeight * D.transpose() @ D
+    #     KRes = softConstraintWeight * D.transpose() @ x
+    #     xInterpo = np.linalg.solve(kMat, KRes)
+    #
+    #     # print("Spatial Laplacian Energy:",  xInterpo[0:nDimX, 0].transpose() @ LNP @  xInterpo[0:nDimX, 0])
+    #     # wI = xInterpo[0:nDimX, 0]
+    #     # wI[nConstraints:] = 1
+    #     # print("Spatial Laplacian Energy with noise:",  wI @ LNP @  wI)
+    #
+    #     interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
 
-        # print("Spatial Laplacian Energy:",  xInterpo[0:nDimX, 0].transpose() @ LNP @  xInterpo[0:nDimX, 0])
-        # wI = xInterpo[0:nDimX, 0]
-        # wI[nConstraints:] = 1
-        # print("Spatial Laplacian Energy with noise:",  wI @ LNP @  wI)
+    D = partialInterpolation
+    # e = np.zeros((nConstraints, 1))
+    # for i, vId in enumerate(constraintIds):
+    #     # D[i, vId] = 1
+    #     e[i, 0] = x[i]
+    #
+    # kMat, KRes = buildKKT(LNP, D, e)
+    kMat = LNP + softConstraintWeight * D.transpose() @ D
+    KRes = softConstraintWeight * D.transpose() @ displacement
+    xInterpo = np.linalg.solve(kMat, KRes)
 
-        interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
+    # print("Spatial Laplacian Energy:",  xInterpo[0:nDimX, 0].transpose() @ LNP @  xInterpo[0:nDimX, 0])
+    # wI = xInterpo[0:nDimX, 0]
+    # wI[nConstraints:] = 1
+    # print("Spatial Laplacian Energy with noise:",  wI @ LNP @  wI)
+
+    interpolatedPtsDisplacement = xInterpo[0:nDimData]
 
     interpolatedVerts = smplshRestPoseVerts + interpolatedPtsDisplacement
 
