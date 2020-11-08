@@ -76,13 +76,17 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
 def toSparseFittingSelectedFrameV2(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
-    M03_ToSparseFitting.toSparseFittingNewRegressorV2(frameNames, inputs.inputKpFolder, inputs.deformedSparseMeshFolder, inputs.outFolderAll, inputs.skelDataFile, inputs.toSparsePCMat,
-                        inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=inputs.fittingParamFile, cfg=cfg.toSparseFittingCfg)
+    # M03_ToSparseFitting.toSparseFittingNewRegressorV2(frameNames, inputs.inputKpFolder, inputs.deformedSparseMeshFolder, inputs.outFolderAll, inputs.skelDataFile, inputs.toSparsePCMat,
+    #                     inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=inputs.fittingParamFile, cfg=cfg.toSparseFittingCfg)
+
+    toSparseFittingFolder = join(inputs.outFolderAll, 'ToSparse')
+    M03_ToSparseFitting.figureOutHandHeadPosesV2(frameNames, toSparseFittingFolder, inputs.inputKpFolder, inputs.SMPLSHNpzFile,
+                                                 inputs.outFolderAll, inputs.personalShapeFile, inputs.betaFile, cfg.toSparseFittingCfg)
 
 def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
     for iF in tqdm.tqdm(range(len(frameNames)), desc='Interpolating meshes: '):
         frameName = frameNames[iF]
-        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
+        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, frameName + '.obj')
 
         frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
         fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams_withHH.npz')
@@ -115,7 +119,7 @@ class InputBundle():
             s.inputDensePointCloudFile = None
             s.toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
             s.personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
-            s.betaFile = r'..\Data\PersonalModel_Lada\Beta.npy'
+            s.betaFile = r'..\Data\PersonalModel_Lada\BetaFile.npy'
 
         elif datasetName == r'Katey_01/01/2020_Remote':
             s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun'
@@ -191,7 +195,7 @@ if __name__ == '__main__':
     # cfg.toSparseFittingCfg.learnrate_ph = 0.005
     cfg.toSparseFittingCfg.lrDecayStep = 200
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
-    cfg.toSparseFittingCfg.numIterFitting = 10000
+    cfg.toSparseFittingCfg.numIterFitting = 1000
     cfg.toSparseFittingCfg.terminateLoss = 1e-5
     cfg.toSparseFittingCfg.terminateLossStep = 1e-10
     cfg.toSparseFittingCfg.skeletonJointsToFix = [12, 15,]
@@ -215,6 +219,7 @@ if __name__ == '__main__':
     os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
+
 
     # intepolate to sparse mesh
     # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
