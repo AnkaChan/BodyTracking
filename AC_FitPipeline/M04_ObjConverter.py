@@ -129,7 +129,8 @@ if __name__ == '__main__':
     # obj_dir = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
     # obj_dir = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese\Final\18411'
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
-    obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
+    # obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
+    obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitBodyOnly\ToSparse\Vis\ObjWithUV'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
     ext = 'obj'
     withMtl = True

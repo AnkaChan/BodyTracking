@@ -93,7 +93,8 @@ def convertObjFile(inFile, outFile, vts, fs, vns):
     print(len(vs))
 
 
-def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False, objWithUV=r'..\Data\TextureMap2Color\SMPLWithSocks_tri.obj'):
+def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False, objWithUV=r'..\Data\TextureMap2Color\SMPLWithSocks_tri.obj'
+                             , fileName = 'ToSparseMesh.obj'):
     if outFolder is None:
         outFolder = join(toSparseFittingFolder, 'Vis')
 
@@ -107,7 +108,7 @@ def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False,
         vs, vts, vns, fs = loadObjWithUV(objWithUV)
         for frameFolder in frameFolders:
             frameName = Path(frameFolder).stem
-            deformedObjFile = join(frameFolder, 'ToSparseMesh.obj')
+            deformedObjFile = join(frameFolder, fileName)
 
             outObj = join(outFolderObjWithUV, 'A' + frameName + '.obj')
 
@@ -119,7 +120,7 @@ def visualizeToSparseFitting(toSparseFittingFolder, outFolder=None, addUV=False,
         for frameFolder in frameFolders:
             frameName = Path(frameFolder).stem
 
-            deformedObjFile = join(frameFolder, 'ToSparseMesh.obj')
+            deformedObjFile = join(frameFolder, )
             mesh = pv.PolyData(deformedObjFile)
             mesh.save(join(outFolder, 'A' + frameName + '.ply'))
 
@@ -303,9 +304,10 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 
 if __name__ == '__main__':
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
-    toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'
-    toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'
-    visualizeToSparseFitting(toSparseFittignFolder, addUV=True)
+    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'
+    # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'
+    toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitBodyOnly\ToSparse'
+    visualizeToSparseFitting(toSparseFittignFolder, addUV=True, )
 
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\ToSparse'
     # finalFittingFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
@@ -314,7 +316,8 @@ if __name__ == '__main__':
 
     # kpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
     # # visualizeToSparseFitting(kpFolder, addUV=False)
-    # Visualization.obj2vtkFolder(kpFolder)
+    kpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
+    Visualization.obj2vtkFolder(kpFolder)
     #
     # sparseMeshFOdler = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
     # # visualizeToSparseFitting(sparseMeshFOdler, addUV=False)
