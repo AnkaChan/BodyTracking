@@ -300,9 +300,52 @@ def renderConsecutiveFrames(inFramesFolder, cleanPlateFolder, inTextureMeshFile,
 
             imageio.imsave(outRenderedFile, (255*img).astype(np.uint8))
 
+def removeHeadAndHandFaces():
+    pass
+def findDeletedFaces(partialMesh, completeMesh, ):
+    partialMesh = pv.PolyData(partialMesh)
+    completeMesh = pv.PolyData(completeMesh)
+
+    partialMeshFaces = np.copy(np.array(partialMesh.faces.reshape((-1, 4))))
+    completeMeshFaces = np.copy(np.array(completeMesh.faces.reshape((-1, 4))))
+
+    partialMeshPoints = np.copy(np.array(partialMesh.points))
+    completeMeshPoints = np.copy(np.array(completeMesh.points))
+
+    faceCentersPartial = set()
+    for iFPartial in range(partialMeshFaces.shape[0]):
+        # faceDiff = partialMesh.points[partialMeshFaces[iFPartial, 1:], :] - completeMesh.points[completeMeshFaces[iF, 1:], :]
+        faceCentersPartial.add( tuple(np.mean(partialMeshPoints[partialMeshFaces[iFPartial, 1:], :], axis=0)))
+        # faceDiff = np.mean(partialMeshPoints[partialMeshFaces[iFPartial, 1:], :], axis=0) - np.mean(
+        #     completeMeshPoints[completeMeshFaces[iF, 1:], :], axis=0)
+        #
+        # if np.sum(np.abs(faceDiff)) < 1e-3:
+        #     print('Face on suit')
+        #     inPartialMesh = True
+        #     break
+
+    validFaces = []
+    for iF in tqdm.tqdm(range(completeMeshFaces.shape[0])):
+        fc =tuple(np.mean( completeMeshPoints[completeMeshFaces[iF, 1:], :], axis=0))
+
+        if fc in faceCentersPartial:
+            # print('Face on suit')
+            validFaces.append(iF)
+
+    assert len(validFaces) == partialMeshFaces.shape[0]
+
+    return validFaces
+
 
 
 if __name__ == '__main__':
+    # completeMesh = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\TextureMap2Color\SMPLWithSocks_tri.obj'
+    # partialMesh = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\TextureMap2Color\SMPLWithSocks_tri_OnlySuit.obj'
+    # validFaces = findDeletedFaces(partialMesh, completeMesh)
+    #
+    # json.dump(validFaces, open('FacesOnlySuit.json', 'w'))
+    # exit()
+
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\ToSparse'
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'
     # toSparseFittignFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\ToSparse'

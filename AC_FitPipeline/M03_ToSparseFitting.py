@@ -1778,7 +1778,7 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
 
 def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
     handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
-    numRealCorners = 1487, fixHandAndHead = True, faces=None):
+    numRealCorners = 1487, fixHandAndHead = True, ):
     handIndices = json.load(open(handIndicesFile))
     headIndices = json.load(open(HeadIndicesFile))
 
@@ -1792,7 +1792,6 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
         LNP = getLaplacian(inMeshFile)
     else:
         LNP = np.load(laplacianMatFile)
-
 
     # LNP
     # Define fit cost to dense point cloud
@@ -1875,7 +1874,9 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     # deformedSMPLSH.points = interpolatedVerts
     # deformedSMPLSH.save(outInterpolatedFile)
 
-    Data.write_obj(outInterpolatedFile, interpolatedVerts, faces)
+    # Data.write_obj(outInterpolatedFile, interpolatedVerts, faces)
+    deformedSMPLSH.points = interpolatedVerts
+    deformedSMPLSH.save(outInterpolatedFile)
 
 def getPersonalShapeFromInterpolation(inMeshFile, inSparseCloud, inFittingParamFile, outInterpolatedObjFile, outFittingParamFileWithPS,
     skelDataFile, interpoMatFile, laplacianMatFile=None, smplshData=r'..\SMPL_reimp\SmplshModel_m.npz',\
