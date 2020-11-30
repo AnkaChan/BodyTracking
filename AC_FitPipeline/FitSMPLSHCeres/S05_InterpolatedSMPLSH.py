@@ -6,13 +6,23 @@ from M04_ObjConverter import *
 import tqdm
 
 if __name__ == '__main__':
-    inputDeformedSmplshFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Fit\WithPBS'
-    inputCoarseMeshFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Final_Smoothed1'
-    outFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Interpolated'
-
     inputs = InputBundle()
-    inputs.laplacianMatFile = 'SmplshRestposeLapMat_Lada.npy'
 
+    # inputDeformedSmplshFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Fit\WithPBS'
+    # inputCoarseMeshFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Final_Smoothed1'
+    # outFolder = r'F:\WorkingCopy2\2020_11_11_TestSMPLSHCeresFit\Interpolated'
+
+    # inputDeformedSmplshFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Fit\Lada_Stand\WithPBS'
+    # inputCoarseMeshFolder = r'F:\WorkingCopy2\2020_01_22_FinalAnimations\Animations\Lada_Stand\Final_Smoothed1'
+    # outFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Interpolated\Lada_Stand'
+    # inputs.laplacianMatFile = 'SmplshRestposeLapMat_Lada.npy'
+
+    inputDeformedSmplshFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Fit\Katey_Stand\WithPBS'
+    inputCoarseMeshFolder =  r'F:\WorkingCopy2\2020_01_22_FinalAnimations\Animations\Katey_LongSeq\Final_Smoothed1'
+    outFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Interpolated\Katey_LongSeq'
+    inputs.laplacianMatFile = 'SmplshRestposeLapMat_Katey.npy'
+
+    os.makedirs(outFolder)
     deformedMeshFiles = sortedGlob(join(inputDeformedSmplshFolder, '*.ply'))
     coarseMeshFiles = sortedGlob(join(inputCoarseMeshFolder, '*.vtk'))
 
