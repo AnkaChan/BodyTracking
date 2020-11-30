@@ -12,19 +12,31 @@ def padOnes(mat):
 if __name__ == '__main__':
     # What is needed: SMPLSH data
     # Registration Matrix
+    # for Lada
+    # SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+    # toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+    # registrationTIdFile = r'..\Data\PersonalModel_Lada\InterpolationTriId.npy'
+    # registrationBarysFile = r'..\Data\PersonalModel_Lada\InterpolationBarys.npy'
+    # toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+    # betaFile =  r'..\Data\PersonalModel_Lada\BetaFile.npy'
+    # personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
+    # smplshMeshFile = r'..\Data\PersonalModel_Lada\FinalMesh.obj'
+    # smplshMeshQuadFile = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad_xyzOnly.obj'
+    # # the initial Skel data
+    # outSkelDataName = r'..\Data\PersonalModel_Lada\SmplshSkelData\01_SmplshSkelData_Lada.json'
+    # coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
-    SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-    toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
-    registrationTIdFile = r'..\Data\PersonalModel_Lada\InterpolationTriId.npy'
-    registrationBarysFile = r'..\Data\PersonalModel_Lada\InterpolationBarys.npy'
-    toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
-    betaFile =  r'..\Data\PersonalModel_Lada\BetaFile.npy'
-    personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
-    smplshMeshFile = r'..\Data\PersonalModel_Lada\FinalMesh.obj'
+    # for Katey
+    SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
+    toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
+    betaFile =  r'..\Data\KateyBodyModel\beta.npy'
+    personalShapeFile = r'..\Data\KateyBodyModel\PersonalShape.npy'
+    smplshMeshFile = r'..\Data\KateyBodyModel\BodyMesh\Initial\Katey.obj'
     smplshMeshQuadFile = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad_xyzOnly.obj'
     # the initial Skel data
-    outSkelDataName = r'..\Data\PersonalModel_Lada\SmplshSkelData\01_SmplshSkelData_Lada.json'
-    coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    outSkelDataName = r'..\Data\KateyBodyModel\SmplshSkelData\01_SmplshSkelData_Katey.json'
+    coarseSkelData = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
+
     badVerts = getBadRestposeVerts(coarseSkelData)
 
     # data = np.load(model_path)
@@ -81,6 +93,8 @@ if __name__ == '__main__':
         fId += 1
 
       facesQuad.append(face)
+
+    json.dump(facesQuad, open('SMPLSHQuadFaces.json', 'w'), indent=2)
 
     numJoints = jointLocations.shape[0]
     registrationVids = []

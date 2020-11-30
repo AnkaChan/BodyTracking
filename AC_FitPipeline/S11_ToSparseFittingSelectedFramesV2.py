@@ -76,8 +76,8 @@ def preprocessSelectedFrame(dataFolder, frameNames, camParamF, outFolder, cfg=Co
 def toSparseFittingSelectedFrameV2(inputs, frameNames, cfg=Config()):
     json.dump(cfg.toSparseFittingCfg.__dict__, open(join(inputs.outFolderAll, 'Cfg.json'), 'w'))
 
-    # M03_ToSparseFitting.toSparseFittingNewRegressorV2(frameNames, inputs.inputKpFolder, inputs.deformedSparseMeshFolder, inputs.outFolderAll, inputs.skelDataFile, inputs.toSparsePCMat,
-    #                     inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=inputs.fittingParamFile, cfg=cfg.toSparseFittingCfg)
+    M03_ToSparseFitting.toSparseFittingNewRegressorV2(frameNames, inputs.inputKpFolder, inputs.deformedSparseMeshFolder, inputs.outFolderAll, inputs.skelDataFile, inputs.toSparsePCMat,
+                        inputs.betaFile, inputs.personalShapeFile, inputs.SMPLSHNpzFile, initialPoseFile=inputs.fittingParamFile, cfg=cfg.toSparseFittingCfg)
 
     toSparseFittingFolder = join(inputs.outFolderAll, 'ToSparse')
     M03_ToSparseFitting.figureOutHandHeadPosesV2(frameNames, toSparseFittingFolder, inputs.inputKpFolder, inputs.SMPLSHNpzFile,
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
     inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
-    inputs.outFolderAll = join(inputs.dataFolder, 'FitBodyOnly')
+    inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')
     inputs.laplacianMatFile = 'SmplshRestposeLapMat_Lada.npy'
 
     frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
     os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    # toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
+    toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
     interpolateToSparseMeshSelectedFrame(inputs, frameNames)

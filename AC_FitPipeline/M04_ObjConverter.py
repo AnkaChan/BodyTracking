@@ -5,7 +5,7 @@ import pyvista as pv
 from os.path import join
 import json
 
-vt_path = r'..\Data\TextureMap\SMPLWithSocks_tri.obj'
+vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_tri.obj'
 vts = []
 fs = []
 vns = []
@@ -30,6 +30,7 @@ with open(vt_path, 'r') as f:
                 fs_curr.append(fi)
             fs.append(fs_curr)
     f.close()
+# fs = json.load(open('SMPLSHQuadFaces.json'))
 # print(len(vns))
 # print(len(vs))
 # print(len(vts))
