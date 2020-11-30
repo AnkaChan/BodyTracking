@@ -86,11 +86,14 @@ def toSparseFittingSelectedFrameV2(inputs, frameNames, cfg=Config()):
 def interpolateToSparseMeshSelectedFrame(inputs, frameNames, cfg=Config()):
     for iF in tqdm.tqdm(range(len(frameNames)), desc='Interpolating meshes: '):
         frameName = frameNames[iF]
-        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, frameName + '.obj')
+        deformedSparseMeshFile = join(inputs.deformedSparseMeshFolder, 'A'+frameName.zfill(8) + '.obj')
 
         frameFittingFolder = join(inputs.outFolderAll, 'ToSparse', frameName)
-        fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams_withHH.npz')
-        fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh_withHH.obj')
+        # fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams_withHH.npz')
+        # fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh_withHH.obj')
+
+        fitParamFile = join(frameFittingFolder, 'ToSparseFittingParams.npz')
+        fittedMeshFile = join(frameFittingFolder, 'ToSparseMesh.obj')
         outInterpolatedMeshFile = join(frameFittingFolder, 'InterpolatedMesh.obj')
         outInterpolatedParamsFile = join(frameFittingFolder, 'InterpolatedParams.npz')
 
@@ -168,11 +171,13 @@ if __name__ == '__main__':
     # frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564 + 50)]
 
     # Lada ground
-    inputs.dataFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround'
-    inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
+    inputs.outFolderAll = inputs.dataFolder
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    inputs.inputKpFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\Keypoints'
-    inputs.outFolderAll = join(r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody')
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
+    inputs.outFolderAll = join(inputs.dataFolder, 'FitBodyOnly')
+    inputs.laplacianMatFile = 'SmplshRestposeLapMat_Lada.npy'
 
     frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
 
@@ -198,7 +203,6 @@ if __name__ == '__main__':
     cfg.toSparseFittingCfg.terminateLoss = 1e-5
     cfg.toSparseFittingCfg.terminateLossStep = 1e-10
     cfg.toSparseFittingCfg.skeletonJointsToFix = [12, 15,]
-    cfg.toSparseFittingCfg.withFaceKp = False
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
 
@@ -218,8 +222,7 @@ if __name__ == '__main__':
 
     os.makedirs(inputs.outFolderAll, exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
-
+    # toSparseFittingSelectedFrameV2(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    interpolateToSparseMeshSelectedFrame(inputs, frameNames)

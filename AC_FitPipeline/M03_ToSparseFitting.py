@@ -19,6 +19,8 @@ import tensorflow as tf
 import vtk
 from pathlib import Path
 from SkelFit import Visualization
+from pypardiso import spsolve
+from scipy import sparse
 
 from CGAL.CGAL_Kernel import Point_3
 from CGAL.CGAL_Kernel import Triangle_3
@@ -1776,7 +1778,7 @@ def toSparseFittingKeypoints(inputKeypoints, outFolder, betaFile, personalShapeF
 
 def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpolatedFile, skelDataFile, interpoMatFile, laplacianMatFile=None, \
     handIndicesFile = r'HandIndices.json', HeadIndicesFile = 'HeadIndices.json', softConstraintWeight = 100,
-    numRealCorners = 1487, fixHandAndHead = True, faces=None):
+    numRealCorners = 1487, fixHandAndHead = True, ):
     handIndices = json.load(open(handIndicesFile))
     headIndices = json.load(open(HeadIndicesFile))
 
@@ -1790,7 +1792,6 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
         LNP = getLaplacian(inMeshFile)
     else:
         LNP = np.load(laplacianMatFile)
-
 
     # LNP
     # Define fit cost to dense point cloud
@@ -1855,16 +1856,12 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     #     interpolatedPtsDisplacement[:, iDim] = xInterpo[0:nDimData]
 
     D = partialInterpolation
-    # e = np.zeros((nConstraints, 1))
-    # for i, vId in enumerate(constraintIds):
-    #     # D[i, vId] = 1
-    #     e[i, 0] = x[i]
-    #
-    # kMat, KRes = buildKKT(LNP, D, e)
+
     kMat = LNP + softConstraintWeight * D.transpose() @ D
     KRes = softConstraintWeight * D.transpose() @ displacement
-    xInterpo = np.linalg.solve(kMat, KRes)
+    # xInterpo = np.linalg.solve(kMat, KRes)
 
+    xInterpo = spsolve(sparse.csr_matrix(kMat), KRes)
     # print("Spatial Laplacian Energy:",  xInterpo[0:nDimX, 0].transpose() @ LNP @  xInterpo[0:nDimX, 0])
     # wI = xInterpo[0:nDimX, 0]
     # wI[nConstraints:] = 1
@@ -1877,7 +1874,9 @@ def interpolateWithSparsePointCloudSoftly(inMeshFile, inSparseCloud, outInterpol
     # deformedSMPLSH.points = interpolatedVerts
     # deformedSMPLSH.save(outInterpolatedFile)
 
-    Data.write_obj(outInterpolatedFile, interpolatedVerts, faces)
+    # Data.write_obj(outInterpolatedFile, interpolatedVerts, faces)
+    deformedSMPLSH.points = interpolatedVerts
+    deformedSMPLSH.save(outInterpolatedFile)
 
 def getPersonalShapeFromInterpolation(inMeshFile, inSparseCloud, inFittingParamFile, outInterpolatedObjFile, outFittingParamFileWithPS,
     skelDataFile, interpoMatFile, laplacianMatFile=None, smplshData=r'..\SMPL_reimp\SmplshModel_m.npz',\

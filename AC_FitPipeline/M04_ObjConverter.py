@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import pyvista as pv
 from os.path import join
-
+import json
 
 vt_path = r'..\Data\TextureMap\SMPLWithSocks_tri.obj'
 vts = []
@@ -36,7 +36,7 @@ with open(vt_path, 'r') as f:
 # print(len(fs))
 
 
-def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=False, withMtl = False,  textureFile=''):
+def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=False, withMtl = False,  textureFile='', facesOnSuit=None):
     os.makedirs(out_dir, exist_ok=True)
 
     in_paths = glob.glob(obj_dir + '/*.' + ext)
@@ -47,10 +47,10 @@ def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=Fals
         else:
             out_path = out_dir + '/{}.obj'.format(obj_name)
 
-        convertObjFile(in_path, out_path, convertToMM, withMtl=withMtl, textureFile=textureFile)
+        convertObjFile(in_path, out_path, convertToMM, withMtl=withMtl, textureFile=textureFile, facesToPreserve=facesOnSuit)
 
 
-def convertObjFile(inFile, outFile, convertToMM=False, withMtl=False, textureFile=None):
+def convertObjFile(inFile, outFile, convertToMM=False, withMtl=False, textureFile=None, facesToPreserve=None):
     # obj_name = in_path.split('\\')[-1]
 
     extName = Path(inFile).suffix
@@ -105,9 +105,11 @@ map_Kd '''
 
         if withMtl:
             f.write('usemtl material_0\n')
-        for face in fs:
+        for iF in range(len(fs)):
+            if facesToPreserve is not None and iF not in facesToPreserve:
+                continue
             f.write('f')
-            for fi in face:
+            for fi in fs[iF]:
                 f.write(' {}'.format(fi))
             f.write('\n')
         f.close()
@@ -129,8 +131,15 @@ if __name__ == '__main__':
     # obj_dir = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Final\Mesh'
     # obj_dir = r'F:\WorkingCopy2\2020_08_27_KateyBodyModel\InitialSilhouetteFitting_NoGlassese\Final\18411'
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
-    obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
+    # obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
+    # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\Vis\ObjWithUV'
+    obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
+
+    # facesFile = 'FacesOnlySuit.json'
+    # facesOnSuit = set(json.load(open(facesFile)))
+    facesOnSuit = None
+
     ext = 'obj'
     withMtl = True
     rename = False
@@ -144,7 +153,8 @@ if __name__ == '__main__':
                 # print(plyF, newFileName)
 
     out_dir = os.path.join(obj_dir, 'WithTextureCoord')
-    converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture)
+    converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture, facesOnSuit=facesOnSuit)
+
     objFilesToPly(out_dir, join(obj_dir, 'PlyWithTextureCoord'))
 
     # inFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
