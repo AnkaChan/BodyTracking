@@ -449,11 +449,19 @@ def getFirstPersonKp(kpData):
 
     return bodyKeyPoints
 
-def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None):
+def detectKeyPoints(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None, opWrapper=None):
+
+
     params = dict()
     params["model_folder"] = cfg.openposeModelDir
     params["face"] = cfg.detecHead
     params["hand"] = cfg.detectHand
+
+    if opWrapper is None:
+        opWrapper = op.WrapperPython()
+        opWrapper.configure(params)
+        opWrapper.start()
+
 
     numBodypts = 25
     numHandpts = 21
@@ -507,9 +515,7 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
     #     undistImgFiles = glob.glob(join(undistImageFolder, '*.' + cfg.extName))
     # else:
     #     undistImgFiles = glob.glob(join(inFolder, '*.' + cfg.extName))
-    opWrapper = op.WrapperPython()
-    opWrapper.configure(params)
-    opWrapper.start()
+
 
     corrs = []
 
@@ -563,11 +569,11 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
             else:
                 faceKeyPoints = np.zeros((numBodypts, 3))
 
-            keypoints = np.vstack([keypoints,faceKeyPoints])
+            keypoints = np.vstack([keypoints, faceKeyPoints])
 
         if cfg.rescale:
-            goodKpIds = np.where(keypoints[:,0]>=0)[0]
-            keypoints[goodKpIds,:2] = keypoints[goodKpIds,:2]/cfg.rescaleLvl
+            goodKpIds = np.where(keypoints[:, 0] >= 0)[0]
+            keypoints[goodKpIds, :2] = keypoints[goodKpIds, :2] / cfg.rescaleLvl
 
         camParam = camParams[iCam]
         fx = camParam['fx']
@@ -575,29 +581,49 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
         cx = camParam['cx']
         cy = camParam['cy']
         intrinsic_mtx = np.array([
-                [fx, 0.0, cx, ],
-                [0.0, fy, cy],
-                [0.0, 0.0, 1],
+            [fx, 0.0, cx, ],
+            [0.0, fy, cy],
+            [0.0, 0.0, 1],
         ], dtype=np.float32)
         undistortParameter = np.array([camParam['k1'], camParam['k2'], camParam['p1'], camParam['p2'],
-                                           camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']], dtype=np.float32)
+                                       camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']],
+                                      dtype=np.float32)
         keypointsPadded = keypoints[:, None, :2]
         if cfg.doUndist:
-            keypointsPaddedUndist = cv2.undistortPoints(keypointsPadded, intrinsic_mtx, undistortParameter, P=intrinsic_mtx)
+            keypointsPaddedUndist = cv2.undistortPoints(keypointsPadded, intrinsic_mtx, undistortParameter,
+                                                        P=intrinsic_mtx)
             keypointsPaddedUndist = np.squeeze(keypointsPaddedUndist)
         else:
             keypointsPaddedUndist = np.squeeze(np.squeeze(keypointsPadded))
 
         keypointsPaddedUndist[np.where(keypoints[:, 0] == -1)[0], :] = [-1, -1]
 
-        corrs.append(np.hstack([keypointsPaddedUndist, keypoints[:,2:3]]).tolist())
+        corrs.append(np.hstack([keypointsPaddedUndist, keypoints[:, 2:3]]).tolist())
 
         if cfg.drawResults:
             detectionDrawFolder = join(debugFolder, 'Detection')
             os.makedirs(detectionDrawFolder, exist_ok=True)
             # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
             outResultOImgFile = join(detectionDrawFolder, Path(imgFiles[iCam]).stem + '.png')
-            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints * cfg.rescaleLvl, cfg.keypointSkeletonParentTable)
+            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints * cfg.rescaleLvl,
+                          cfg.keypointSkeletonParentTable)
+
+    return corrs
+
+def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None):
+    camParams, camNames = Camera.loadCamParams(calibrationDataFile)
+
+    camProjMats = []
+    for iCam in range(len(camParams)):
+        camParam = camParams[iCam]
+        I, E = Camera.calibrationParamsToIEMats(camParam, True)
+
+        projMat = I @ E
+        # pts2D = Triangulation.projectPoints(mesh.points, projMat)
+        # pts2Ds.append(pts2D)
+        camProjMats.append(projMat)
+
+    corrs = detectKeyPoints(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg, debugFolder)
 
             # outResultOImgWithSkelFile = join(folderKeypointsWithSkel, Path(imgF).stem + '.png')
             # drawKeyPoints(outResultOImgWithSkelFile, datum.cvOutputData, keypoints)
