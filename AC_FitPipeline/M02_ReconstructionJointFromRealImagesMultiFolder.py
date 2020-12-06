@@ -451,7 +451,6 @@ def getFirstPersonKp(kpData):
 
 def detectKeyPoints(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None, opWrapper=None):
 
-
     params = dict()
     params["model_folder"] = cfg.openposeModelDir
     params["face"] = cfg.detecHead
@@ -605,7 +604,9 @@ def detectKeyPoints(imgFiles, outTriangulationObjFile, calibrationDataFile, cfg=
             os.makedirs(detectionDrawFolder, exist_ok=True)
             # outResultOImgFile = join(folderKeypoints, Path(imgF).stem + '.pdf')
             outResultOImgFile = join(detectionDrawFolder, Path(imgFiles[iCam]).stem + '.png')
-            drawKeyPoints(outResultOImgFile, imageToProcess, keypoints * cfg.rescaleLvl,
+            if cfg.rescale:
+                keypointsScaled = keypoints * cfg.rescaleLvl
+            drawKeyPoints(outResultOImgFile, imageToProcess, keypointsScaled,
                           cfg.keypointSkeletonParentTable)
 
     return corrs

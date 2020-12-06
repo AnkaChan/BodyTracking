@@ -130,7 +130,8 @@ if __name__ == '__main__':
     cfg = Config()
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
-    cfg.kpReconCfg.drawResults = True
+    # cfg.kpReconCfg.drawResults = True
+    cfg.kpReconCfg.rescale = True
     detectKeypointsOnSelectedFrame(inputs.inputImgDataFolder, frameNames, inputs.camParamF, inputs.inputKpFolder, cfg)
 
     # to sparse fitting
