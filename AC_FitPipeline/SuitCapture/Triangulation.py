@@ -108,7 +108,8 @@ def mulCamsRansac(controlPts, camProjMats, computeErrOnAllCam=True):
             if bestErr > reprojErr or bestErr < 0:
                 bestErr = reprojErr
                 bestX = X
-        reprojErrs = computeReprojErrMultiCam(X, controlPts, camProjMats)
+        # reprojErrs = computeReprojErrMultiCam(X, controlPts, camProjMats)
+        reprojErrs = computeReprojErrMultiCam(bestX, controlPts, camProjMats)
 
         reprojErrsS = sorted(reprojErrs)
         q1, q3 = np.percentile(reprojErrsS, [25, 75])

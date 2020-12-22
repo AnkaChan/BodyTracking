@@ -688,6 +688,87 @@ def reconstructKeypoints2(imgFiles, outTriangulationObjFile, calibrationDataFile
     # outTriangulationObjFile = join(reconFolder, "PointCloud.obj")
     write_obj(outTriangulationObjFile, triangulations)
 
+def triangulateKeypoints(corrs, outTriangulationObjFile, calibrationDataFile, cfg=Config(), debugFolder=None, imgs=None, doUndist=False):
+    camParams, camNames = Camera.loadCamParams(calibrationDataFile)
+
+    if doUndist:
+        for iCam in range(len(corrs)):
+            camParam = camParams[iCam]
+            fx = camParam['fx']
+            fy = camParam['fy']
+            cx = camParam['cx']
+            cy = camParam['cy']
+            intrinsic_mtx = np.array([
+                [fx, 0.0, cx, ],
+                [0.0, fy, cy],
+                [0.0, 0.0, 1],
+            ], dtype=np.float32)
+            undistortParameter = np.array([camParam['k1'], camParam['k2'], camParam['p1'], camParam['p2'],
+                                           camParam['k3'], camParam['k4'], camParam['k5'], camParam['k6']],
+                                          dtype=np.float32)
+            keypoints = np.array(corrs[iCam])
+            keypointsPadded = keypoints[:, None, :2]
+            keypointsPaddedUndist = cv2.undistortPoints(keypointsPadded, intrinsic_mtx, undistortParameter,
+                                                        P=intrinsic_mtx)
+            keypointsPaddedUndist = np.squeeze(keypointsPaddedUndist)
+
+            keypointsPaddedUndist[np.where(keypoints[:, 0] == -1)[0], :] = [-1, -1]
+            corrs[iCam] = np.hstack([keypointsPaddedUndist, keypoints[:, 2:3]]).tolist()
+
+    camProjMats = []
+    for iCam in range(len(camParams)):
+        camParam = camParams[iCam]
+        I, E = Camera.calibrationParamsToIEMats(camParam, True)
+
+        projMat = I @ E
+        # pts2D = Triangulation.projectPoints(mesh.points, projMat)
+        # pts2Ds.append(pts2D)
+        camProjMats.append(projMat)
+
+    # triangulate using python code
+    triangulations = []
+    if len(corrs) == 0:
+        return
+    for i in range(len(corrs[0])):
+        camPts = []
+        selectedCamProjMats = []
+        confidence = []
+        for iCam in range(len(camProjMats)):
+            if i < len(corrs[iCam]):
+                # camPts.append(corrs[iCam][i])
+                # confidence.append(corrs[iCam][i][2])
+                # selectedCamProjMats.append(camProjMats[iCam])
+                if corrs[iCam][i][0] != -1:
+                    camPts.append(corrs[iCam][i])
+                    confidence.append(corrs[iCam][i][2])
+                    selectedCamProjMats.append(camProjMats[iCam])
+
+        if cfg.numMostConfidentToPick != -1:
+            sortedId = np.argsort(-np.array(confidence))
+            # print(sortedId)
+            selecedIds = sortedId[:cfg.numMostConfidentToPick]
+            camPts = [camPts[i] for i in selecedIds]
+            selectedCamProjMats = [selectedCamProjMats[i] for i in selecedIds]
+
+        try:
+            keyPoint3D, errs = Triangulation.mulCamsRansac(camPts, selectedCamProjMats, computeErrOnAllCam=True)
+
+            # print(errs.shape[0], errs)
+
+            if np.mean(errs) < cfg.reprojectErrThreshold:
+                triangulations.append(keyPoint3D)
+            else:
+                triangulations.append([0, 0, -1])
+        except:
+            triangulations.append([0, 0, -1])
+
+    if cfg.drawReconstructedKeypoints:
+        for iCam, (img, imgF) in enumerate(zip(imgs, imgFiles)):
+            outResultOImgFile = join(debugFolder, Path(imgF).stem + '.png')
+            project3DKeypoints(outResultOImgFile, img, camProjMats[iCam], triangulations, cfg.keypointSkeletonParentTable)
+
+    write_obj(outTriangulationObjFile, triangulations)
+
 if __name__ == '__main__':
     inParentFolder = r'Z:\shareZ\2019_12_13_Lada_Capture\Converted'
     outFolder = r'Z:\shareZ\2019_12_13_Lada_Capture\KeyPoints'

@@ -6,6 +6,7 @@ import smplsh_np
 import numpy as np
 import pyvista as pv
 from SkelFit.Data import *
+from M03_ToSparseFitting import vertex_ids, VertexToOpJointsConverter
 
 def padOnes(mat):
     return np.vstack([mat, np.ones((1, mat.shape[1]))])
@@ -13,29 +14,29 @@ if __name__ == '__main__':
     # What is needed: SMPLSH data
     # Registration Matrix
     # for Lada
-    # SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-    # toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
-    # registrationTIdFile = r'..\Data\PersonalModel_Lada\InterpolationTriId.npy'
-    # registrationBarysFile = r'..\Data\PersonalModel_Lada\InterpolationBarys.npy'
-    # toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
-    # betaFile =  r'..\Data\PersonalModel_Lada\BetaFile.npy'
-    # personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
-    # smplshMeshFile = r'..\Data\PersonalModel_Lada\FinalMesh.obj'
-    # smplshMeshQuadFile = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad_xyzOnly.obj'
-    # # the initial Skel data
-    # outSkelDataName = r'..\Data\PersonalModel_Lada\SmplshSkelData\01_SmplshSkelData_Lada.json'
-    # coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
-
-    # for Katey
-    SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
-    toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
-    betaFile =  r'..\Data\KateyBodyModel\beta.npy'
-    personalShapeFile = r'..\Data\KateyBodyModel\PersonalShape.npy'
-    smplshMeshFile = r'..\Data\KateyBodyModel\BodyMesh\Initial\Katey.obj'
+    SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
+    toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+    registrationTIdFile = r'..\Data\PersonalModel_Lada\InterpolationTriId.npy'
+    registrationBarysFile = r'..\Data\PersonalModel_Lada\InterpolationBarys.npy'
+    toSparsePCMat = r'..\Data\PersonalModel_Lada\InterpolationMatrix.npy'
+    betaFile =  r'..\Data\PersonalModel_Lada\BetaFile.npy'
+    personalShapeFile = r'..\Data\PersonalModel_Lada\PersonalShape.npy'
+    smplshMeshFile = r'..\Data\PersonalModel_Lada\FinalMesh.obj'
     smplshMeshQuadFile = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad_xyzOnly.obj'
     # the initial Skel data
-    outSkelDataName = r'..\Data\KateyBodyModel\SmplshSkelData\01_SmplshSkelData_Katey.json'
-    coarseSkelData = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
+    outSkelDataName = r'..\Data\PersonalModel_Lada\SmplshSkelData\01_SmplshSkelData_Lada.json'
+    coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+
+    # for Katey
+    # SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
+    # toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
+    # betaFile =  r'..\Data\KateyBodyModel\beta.npy'
+    # personalShapeFile = r'..\Data\KateyBodyModel\PersonalShape.npy'
+    # smplshMeshFile = r'..\Data\KateyBodyModel\BodyMesh\Initial\Katey.obj'
+    # smplshMeshQuadFile = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad_xyzOnly.obj'
+    # # the initial Skel data
+    # outSkelDataName = r'..\Data\KateyBodyModel\SmplshSkelData\01_SmplshSkelData_Katey.json'
+    # coarseSkelData = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
 
     badVerts = getBadRestposeVerts(coarseSkelData)
 
@@ -109,6 +110,69 @@ if __name__ == '__main__':
         registrationVids[iBadVert] = [-1,-1,-1]
         barys[iBadVert] = [0,0,0]
     # barys[badVerts, :] = 0
+
+    # add hand and head regressor
+    body_mapping = np.array([52, 12, 17, 19, 21, 16, 18, 20, 0, 2, 5,
+                             8, 1, 4, 7, 53, 54, 55, 56, 57, 58, 59,
+                             60, 61, 62], dtype=np.int32)
+    mapping = [body_mapping]
+    lhand_mapping = np.array([20, 34, 35, 36, 63, 22, 23, 24, 64,
+                              25, 26, 27, 65, 31, 32, 33, 66, 28,
+                              29, 30, 67], dtype=np.int32)
+    rhand_mapping = np.array([21, 49, 50, 51, 68, 37, 38, 39, 69,
+                              40, 41, 42, 70, 46, 47, 48, 71, 43,
+                              44, 45, 72], dtype=np.int32)
+    mapping += [lhand_mapping, rhand_mapping]
+    # mapps all smplsh joints to openpose
+    smplshToOpenposeMapper = np.concatenate(mapping)
+    jMap = VertexToOpJointsConverter()
+
+    numOPKps = 67
+    numSMPLSHJoints = 52
+    extra_joints_vIdxs = jMap.jSelector.extra_joints_idxs
+    # VertexToOpJointsConverter maps smplsh mesh and joints directly to the openpose keypoints
+    # smplshToOpenposeMapper repermutates tf.concat([joints, extra_joints], axis=1) to openpose joints
+    # where extra_joints is pick from mesh vertices by: jMap.jSelector.extra_joints_idxs
+
+    smplshAllJointsMap = []
+    for iP in range(numOPKps):
+        smplshKpId = smplshToOpenposeMapper[iP]
+        opKpId = iP
+        if smplshKpId < numSMPLSHJoints:
+            smplshAllJointsMap.append({'type':'Joint', 'map':[smplshKpId, opKpId]})
+        else:
+            vId = extra_joints_vIdxs[smplshKpId-numSMPLSHJoints]
+            smplshAllJointsMap.append({'type': 'Vertex', 'map': [vId, opKpId]})
+
+
+    # 2 parts: 1. smplsh joints to Openpose 2. smplsh vertices to Openpose:
+    # 1. smplsh joints to Openpose
+    #   all smplsh joints: joints = tf.concat([joints, extra_joints], axis=1)
+    #   1.a: smplsh joint-joints
+    # print('here')
+    smplshJoint2KpMap = []
+    smplshVertex2KpMap = []
+
+    for mp in smplshAllJointsMap:
+        if mp['type'] == 'Joint':
+            smplshJoint2KpMap.append(mp['map'])
+        else:
+            assert mp['type'] == 'Vertex'
+            smplshVertex2KpMap.append(mp['map'])
+
+    print('smplshJoint2KpMap:\n', smplshJoint2KpMap)
+    print('smplshVertex2KpMap:\n', smplshVertex2KpMap)
+
+    # visualize correspondence
+    # need input smplsh mesh, smplsh joints, and op keypoits
+    inputPose = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\PersonalModel_Lada\FittingParam.npz'
+    # pose = np.loadz
+    fitParam = np.load(inputPose)
+    transInit = fitParam['trans']
+    poseInit = fitParam['pose']
+    betaInit = fitParam['beta']
+    smplsh.set_params(trans=transInit, pose=poseInit, beta = betaInit)
+    smplsh.update()
 
     skelData = {
         'VTemplate': padOnes(1000 * vTemplate.transpose()).tolist(),

@@ -6,11 +6,12 @@ import tqdm
 import json
 
 if __name__ == '__main__':
-    triangulateFolder = r'F:\WorkingCopy2\2020_03_18_LadaAnimationWholeSeq\WholeSeq\TriangulationType1Only'
+    triangulateFolder = r'F:\WorkingCopy2\2020_01_16_Lada_FinalAnimations\WholeSeq\TriangulationType1Only'
 
     errFiles = sortedGlob(join(triangulateFolder, '*.json'))
-
     allErrs = []
+
+    log_x = False
 
     for errF in tqdm.tqdm(errFiles):
         errs = json.load(open(errF))['Errs']
@@ -31,14 +32,17 @@ if __name__ == '__main__':
             'size': 20}
 
     matplotlib.rc('font', **font)
-
     n_bins = 200
+
     hist, bins, _ = plt.hist(allErrs, bins=n_bins)
-    logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
-    plt.figure()
-    plt.hist(allErrs, bins=logbins)
-    plt.xscale('log')
-    plt.yscale('log')
+
+    if log_x:
+        plt.figure()
+        logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
+        plt.hist(allErrs, bins=logbins)
+
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.xlabel('Reprojection Errors')
     plt.ylabel('Number of Points (in pixel)')
     plt.show()

@@ -14,6 +14,7 @@ from pathlib import Path
 import tqdm
 import copy
 import sys
+import pyvista as pv
 
 class Config:
     def __init__(s):
@@ -81,19 +82,6 @@ def detectKeypointsOnSelectedFrame(dataFolder, frameNames, camParamF, outFolder,
         outFrameFolder = join(outFolderUndist, frameName)
         os.makedirs(outFrameFolder, exist_ok=True)
 
-        rgbUndistFrameFiles = []
-        # for iCam, inImgF in enumerate(inImgFilesCurFrame):
-        #     outImgFile = join(outFrameFolder, Path(inImgF).stem + '.png')
-        #     if cfg.saveDistRgb:
-        #         outFrameFolderDist = join(outFolderDist, frameName)
-        #         os.makedirs(outFrameFolderDist, exist_ok=True)
-        #         outImgFileDist = join(outFrameFolderDist, Path(inImgF).stem + '.png')
-        #     else:
-        #         outImgFileDist = None
-        #
-        #     if cfg.converImg:
-        #         M01_Preprocessing.preprocessImg(inImgF, outImgFile, camParams[iCam], outImgFileDist)
-
         rgbUndistFrameFiles = sortedGlob(join(outFrameFolder,  '*.png'))
 
         outKpFile = join(outFolderKp, frameName + '.json')
@@ -105,6 +93,24 @@ def detectKeypointsOnSelectedFrame(dataFolder, frameNames, camParamF, outFolder,
         corrs = M02_ReconstructionJointFromRealImagesMultiFolder.detectKeyPoints(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, debugFolder, opWrapper=opWrapper)
 
         json.dumps({'Keypoints2D':corrs, 'ImageFiles':rgbUndistFrameFiles, 'cfg':cfg.kpReconCfg.__dict__})
+
+def triangulateKeypointsOnSelectedFrame(keypointsFolder, frameNames, camParamF, outFolder, cfg=Config(),):
+    visFolder = join(outFolder, 'Vis')
+    os.makedirs(visFolder, exist_ok=True)
+
+    for iF in tqdm.tqdm(range(len(frameNames)), desc='Preprocessing: '):
+        frameName = frameNames[iF]
+        keyFile = join(keypointsFolder, frameName + '.json')
+        corrs = json.load(open(keyFile))['Keypoints2D']
+        out3DKpFile = join(outFolder, 'A'+frameName+'.obj')
+
+        # M02_ReconstructionJointFromRealImagesMultiFolder.triangulateKeypoints(corrs, out3DKpFile, camParamF, cfg, doUndist=False)
+        M02_ReconstructionJointFromRealImagesMultiFolder.triangulateKeypoints(corrs, out3DKpFile, camParamF, cfg.kpReconCfg, doUndist=True)
+
+        # Viusalization
+        outVisFile = join(visFolder, 'A'+frameName+'.ply')
+        kp = pv.PolyData(out3DKpFile)
+        kp.save(outVisFile)
 
 
 class InputBundle():
@@ -122,16 +128,19 @@ if __name__ == '__main__':
     inputs = InputBundle()
 
     # Lada ground
-    inputs.inputImgDataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Preprocessed'
-    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
+    inputs.inputImgDataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Preprocessed'
+    inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
 
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(8564, 8564+200)]
+    frameNames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
 
     cfg = Config()
     cfg.converImg = False
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
     # cfg.kpReconCfg.drawResults = True
     cfg.kpReconCfg.rescale = True
-    detectKeypointsOnSelectedFrame(inputs.inputImgDataFolder, frameNames, inputs.camParamF, inputs.inputKpFolder, cfg)
+    cfg.kpReconCfg.numMostConfidentToPick = 6
+    # detectKeypointsOnSelectedFrame(inputs.inputImgDataFolder, frameNames, inputs.camParamF, inputs.inputKpFolder, cfg)
+
+    triangulateKeypointsOnSelectedFrame(inputs.inputKpFolder, frameNames, inputs.camParamF, inputs.inputKpFolder, cfg)
 
     # to sparse fitting

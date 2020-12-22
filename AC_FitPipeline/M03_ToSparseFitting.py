@@ -578,7 +578,9 @@ class VertexToOpJointsConverter:
         s.joint_mapper = JointMapper(jointMap)
 
     def __call__(s, smplshVerts, smplshJoints):
+        # convert smplsh to multiple joints (more than openpose keypoints)
         allJoints = s.jSelector(smplshVerts, smplshJoints)
+        # convert all the joints to the same format of openpose, using joint mapper
         joint_mapped = s.joint_mapper(allJoints)
 
         return joint_mapped
