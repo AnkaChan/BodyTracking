@@ -6,15 +6,20 @@ import tqdm
 import json
 
 if __name__ == '__main__':
-    triangulateFolder = r'F:\WorkingCopy2\2020_01_16_Lada_FinalAnimations\WholeSeq\TriangulationType1Only'
+    # triangulateFolder = r'F:\WorkingCopy2\2020_01_16_Lada_FinalAnimations\WholeSeq\TriangulationType1Only'
+    # triangulateFolder = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithoutConsis'
+    triangulateFolder = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsis'
+    # triangulateFolder = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsisRansac'
 
-    errFiles = sortedGlob(join(triangulateFolder, '*.json'))
+    errFiles = sortedGlob(join(triangulateFolder, '*.json'))[:100]
     allErrs = []
 
     log_x = False
+    # log_x = True
 
     for errF in tqdm.tqdm(errFiles):
-        errs = json.load(open(errF))['Errs']
+        # errs = json.load(open(errF))['Errs']
+        errs = json.load(open(errF))
         for err in errs:
             allErrs.extend(err)
 
@@ -32,7 +37,7 @@ if __name__ == '__main__':
             'size': 20}
 
     matplotlib.rc('font', **font)
-    n_bins = 200
+    n_bins = 1000
 
     hist, bins, _ = plt.hist(allErrs, bins=n_bins)
 
@@ -42,7 +47,7 @@ if __name__ == '__main__':
         plt.hist(allErrs, bins=logbins)
 
     # plt.xscale('log')
-    # plt.yscale('log')
+    plt.yscale('log')
     plt.xlabel('Reprojection Errors')
     plt.ylabel('Number of Points (in pixel)')
     plt.show()
