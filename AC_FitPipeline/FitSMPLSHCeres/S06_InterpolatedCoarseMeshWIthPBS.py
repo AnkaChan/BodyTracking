@@ -117,7 +117,7 @@ if __name__ == '__main__':
     cfg.spatialBiLap = True
     cfg.meshInterpolationCfg.usePoseBlendShape = True
     # cfg.tw = 0
-    cfg.meshInterpolationCfg.tw = 50
+    cfg.tw = 50
     # cfg.meshInterpolationCfg.tw = 100 # for Yoga
 
     # cfg.meshInterpolationCfg.interpolationSegLength = 100
@@ -127,13 +127,13 @@ if __name__ == '__main__':
     # cfg.meshInterpolationCfg.interpolationSegLength = 200
     # cfg.meshInterpolationCfg.interpolationOverlappingLength = 100
 
-    cfg.meshInterpolationCfg.interpolationSegLength = 500
-    cfg.meshInterpolationCfg.interpolationOverlappingLength = 200
+    cfg.interpolationSegLength = 500
+    cfg.interpolationOverlappingLength = 200
 
     # cfg.meshInterpolationCfg.jointTCW = 1
-    cfg.meshInterpolationCfg.poseChangeRegularizerWeight = 200
+    cfg.poseChangeRegularizerWeight = 200
     # cfg.meshInterpolationCfg.jointTCW = 10000 # for Ground Motion
     # cfg.meshInterpolationCfg.jointTCW = 2000 # for Stand Motion
-    cfg.meshInterpolationCfg.jointTCW = 5000  # for Long Sequence Katey Moti
+    cfg.jointTCW = 5000  # for Long Sequence Katey Moti
 
     interpolateCoarseMeshOnRestpose(inPoseFile, inTargetJsonFile, outputDataFolder, skelFile, inOriginalRestPoseMesh, inOriginalRestPoseQuadMesh, cfg)
