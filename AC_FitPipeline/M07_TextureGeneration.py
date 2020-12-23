@@ -204,6 +204,8 @@ class Config:
         s.lapLossWeight = 0.2
         s.lossType = 'L1'
 
+        s.savePlot = True
+
 
 
 def gen_target_images(device, render_data, image_size):
@@ -891,7 +893,7 @@ def plot_3(out_dir, i, N, img_name, cam_idx, image_curr, image_target):
 
 
 
-def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_plate_dir, contour_dir, out_dir, cfg=Config()):
+def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_plate_dir, contour_dir, out_dir, showImg=True, cfg=Config()):
     print('Meshes:')
     mesh_paths = []
     for img_name in frameNames:
@@ -933,19 +935,20 @@ def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_p
     clean_plates_original, clean_plates_undistort, clean_plates = load_clean_plates(clean_plate_dir, cfg)
 
     # Check contour masks
-    for img_name, img_ref in img_refs.items():
-        for cam_idx in range(len(img_ref)):
-            target_img = img_ref[cam_idx]
-            cnt = contours[img_name][cam_idx]
+    if showImg:
+        for img_name, img_ref in img_refs.items():
+            for cam_idx in range(len(img_ref)):
+                target_img = img_ref[cam_idx]
+                cnt = contours[img_name][cam_idx]
 
-            plt.figure(figsize=(10, 10))
-            plt.imshow(cv2.flip(target_img, -1))
-            plt.imshow(cnt, alpha=0.5, cmap='gray')
-            plt.title('{}.pgm | cam={} | {}, {}, ({:.2f}, {:.2f})'.format(img_name, cam_idx, cnt.shape, cnt.dtype,
-                                                                          np.min(cnt), np.max(cnt)))
-            plt.show()
+                plt.figure(figsize=(10, 10))
+                plt.imshow(cv2.flip(target_img, -1))
+                plt.imshow(cnt, alpha=0.5, cmap='gray')
+                plt.title('{}.pgm | cam={} | {}, {}, ({:.2f}, {:.2f})'.format(img_name, cam_idx, cnt.shape, cnt.dtype,
+                                                                              np.min(cnt), np.max(cnt)))
+                plt.show()
+                break
             break
-        break
 
     n_forwards = len(cam_params) * len(frameNames)
     n_batch = n_forwards // cfg.batch_size
@@ -996,14 +999,15 @@ def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_p
         # clean plates
         img1 = clean_plates_undistort[i]
         img2 = clean_plates[i]
-        fig, ax = plt.subplots(1, 2, figsize=(50, 50))
-        ax[0].imshow(img1, cmap='gray')
-        ax[0].set_title('undistorted')
-        ax[1].imshow(img2, cmap='gray')
-        ax[1].set_title('undistorted & cropped')
-        ax[1].invert_yaxis()
-        ax[1].invert_xaxis()
-        plt.show()
+        if showImg:
+            fig, ax = plt.subplots(1, 2, figsize=(50, 50))
+            ax[0].imshow(img1, cmap='gray')
+            ax[0].set_title('undistorted')
+            ax[1].imshow(img2, cmap='gray')
+            ax[1].set_title('undistorted & cropped')
+            ax[1].invert_yaxis()
+            ax[1].invert_xaxis()
+            plt.show()
         break
 
     lapOperator = Laplacian().to(device)
@@ -1013,7 +1017,8 @@ def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_p
     texture_map_Lap = lapOperator(texture_map_NCWH)
 
     texture_map_Lap = texture_map_Lap.permute(0, 2, 3, 1)
-    plt.imshow(texture_map_Lap.detach().cpu().numpy()[0, ...])
+    if showImg:
+        plt.imshow(texture_map_Lap.detach().cpu().numpy()[0, ...])
 
     print("Initial Laplacian loss: ", torch.mean(texture_map_Lap ** 2))
 
@@ -1134,7 +1139,7 @@ def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_p
         images_last = images.copy()
         targets_last = targets.copy()
 
-        if save_plot:
+        if save_plot and cfg.savePlot:
             out_idx = 0
             texturemap = model.texture_map.clone().squeeze().detach().cpu().numpy()
             img_name = model.batch_dict['img_name'][out_idx]
@@ -1175,5 +1180,11 @@ def learnTexture(cam_path, mesh_dir, frameNames, device, undist_img_dir, clean_p
             break
 
     # save texturemap
+    texturemap_out = (
+            255.0 * np.clip(model.texture_map.detach().squeeze().cpu().numpy(), a_min=0, a_max=1.0)).astype(
+        np.uint8)
+    im = Image.fromarray(texturemap_out)
+    im.save(out_dir + '/texturemap_learned' + '_LapW' + str(cfg.lapLossWeight) + "_Mask" + str(
+        cfg.useContour) + '_' + cfg.lossType + '.png', dpi=(600, 600))
     texels_np = model.texture_map.clone().detach().cpu().numpy()
     np.save(out_dir + '/texturemap.npy', texels_np)

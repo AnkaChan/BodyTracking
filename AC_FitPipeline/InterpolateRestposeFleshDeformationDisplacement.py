@@ -8,12 +8,17 @@ import scipy.sparse.linalg
 import time
 import subprocess
 
+import random
+from iglhelpers import *
+import pyvista as pv
+
 from pypardiso import spsolve
 from SkelFit import Data
 from SkelFit import Visualization
 from SkelFit.PoseBlendShape import *
 
 import shutil
+import os
 
 def makeTemporalLaplacainBlock(dim):
     TL = sparse.lil_matrix((3 * dim, 3 * dim))
@@ -384,6 +389,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence2DifferentMesh(restPoseTa
 def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(restPoseTarget, inSkelDataFile, inFaceMeshPath, outFolder, interpolationOverlappingLength = 30,
                                                         interpolationSegLength=100, tw=1, interval=[], inputExt = 'obj', chunkedInput=False, blendOverlapping=True, spatialLap=True,
                                                         poseBlendShape=None, quaternions=None, spatialBiLap = False, spatialLapFromSkelData=True):
+    import pyigl  as igl
     os.makedirs(outFolder, exist_ok=True)
 
     shutil.copy(inSkelDataFile, join(outFolder, 'SkelData.json'))

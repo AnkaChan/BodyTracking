@@ -7,10 +7,9 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 import numpy as np
 import scipy.sparse as sparse
+import pyigl as igl
 
 def p2e(m):
-    import pyigl as igl
-
     if isinstance(m, np.ndarray):
         if not (m.flags['C_CONTIGUOUS'] or m.flags['F_CONTIGUOUS']):
             raise TypeError('p2e support either c-order or f-order')
@@ -42,8 +41,6 @@ def p2e(m):
 
 
 def e2p(m):
-    import pyigl as igl
-
     if isinstance(m, igl.eigen.MatrixXd):
         return np.array(m, dtype='float64', order='C')
     elif isinstance(m, igl.eigen.MatrixXi):

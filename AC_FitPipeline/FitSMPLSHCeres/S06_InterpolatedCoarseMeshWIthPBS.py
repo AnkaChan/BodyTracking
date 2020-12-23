@@ -115,7 +115,7 @@ if __name__ == '__main__':
     cfg.visualizeInitialFit = True
     cfg.spatialLap = True
     cfg.spatialBiLap = True
-    cfg.meshInterpolationCfg.usePoseBlendShape = True
+    cfg.usePoseBlendShape = True
     # cfg.tw = 0
     cfg.tw = 50
     # cfg.meshInterpolationCfg.tw = 100 # for Yoga
