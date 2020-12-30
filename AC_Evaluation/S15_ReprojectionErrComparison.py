@@ -25,15 +25,23 @@ if __name__ == '__main__':
     triangulateFolderWithoutConsis = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithoutConsis'
     triangulateFolderWithConsis = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsis'
     triangulateFolderConsisRansac = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsisRansac'
+    maxX = -1
+    # errsWithoutConsis = loadALlErrs(triangulateFolderWithoutConsis)
+    # errsWithConsis = loadALlErrs(triangulateFolderWithConsis)
+    # errsConsisRansac = loadALlErrs(triangulateFolderConsisRansac)
 
-    errsWithoutConsis = loadALlErrs(triangulateFolderWithoutConsis)
-    errsWithConsis = loadALlErrs(triangulateFolderWithConsis)
-    errsConsisRansac = loadALlErrs(triangulateFolderConsisRansac)
+    # json.dump(errsWithoutConsis, open('errsWithoutConsis.json', 'w'))
+    # json.dump(errsWithConsis, open('errsWithConsis.json', 'w'))
+    # json.dump(errsConsisRansac, open('errsConsisRansac.json', 'w'))
 
-    json.dump(errsWithoutConsis, open('errsWithoutConsis.json', 'w'))
-    json.dump(errsWithConsis, open('errsWithConsis.json', 'w'))
-    json.dump(errsConsisRansac, open('errsConsisRansac.json', 'w'))
+    errsWithoutConsis = json.load(open('errsWithoutConsis.json'))
+    errsWithConsis = json.load(open('errsWithConsis.json'))
+    errsConsisRansac = json.load(open('errsConsisRansac.json'))
 
+    if maxX > 0:
+        errsWithoutConsis = np.array(errsWithoutConsis)[np.where(np.array(errsWithoutConsis) < maxX)].tolist()
+        errsWithConsis = np.array(errsWithConsis)[np.where(np.array(errsWithConsis) < maxX)].tolist()
+        errsConsisRansac = np.array(errsConsisRansac)[np.where(np.array(errsConsisRansac) < maxX)].tolist()
 
     # p_95 = np.percentile(allErrs, 95)  # return 50th percentile, e.g median.
     # p_99 = np.percentile(allErrs, 99)  # return 50th percentile, e.g median.
@@ -48,7 +56,7 @@ if __name__ == '__main__':
             # 'weight': 'bold',
             'size': 20}
 
-    # matplotlib.rc('font', **font)
+    matplotlib.rc('font', **font)
     # n_bins = 1000
     #
     # hist, bins, _ = plt.hist(allErrs, bins=n_bins)
@@ -71,7 +79,7 @@ if __name__ == '__main__':
     # plt.hist(errsConsisRansac, **kwargs, color='r', label='With Consistency Check+ RANSAC')
     largeErrIds = ['Without Consistency Check', 'With Consistency Check', 'With Consistency Check+ RANSAC']
     errs = np.array([errsWithoutConsis, errsWithConsis, errsConsisRansac]).transpose()
-    plt.hist(errs, 50, density=True, histtype='bar', color=['g', 'b', 'r'], label=largeErrIds)
+    plt.hist(errs, 50,  histtype='bar', color=['g', 'b', 'r'], label=largeErrIds)
     plt.yscale('log')
     plt.gca().set(title='Reprojection errors', ylabel='Errs')
     # plt.xlim(0, 75)

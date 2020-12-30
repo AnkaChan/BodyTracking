@@ -1494,6 +1494,115 @@ GE3'''
 codeDictOldWithStar = ['1', '2', '3', '4', '5', '6', '7', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'J', 'K', 'L',
                                'M', 'P', 'Q', 'R', 'T', 'U', 'V', 'Y', '*']
 
+characterToDigit = {character:iC for iC, character in enumerate(codeDictOldWithStar)}
+
+def readProcessJsonFile(file):
+    data = json.load(open(file))
+
+    corners = data['corners']
+
+    codes = data['code']
+    accetped_qi = data['accept_qi']
+    numCodes = len(codes)
+
+    cornerKeys = [[] for i in range(len(corners))]
+    cornerKeysConfidence = [[] for i in range(len(corners))]
+    for iQuad in range(numCodes):
+        code = codes[iQuad]
+        qi = accetped_qi[iQuad]
+
+        quadIndex = 0
+        for iC in qi:
+            cornerKeys[iC].append(code+str(quadIndex))
+            quadIndex += 1
+            probablity1 = np.exp(data['recog_dens4a'][iQuad])/np.sum(np.exp(data['recog_dens4a'][iQuad]))
+            probablity2 = np.exp(data['recog_dens4b'][iQuad])/np.sum(np.exp(data['recog_dens4b'][iQuad]))
+
+            characterDigit1 = characterToDigit[code[0]]
+            characterDigit2 = characterToDigit[code[1]]
+            cornerKeysConfidence[iC].append(probablity1[characterDigit1]*probablity2[characterDigit2])
+
+    return cornerKeys, cornerKeysConfidence
+
+
+
+
+
+class CornerLabeler:
+    def __init__(s, CIDList=CIDList1487):
+        s.labelingFunction = {}
+        allCornerKeys = CIDList.split('\n')
+        s.numCorners = 0
+        for cId, cornerKey in enumerate(allCornerKeys):
+            if cornerKey != '':
+                s.numCorners += 1
+                singleKeys = cornerKey.split(' ')
+                for singleKey in singleKeys:
+                    s.labelingFunction[singleKey] = cId
+
+    def labelCorners(s, cornerkeys, consistencyCheckScheme='discard', cornerKeysConfidence=None):
+        cornerIds = []
+        cornerConf = []
+        for iC, cornerKey in enumerate(cornerkeys):
+            if len(cornerKey) == 1:
+                cornerIds.append(s.labelingFunction.get(cornerKey[0], -1))
+                if cornerKeysConfidence is not None and consistencyCheckScheme == 'maxConfidence':
+                    cornerConf.append(cornerKeysConfidence[iC][0])
+            elif len(cornerKey) == 2:
+                if consistencyCheckScheme == 'discard':
+                    uId1 = s.labelingFunction.get(cornerKey[0], -1)
+                    uId2 = s.labelingFunction.get(cornerKey[1], -1)
+
+                    if uId1 == uId2:
+                        cornerIds.append(uId1)
+                    else:
+                        cornerIds.append(-1)
+
+                elif consistencyCheckScheme == 'maxConfidence':
+                    uId1 = s.labelingFunction.get(cornerKey[0], -1)
+                    uId2 = s.labelingFunction.get(cornerKey[1], -1)
+
+                    if cornerKeysConfidence[iC][0] > cornerKeysConfidence[iC][1]:
+                        cornerIds.append(uId1)
+                        cornerConf.append(cornerKeysConfidence[iC][0] )
+                    else:
+                        cornerIds.append(uId2)
+                        cornerConf.append(cornerKeysConfidence[iC][1])
+
+            else:
+                cornerIds.append(-1)
+                cornerConf.append(0)
+
+        if consistencyCheckScheme == 'discard':
+            return cornerIds
+        elif consistencyCheckScheme == 'maxConfidence':
+            return cornerIds, cornerConf
+
+    def cornerUIdsToCorrList(s, corners, cornerUIds, cornerConf=None):
+        corrs = [[-1,-1] for i in range(s.numCorners)]
+        corrConfs = [0 for i in range(s.numCorners)]
+        if cornerConf is None:
+            for iC, corner in enumerate(corners):
+                if cornerUIds[iC] != -1:
+                    corrs[cornerUIds[iC]] = corner
+        else:
+            for iC, corner in enumerate(corners):
+                uId = cornerUIds[iC]
+                if uId != -1:
+                    if corrs[uId][0] == -1:
+                        corrs[uId] = corner
+                        corrConfs[uId] = cornerConf[iC]
+                    else:
+                        if corrConfs[uId] < cornerConf[iC]:
+                            corrs[uId] = corner
+                            corrConfs[uId] = cornerConf[iC]
+
+        return corrs
+
+
+
+
+
 class CornerLabelData:
     def __init__(self, labelFile, imgFile, cropSize = 50, checkSingleLabeledCorners = True, inCornerData=None):
         self.cropSize = cropSize
@@ -1575,3 +1684,5 @@ def getCodeSet2(CIDList = CIDList1487):
 
     return codeSet
 
+if __name__ == '__main__':
+    labeler = CornerLabeler()

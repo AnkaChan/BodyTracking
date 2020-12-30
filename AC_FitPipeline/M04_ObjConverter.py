@@ -5,7 +5,9 @@ import pyvista as pv
 from os.path import join
 import json
 
-vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_tri.obj'
+# vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_tri.obj'
+vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad.obj'
+
 vts = []
 fs = []
 vns = []
@@ -134,7 +136,8 @@ if __name__ == '__main__':
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\09_PipelineALL\Data\ObjWithTexture'
     # obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
     # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\Vis\ObjWithUV'
-    obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
+    # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
+    obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
 
     # facesFile = 'FacesOnlySuit.json'
@@ -142,7 +145,8 @@ if __name__ == '__main__':
     facesOnSuit = None
 
     ext = 'obj'
-    withMtl = True
+    # withMtl = True
+    withMtl = False
     rename = False
     plyFiles = glob.glob(join(obj_dir, '*.' + ext))
     if rename:

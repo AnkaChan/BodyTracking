@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
-    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
     # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
