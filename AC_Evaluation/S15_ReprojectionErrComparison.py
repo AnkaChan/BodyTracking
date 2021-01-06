@@ -77,6 +77,7 @@ if __name__ == '__main__':
     # plt.hist(errsWithoutConsis, **kwargs, color='g', label='Without Consistency Check')
     # plt.hist(errsWithConsis, **kwargs, color='b', label='With Consistency Check')
     # plt.hist(errsConsisRansac, **kwargs, color='r', label='With Consistency Check+ RANSAC')
+
     largeErrIds = ['Without Consistency Check', 'With Consistency Check', 'With Consistency Check+ RANSAC']
     errs = np.array([errsWithoutConsis, errsWithConsis, errsConsisRansac]).transpose()
     plt.hist(errs, 50,  histtype='bar', color=['g', 'b', 'r'], label=largeErrIds)

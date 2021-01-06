@@ -7,7 +7,7 @@ import cv2
 
 def computeOpticalFlowNorm(flow, sil):
     foregroundPixels = np.where(sil)
-    flowMag = np.sqrt(flow[:, :, 0] ** 2 + flowlbs[:, :, 1] ** 2)
+    flowMag = np.sqrt(flow[:, :, 0] ** 2 + flow[:, :, 1] ** 2)
     avgFlowNorm = np.mean(flowMag[foregroundPixels])
 
     return avgFlowNorm
@@ -100,8 +100,8 @@ if __name__ == '__main__':
 
     figure = plt.figure('CorrespondenceAccuracy')
     plt.plot(t, avgFlowMagsLBSToTP, label = 'Pure LBS - Keypoinits + Tracking Points')
-    plt.plot(t, avgFlowMagsLBSToDense, label = 'Pure LBS - Keypoinits + OpenMVS Point Clouds')
-    plt.plot(t, avgFlowMagsIntpl, label = 'DTI - Keypoinits + Tracking Points')
+    # plt.plot(t, avgFlowMagsLBSToDense, label = 'Pure LBS - Keypoinits + OpenMVS Point Clouds')
+    # plt.plot(t, avgFlowMagsIntpl, label = 'DTI - Keypoinits + Tracking Points')
     plt.plot(t, avgFlowMagsFinal, label = 'DTI + DTF - Keypoinits + Tracking Points')
     plt.xlabel('Frames')
     plt.ylabel('Avg Optical Flow Norm')
