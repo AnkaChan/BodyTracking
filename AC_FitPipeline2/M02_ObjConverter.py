@@ -55,32 +55,48 @@ def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=Fals
         convertObjFile(in_path, out_path, convertToMM, withMtl=withMtl, textureFile=textureFile, facesToPreserve=facesOnSuit)
 
 
-def removeVertsFromMeshFolder(inFolder,  outFolder, vertIdsToRemove, exampleMesh, extName='ply'):
+def removeVertsFromMeshFolder(inFolder,  outFolder, vertIdsToRemove, exampleMesh, inExtName='ply', outExtName='ply',  removeVerts=True):
     os.makedirs(outFolder, exist_ok=True)
-    inFiles = glob.glob(join(inFolder, '*.'+extName))
+
+    vertIdsToRemove = set(vertIdsToRemove)
+    exampleMesh = pv.PolyData(exampleMesh)
+    faces = retrieveFaceStructure(exampleMesh)
+    vertIds = list(range(exampleMesh.points.shape[0]))
+
+    if removeVerts:
+        for iV in vertIdsToRemove:
+            vertIds.remove(iV)
+
+        vertToOldId = {vId: iV for iV, vId in enumerate(vertIds)}
+        faces = retrieveFaceStructure(exampleMesh)
+        newFaces = [[vertToOldId[iFV] for iFV in faces[iF]] for iF in range(len(faces)) if
+                    np.all([iV not in vertIdsToRemove for iV in faces[iF]])]
+    else:
+        newFaces = [faces[iF] for iF in range(len(faces)) if np.all([iV not in vertIdsToRemove for iV in faces[iF]])]
+
+    inFiles = glob.glob(join(inFolder, '*.'+inExtName))
     for inFile in tqdm.tqdm(inFiles, desc='Removing Faces'):
         fileName = Path(inFile).stem
-        outFile = join(outFolder, fileName+'.'+extName)
+        outFile = join(outFolder, fileName+'.'+outExtName)
 
-        vertIdsToRemove = set(vertIdsToRemove)
-        exampleMesh = pv.PolyData(exampleMesh)
-        faces = retrieveFaceStructure(exampleMesh)
-        newFaces = [faces[iF] for iF in range(len(faces)) if np.all([iV not in vertIdsToRemove for iV in faces[iF]])]
-        removeVertsFromMesh(inFile, outFile, vertIdsToRemove, exampleMesh, newFaces=newFaces)
+        removeVertsFromMesh(inFile, outFile, vertIds, exampleMesh, newFaces=newFaces)
 
-
-def removeVertsFromMesh(inMesh, outMesh, vertIdsToRemove, exampleMesh, newFaces=None):
+def removeVertsFromMesh(inMesh, outMesh, vertIdsToKeep, exampleMesh, newFaces=None, removeVerts=True):
     inMesh = pv.PolyData(inMesh)
 
     # newVerts = [inMesh.points[iV] for iV in range(inMesh.points.shape[0]) if iV not in vertIdsToRemove]
-    newVerts = [inMesh.points[iV] for iV in range(inMesh.points.shape[0]) ]
+    if removeVerts:
+        newVerts = inMesh.points[vertIdsToKeep, :].tolist()
+    else:
+        newVerts = [inMesh.points[iV] for iV in range(inMesh.points.shape[0]) ]
 
     if newFaces is not None:
         newFacesFlattern = flattenFaces(newFaces)
     else:
         exampleMesh = pv.PolyData(exampleMesh)
         faces = retrieveFaceStructure(exampleMesh)
-        newFaces = [faces[iF] for iF in range(len(faces)) if np.all([iV in vertIdsToRemove for iV in faces[iF]])]
+        vertToOldId = {vId: iV for iV, vId in enumerate(vertIdsToKeep)}
+        newFaces = [[vertToOldId[iFV] for iFV in faces[iF]] for iF in range(len(faces)) if np.all([iV in vertIdsToKeep for iV in faces[iF]])]
         newFacesFlattern = flattenFaces(newFaces)
 
     newMesh = pv.PolyData(np.array(newVerts), np.array(newFacesFlattern))
@@ -171,12 +187,13 @@ if __name__ == '__main__':
     # obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
     # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\Vis\ObjWithUV'
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
-    obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
-    texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
 
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', 'ply'))
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', 'ply'))
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', 'ply'))
+    # obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
+    # texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
+    #
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', 'ply'))
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', 'ply'))
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', 'ply'))
 
     # facesFile = 'FacesOnlySuit.json'
     # facesOnSuit = set(json.load(open(facesFile)))
@@ -203,3 +220,15 @@ if __name__ == '__main__':
     # inFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
     # outFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\FinalMesh.obj'
     # convertObjFile(inFile, outFile)
+
+    from SkelFit.Data import getIsolatedVerts
+    inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Interpolated\Test'
+    headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
+    handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
+    exampleQuadMesh = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\Complete_withHeadHand_XYZOnly.obj'
+    headVIds = json.load(open(headVIdsFile))
+    handVIds = json.load(open(handVIdsFile))
+    isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
+    vertsToRemove = set(headVIds + handVIds + isolatedPoints)
+
+    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh)

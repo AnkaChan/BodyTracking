@@ -4,6 +4,8 @@ import matplotlib
 from Utility import *
 import tqdm
 import json
+from matplotlib.gridspec import GridSpec
+
 
 def loadALlErrs(errFolder):
     errFiles = sortedGlob(join(errFolder, '*.json'))[:100]
@@ -26,7 +28,7 @@ if __name__ == '__main__':
     triangulateFolderWithConsis = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsis'
     triangulateFolderConsisRansac = r'F:\WorkingCopy2\2020_12_22_ReconstructionEvaluation\Recon\WithConsisRansac'
 
-    outFolder = r'outout/S16_ReprojErrsAnalysis'
+    outputFolder = r'output/S16_ReprojErrsAnalysis'
 
     # errsWithoutConsis = loadALlErrs(triangulateFolderWithoutConsis)
     # errsWithConsis = loadALlErrs(triangulateFolderWithConsis)
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     log_x = False
     # log_x = True
 
-    os.makedirs(outFolder, exist_ok=True)
+    os.makedirs(outputFolder, exist_ok=True)
     for errF in tqdm.tqdm(errFiles):
         # errs = json.load(open(errF))['Errs']
         errs = json.load(open(errF))
@@ -67,9 +69,11 @@ if __name__ == '__main__':
     print('p_999:', p_999)
     print('p_9999:', p_9999)
 
-    font = {'family': 'normal',
+    font = {
+            # 'family': 'normal',
             # 'weight': 'bold',
-            'size': 20}
+            # 'size': 20
+    }
 
     matplotlib.rc('font', **font)
     # n_bins = 1000
@@ -88,15 +92,22 @@ if __name__ == '__main__':
     # plt.show()
 
     kwargs = dict(alpha=0.5, bins=200, stacked=True)
+    # fig = plt.figure(constrained_layout=True, tight_layout=True)
+    plt.rcParams["figure.figsize"] = (6, 2.5)  # (w, h)
+    fig = plt.figure(constrained_layout=True, tight_layout=True)
+    gs = GridSpec(1, 1, figure=fig)
 
-    plt.hist(errsWithoutConsis, **kwargs, color='b', label='Without outlier filtering')
+    # linear
+    plt.hist(errsWithoutConsis, **kwargs, color='b', label='Without outlier filtering', rwidth=1)
     # plt.hist(errsWithConsis, **kwargs, color='b', label='With Consistency Check')
-    plt.hist(errsConsisRansac, **kwargs, color='r', label='With outlier filtering')
+    plt.hist(errsConsisRansac, **kwargs, color='r', label='With outlier filtering', rwidth=5)
     plt.yscale('log')
-    plt.gca().set(title='Reprojection errors', ylabel='Errs')
-    # plt.xlim(0, 75)
+    # plt.xscale('log')
+    plt.gca().set(ylabel='Bin count', xlabel='(a) Reprojection error of 3D reconstruction [pixels]')
+    plt.ylim([0, 1e5])
+    plt.xlim([0, 300])
     plt.legend();
-    plt.savefig(join(outFolder, 'ReprojErrsCompr.png'), dpi=300)
+    plt.savefig(join(outputFolder, 'ReprojErrsCompr.png'), dpi=400, bbox_inches="tight")
     plt.show()
 
     errsConsisRansacCutoff = []
@@ -104,14 +115,40 @@ if __name__ == '__main__':
         if err< reprojErrCutoff:
             errsConsisRansacCutoff.append(err)
 
-    plt.figure('ReprojErrWithOutlierLessThan'+str(reprojErrCutoff))
-    # plt.hist(errsConsisRansacCutoff, **kwargs, color='r', label='With outlier filtering')
-    plt.hist(errsConsisRansacCutoff, **kwargs, label='With outlier filtering')
-    plt.xlim(0, reprojErrCutoff)
-    plt.yscale('log')
-    plt.gca().set(title='Reprojection errors with outlier filtering', ylabel='Errs')
-    # plt.xlim(0, 75)
-    plt.legend();
-    plt.savefig(join(outFolder, 'ReprojErrWithOutlierLessThan' + str(reprojErrCutoff)+'.png'), dpi=300)
-    plt.show()
+    # plt.figure('ReprojErrWithOutlierLessThan'+str(reprojErrCutoff))
+    # # plt.hist(errsConsisRansacCutoff, **kwargs, color='r', label='With outlier filtering')
+    # plt.hist(errsConsisRansacCutoff, **kwargs, label='With outlier filtering')
+    # plt.xlim(0, reprojErrCutoff)
+    # plt.yscale('log')
+    # plt.gca().set(title='Reprojection errors with outlier filtering', ylabel='Errs')
+    # # plt.xlim(0, 75)
+    # plt.legend();
+    # plt.savefig(join(outFolder, 'ReprojErrWithOutlierLessThan' + str(reprojErrCutoff)+'.png'), dpi=300)
+    # plt.show()
 
+    matplotlib.style.use('default')
+
+    # mpl.rcParams['axes.prop_cycle'] = cycler(color='rbgcmyk')
+    num_bins = 500
+    plt.rcParams["figure.figsize"] = (6, 2.5)  # (w, h)
+    fig = plt.figure(constrained_layout=True, tight_layout=True)
+    gs = GridSpec(1, 1, figure=fig)
+    ax1 = fig.add_subplot(gs[0, :])
+
+    # linear
+    save_path = os.path.join(outputFolder, 'ReprojErrWithOutlierLessThan'+str(reprojErrCutoff) + ".png")
+
+    ax1.hist(errsConsisRansacCutoff, bins=num_bins)
+    ax1.set_yscale('log')
+    ax1.set_xlim(left=0)
+    ax1.set_xlabel('(b) Reprojection error  of 3D reconstruction [pixels]')
+    ax1.set_ylabel('Bin count')
+    # ax1.set_title(
+    #     'Reprojection Errors | {} image points\n(mean={:.2f}, std={:.2f}, max={:.2f})'.format(len(reproj_errs), mean,
+    #                                                                                           std, max_err))
+    # ax1.legend(['bundle adjustment (6dof)'])
+    plt.grid(False)
+    plt.xlim([0, 6])
+    plt.savefig(save_path, dpi=400, bbox_inches="tight")
+    print(save_path)
+    plt.show()

@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     print("Number of constraints: ", len(corrs))
 
-    # ARAPDeformation(inSourceObjMeshFile, inTargetObjMeshFile, outObjMeshFile, corrs)
+    ARAPDeformation(inSourceObjMeshFile, inTargetObjMeshFile, outObjMeshFile, corrs)
 
     # ARAP Works, but it only works for the mesh, and it performs badly on the head
     # So I still need to map every thing back to restpose

@@ -62,6 +62,9 @@ if __name__ == '__main__':
     test_images = np.vstack([test_images, test2_images])
     test_labels = np.vstack([test_labels, test2_labels])
 
+    print(test_images.shape)
+    print(test_labels.shape)
+
     saver3 = tf.train.import_meta_graph(recognizer_sess + '.meta', import_scope="recognizer")
     sess_recognizer = tf.Session()
     saver3.restore(sess_recognizer, recognizer_sess)

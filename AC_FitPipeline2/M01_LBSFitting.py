@@ -35,6 +35,7 @@ class Config:
         self.numPtsCompleteMesh = 1626
         self.posePreservingTerm = True # to preserve the input pose
         self.posePreservingWeight = 500
+        self.omittedVertsFile = None
 
         # Detail Interpolation
         self.interpolationSegLength=None
@@ -128,6 +129,10 @@ def lbsFitting(inChunkFile, outputDataFolder, inSkelDataFile, cfg = Config()):
             fitCmd.extend(
                 ['--poseChangeRegularizer', '1', '--poseChangeRegularizerWeight', str(cfg.poseChangeRegularizerWeight)])
 
+        if cfg.omittedVertsFile is not None:
+            fitCmd.extend(
+                ['--omittedVerts', cfg.omittedVertsFile])
+
         print(*fitCmd)
         subprocess.call(fitCmd)
 
@@ -204,7 +209,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                                                         poseBlendShape=None, quaternions=None, spatialBiLap = False, spatialLapFromSkelData=True):
     os.makedirs(outFolder, exist_ok=True)
 
-    shutil.copy(inSkelDataFile, join(outFolder, 'SkelData.json'))
+    # shutil.copy(inSkelDataFile, join(outFolder, 'SkelData.json'))
 
     skelData = json.load(open(inSkelDataFile))
     restPosePts = (np.array(skelData['VTemplate']).transpose())[:,:3]
@@ -321,11 +326,18 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
     # Do interpolation in step of interpolationSegLength
     numSteps = int((numFrames - interpolationSegLength) / interpoStep) + 1
+    # if there is some frame left that is not enough for a full interpolationSegLength, make one more interpolation for them
+    if interpolationSegLength + interpoStep * (numSteps-1) < numFrames:
+        numSteps += 1
+        # fill up the rest of interpolation system by replicating the last frame
+        allCapturePts = np.vstack([allCapturePts, *[allCapturePts[-numMeshVertsDims:, :] for i in range(interpolationSegLength + interpoStep * (numSteps-1) -numFrames)]])
+
     for iStep in tqdm.tqdm(range(numSteps), desc="Do interpolation in steps"):
 
         timeStart = time.clock()
         iStart = iStep * interpoStep * numMeshVertsDims
         iEnd = iStart + interpolationSegLength * numMeshVertsDims
+
 
         # if pose blend shape is not none then apply pose blend Shape
         if poseBlendShape is not None:
@@ -344,9 +356,15 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                 mesh.points = restposeWithPBS
                 mesh.save(restposeWithBSFolder + '\\' + objFp.stem + '.ply', binary=False)
 
+        # if iEnd <= numFrames*numMeshVertsDims:
         X = allCapturePts[iStart:iEnd, 0] - restPoseStacked[:, 0]
         Y = allCapturePts[iStart:iEnd, 1] - restPoseStacked[:, 1]
         Z = allCapturePts[iStart:iEnd, 2]
+        # else:
+        #     X = np.vstack( [allCapturePts[iStart:, 0] - restPoseStacked[:, 0], (allCapturePts[-1, 0] - restPoseStacked[-1, 0]) * np.ones((iEnd-numFrames*numMeshVertsDims,))])
+        #     Y = np.vstack( [allCapturePts[iStart:, 1] - restPoseStacked[:, 1], (allCapturePts[-1, 1] - restPoseStacked[-1, 1]) * np.ones((iEnd-numFrames*numMeshVertsDims,))])
+        #     Z = np.vstack( [allCapturePts[iStart:numFrames*numMeshVertsDims, 2], allCapturePts[-1, 2] * np.ones((iEnd-numFrames*numMeshVertsDims,))])
+
         observedIds = np.where(Z != -1)[0]
 
         constraintIds = np.union1d(observedIds, depracatedVertsOnRestpose)
@@ -390,10 +408,13 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
         xInterpo = xInterpo + restPoseStacked
 
         blendWeights = [i / interpolationOverlappingLength for i in range(1, interpolationOverlappingLength + 1)]
+
         if blendOverlapping and iStep != 0 and iStep != numSteps-1:
             for iF in range(interpoStep):
                 fid = iStep * interpoStep + iF
                 objFp = Path(objFiles[fid])
+                if fid >= numFrames:
+                    break
 
                 if iF < interpolationOverlappingLength:
                     mesh.points = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
@@ -406,8 +427,10 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
             if iStep != 0:
                 for iF in range(interpolationSegLength):
                     fid = iStep * interpoStep + iF
-                    objFp = Path(objFiles[fid])
+                    if fid >= numFrames:
+                        break
 
+                    objFp = Path(objFiles[fid])
                     if iF < interpolationOverlappingLength:
                         mesh.points = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
                                       (1 - blendWeights[iF]) * xInterpoLast[(iF + interpoStep) * numMeshVertsDims:(iF + interpoStep + 1) * numMeshVertsDims,:]
@@ -419,12 +442,16 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                 # only 1 step in this case
                 for iF in range(interpolationSegLength):
                     fid = iStep * interpoStep + iF
+                    if fid >= numFrames:
+                        break
                     objFp = Path(objFiles[fid])
                     mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                     mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)
         else:
             for iF in range(interpoStep):
                 fid = iStep * interpoStep + iF
+                if fid >= numFrames:
+                    break
                 objFp = Path(objFiles[fid])
                 mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                 mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)

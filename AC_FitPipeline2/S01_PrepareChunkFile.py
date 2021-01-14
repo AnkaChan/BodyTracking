@@ -13,15 +13,25 @@ if __name__ == '__main__':
     # outChunkedFile = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\2020_12_27_betterCoarseMesh\Mesh1487\BackToRestpose\Restpose.json'
     # coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
-    inputFinalAnimationFolder = r'F:\WorkingCopy2\2020_01_22_FinalAnimations\Animations\Lada_Stand\Final_Smoothed1'
-    outChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Lada_Stand.json'
-    coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+    # inputFinalAnimationFolder = r'F:\WorkingCopy2\2020_01_22_FinalAnimations\Animations\Lada_Stand\Final_Smoothed1'
+    # outChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Lada_Stand.json'
+    # coarseSkelData = r'..\Data\PersonalModel_Lada\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
 
-    inExt = r'vtk'
+    inputFinalAnimationFolder = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose\Triangulation_RThres1.5_HardRThres_1.5'
+    # outChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Stand.json'
+    # outChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Stand_1Frame.json'
+    outChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_CalibrationSeqs.json'
+    coarseSkelData = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487_Katey\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
+
+    # inExt = r'vtk'
+    inExt = r'obj'
     interval=None
-    # interval=[0,20]
+    # interval=[54,54+1500]
+    # interval=[54+1299,54+1300]
+    interval=[54,54+6000]
     numRealPts = 1487
 
     badVerts = getBadRestposeVerts(coarseSkelData)
+    badVerts = badVerts[np.where(badVerts<numRealPts)]
     # interval=None
     pointCloudFilesToChunk(inputFinalAnimationFolder, outChunkedFile, interval=interval, discardedVerts=badVerts, convertToMM=False, inputExt=inExt, padTo=numRealPts)
