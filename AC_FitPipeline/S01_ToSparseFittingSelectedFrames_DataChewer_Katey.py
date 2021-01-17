@@ -51,13 +51,18 @@ if __name__ == '__main__':
     # params for LadaGround
     inputs.dataFolder = r'Z:\shareZ\2020_01_01_KateyCapture\Converted'
     inputs.deformedSparseMeshFolder = r'Z:\shareZ\2020_08_26_TexturedFitting_LadaGround\LadaGround'
-    inputs.outFolderAll = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
-    inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
+    # inputs.outFolderAll = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
+    # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
+
+    inputs.outFolderAll = r'Z:\shareZ\2020_08_27_KateyBodyModel\Backbend'
+    inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\Backbend'
     inputs.laplacianMatFile = r'SmplshRestposeLapMat.npy'
 
-    camParamF = r'Z:\shareZ\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
+    inputs.camParamF = r'Z:\shareZ\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
     # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
-    frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
+    # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
+    # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
+    frameNames = ['16755']
     # frameNames = [str(i).zfill(5) for i in range(9745, 10874)]
     # frameNames = [str(i).zfill(5) for i in range(8646 + 464, 10873)]
     cfg = Config()
@@ -80,7 +85,7 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
-    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
     # interpolateToSparseMeshSelectedFrame(inputs, frameNames)

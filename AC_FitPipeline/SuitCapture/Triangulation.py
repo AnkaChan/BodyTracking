@@ -1,4 +1,5 @@
 import numpy as np
+import itertools
 # C++ version of multiview triangulation
 # void MultiCameraReconstructor::multiCamsDLT(const VecEP3f& controlPts, const std::vector<Eigen::Matrix4f>& controlMats, Eigen::Matrix<float, 3, 1>& X)
 # {
@@ -71,3 +72,57 @@ def mulCamsDLT(controlPts, camProjMats):
         assert False
 
     return X, np.array(reprojErrs)
+
+def computeReprojErrMultiCam(X, controlPts, camProjMats):
+    numConstraints = len(controlPts)
+    reprojErrs = []
+    for iCam in range(numConstraints):
+        p3DH = np.vstack([X.reshape(3, 1), 1])
+
+        ptsP = camProjMats[iCam] @ p3DH
+        ptsP = ptsP / ptsP[2]
+
+        err = np.sqrt((controlPts[iCam][0] - ptsP[0]) ** 2 + (controlPts[iCam][1] - ptsP[1]) ** 2)
+
+        reprojErrs.append(err)
+    return reprojErrs
+
+def mulCamsRansac(controlPts, camProjMats, computeErrOnAllCam=True):
+    numConstraints = len(controlPts)
+
+    bestErr = -1
+    bestX = 1
+
+    cams = list(range(numConstraints))
+    if numConstraints >= 2:
+        for camPair in itertools.product(cams, repeat = 2):
+            if camPair[0] == camPair[1]:
+                continue
+            X, errs = mulCamsDLT([controlPts[camPair[0]], controlPts[camPair[1]]], [camProjMats[camPair[0]], camProjMats[camPair[1]]])
+
+            if computeErrOnAllCam:
+                reprojErrs = computeReprojErrMultiCam(X, controlPts, camProjMats)
+                reprojErr = np.mean(reprojErrs)
+            else:
+                reprojErr = np.mean(errs)
+            if bestErr > reprojErr or bestErr < 0:
+                bestErr = reprojErr
+                bestX = X
+        # reprojErrs = computeReprojErrMultiCam(X, controlPts, camProjMats)
+        reprojErrs = computeReprojErrMultiCam(bestX, controlPts, camProjMats)
+
+        reprojErrsS = sorted(reprojErrs)
+        q1, q3 = np.percentile(reprojErrsS, [25, 75])
+        iqr = q3 - q1
+        upper_bound = q3 + (1.5 * iqr)
+        outlierIds = np.where(reprojErrs > upper_bound)
+
+        controlPtsFilterer = [controlPts[iP] for iP in range(len(controlPts)) if iP not in outlierIds]
+        camProjMatsFilterer = [camProjMats[iP] for iP in range(len(camProjMats)) if iP not in outlierIds]
+        X, errs = mulCamsDLT(controlPtsFilterer, camProjMatsFilterer)
+
+        return X, errs
+
+    else:
+        print("Need at least 2 constraints")
+        assert False

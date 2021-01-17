@@ -40,7 +40,7 @@ def texturedPoseFitting(inputs, cfg, device, ):
     smplshExampleMesh = pv.PolyData(inputs.smplshExampleMeshFile)
     nVerts = smplshExampleMesh.points.shape[0]
 
-    LNP = np.load('SmplshRestposeLapMat.npy')
+    LNP = np.load(cfg.lapMatFile)
 
     BiLNP = LNP @ LNP
     if cfg.biLaplacian:
@@ -360,7 +360,7 @@ def texturedPerVertexFitting(inputs, cfg, device):
     smplshExampleMesh = pv.PolyData(inputs.smplshExampleMeshFile)
     nVerts = smplshExampleMesh.points.shape[0]
 
-    LNP = np.load('SmplshRestposeLapMat.npy')
+    LNP = np.load(cfg.lapMatFile)
 
     BiLNP = LNP @ LNP
     if cfg.biLaplacian:

@@ -14,8 +14,8 @@ if __name__ == '__main__':
     inTextureMeshFile = r"..\Data\TextureMap2Color\SMPLWithSocks_tri.obj"
     camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
 
-    # outFolder = r'X:\MocapProj\2020_08_24_TexturedFitting_Lada_Rendering\Evaluation\ToDense'
-    outFolder = r'X:\MocapProj\2020_08_24_TexturedFitting_Lada_Rendering\Evaluation\ToTrackingPoints'
+    outFolder = r'X:\MocapProj\2020_08_24_TexturedFitting_Lada_Rendering\Evaluation\ToDense\Rendered'
+    # outFolder = r'X:\MocapProj\2020_08_24_TexturedFitting_Lada_Rendering\Evaluation\ToTrackingPoints\Rendered'
 
     cfg = Config.RenderingCfg()
     cfg.sigma = 1e-10
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     ImageBasedFittingFolder = join(fittingFolder, 'ImageBasedFitting')
 
     # frames = [str(i) for i in range(10459 , 10459 + 300)]
-    frames = [str(i).zfill(5) for i in range(8564+43 , 8564 + 300)]
+    frames = [str(i).zfill(5) for i in range(8564 , 8564 + 300)]
 
     # folders = [ToKpAndDensefolder, ToTrackingPointsFolder, InterpolatedFolder, ImageBasedFittingFolder]
     # convertToMs = [ True,True, True, False]
@@ -51,5 +51,5 @@ if __name__ == '__main__':
     #                                                   processRenderFolder, cleanPlateFolder=cleanPlateFolder,
     #                                                   cfg=cfg, convertToM=convertToM, rendererType='RGB')
 
-    M05_Visualization.renderConsecutiveFrames(ToTrackingPointsFolder, cleanPlateFolder, inTextureMeshFile, camParamF,
+    M05_Visualization.renderConsecutiveFrames(ToKpAndDensefolder, cleanPlateFolder, inTextureMeshFile, camParamF,
                             outFolder, frameNames=frames, cfg=cfg, inMeshExt='obj', convertToM=True)

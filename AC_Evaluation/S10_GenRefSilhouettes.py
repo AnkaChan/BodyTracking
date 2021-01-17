@@ -28,7 +28,7 @@ if __name__ == '__main__':
     cfg.numCams = 16
     cfg.batchSize = 8
 
-    frames = [str(i) for i in range(10459+135, 10459 + 300)]
+    frames = [str(i) for i in range(10459, 10459 + 300)]
     # frames = [str(i) for i in range(10459 + 20, 10459 + 200)]
     diffThres = 20
 

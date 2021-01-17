@@ -66,12 +66,13 @@ class SMPLSHModel():
     self.verts = None
     self.J = None
     self.R = None
+    self.personalShape = None
 
     self.useHandPBS = useHandPBS
 
     self.update()
 
-  def set_params(self, pose=None, beta=None, trans=None):
+  def set_params(self, pose=None, beta=None, trans=None, personalShape=None):
     """
     Set pose, shape, and/or translation parameters of SMPL model. Verices of the
     model will be updated and returned.
@@ -98,6 +99,8 @@ class SMPLSHModel():
       self.beta = beta
     if trans is not None:
       self.trans = trans
+    if personalShape is not None:
+      self.personalShape = personalShape
     self.update()
     return self.verts
 
@@ -108,6 +111,8 @@ class SMPLSHModel():
     """
     # how beta affect body shape
     v_shaped = self.shapedirs.dot(self.beta) + self.v_template
+    if self.personalShape is not None:
+      v_shaped = v_shaped + self.personalShape
     # joints location
     self.J = self.J_regressor.dot(v_shaped)
     pose_cube = self.pose.reshape((-1, 1, 3))

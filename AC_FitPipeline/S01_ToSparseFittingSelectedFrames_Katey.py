@@ -8,14 +8,14 @@ from S01_ToSparseFittingSelectedFrames import *
 
 class InputBundle():
     def __init__(s):
-        s.SMPLSHNpzFile = r'..\Data\BuildSmplsh\Output\SmplshModel_m.npz'
-        s.skelDataFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\MeshInterpolation\06_SKelDataLadaWeightsMultiplierCorrectAnkle_1692.json'
+        s.SMPLSHNpzFile = r'..\Data\BuildSmplsh_Female\Output\SmplshModel_f_noBun.npz'
+        s.skelDataFile = r'..\Data\KateyBodyModel\InitialRegistration\06_SKelDataKeteyWeightsMultiplierCorrectAnkle_1692.json'
 
-        # s.inputImgDataFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied'
         s.inputDensePointCloudFile = None
-        s.toSparsePCMat = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolationMatrix.npy'
-        s.personalShapeFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\PersonalShape.npy'
-        s.betaFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\BetaFile.npy'
+        s.toSparsePCMat = r'..\Data\KateyBodyModel\InterpolationMatrix.npy'
+        s.personalShapeFile = r'..\Data\KateyBodyModel\PersonalShape.npy'
+        s.betaFile = r'..\Data\KateyBodyModel\beta.npy'
+        s.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
 
         s.dataFolder = None
         s.deformedSparseMeshFolder = None
@@ -23,78 +23,99 @@ class InputBundle():
         s.outFolderAll = None
         s.laplacianMatFile = None
 
-
 if __name__ == '__main__':
     inputs = InputBundle()
 
-    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    # inputs.preprocessOutFolder = r'F:\WorkingCopy2\2020_07_26_NewPipelineTestData'
-    # inputs.deformedSparseMeshFolder = r''
-    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\ObjFiles'
-    # inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    # inputs.outFolderAll = inputs.dataFolder
-    # frameNames = [
-    # #              '03067',
-    #               # '03990',
-    #               # '04735', '04917',
-    #               # '06250',
-    #               '06550',
-    #               #  '06950'
-    #               ]
-
-    inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
-    # inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\TPose'
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose2\SLap_SBiLap_True_TLap_0_JTW_5000_JBiLap_0_Step1_Overlap0\Deformed'
-    inputs.inputKpFolder = join(inputs.dataFolder, 'Keypoints')
-    inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters3_k6p2\cam_params.json'
-    # inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters\cam_params.json'
-    # inputs.outFolderAll = inputs.dataFolder
-    inputs.preprocessOutFolder = r'Z:\2020_09_10_CleanPlateKatey'
-
-    # frameNames = [str(iFrame).zfill(5) for iFrame in  range(18410, 18414)]
-    # Clean Plate
-    frameNames = [str(iFrame).zfill(5) for iFrame in range(3280, 3281)]
-
-    # inputs.dataFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada'
-    # inputs.outFolderAll = inputs.dataFolder
-    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\LadaStand'
-    # inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
-    # inputs.inputKpFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Keypoints'
-
-    # frameNames = [str(iFrame).zfill(5) for iFrame in range(8332, 8332 + 5)]
-
-    cfg = Config()
-    cfg.saveDistRgb = True
-    cfg.toSparseFittingCfg.learnrate_ph = 0.05
+    # # params for LadaStand
+    # inputs.dataFolder = r'Z:\shareZ\2019_12_13_Lada_Capture\Converted'
+    # inputs.deformedSparseMeshFolder = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada\LadaStand'
+    # inputs.outFolderAll = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada'
+    # inputs.preprocessOutFolder = r'Z:\shareZ\2020_07_28_TexturedFitting_Lada'
+    # inputs.laplacianMatFile = r'SmplshRestposeLapMat.npy'
+    #
+    # camParamF = r'Z:\shareZ\2020_06_07_AC_ToSilhouetteFitting\CameraParams\cam_params.json'
+    # # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
+    # frameNames = [str(i).zfill(5) for i in range(9330, 10873)]
+    # # frameNames = [str(i).zfill(5) for i in range(9745, 10874)]
+    # # frameNames = [str(i).zfill(5) for i in range(8646 + 464, 10873)]
+    # cfg = Config()
     # cfg.toSparseFittingCfg.learnrate_ph = 0.05
-    # cfg.toSparseFittingCfg.learnrate_ph = 0.005
+    # cfg.toSparseFittingCfg.lrDecayStep = 200
+    # cfg.toSparseFittingCfg.lrDecayRate = 0.96
+    # cfg.toSparseFittingCfg.numIterFitting = 6000
+    # cfg.toSparseFittingCfg.noBodyKeyJoint = True
+    # cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
+    # cfg.toSparseFittingCfg.outputErrs = True
+    # cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    # cfg.toSparseFittingCfg.
+
+    # params for KeteyLongSeq
+    inputs.dataFolder = r'Z:\2020_01_01_KateyCapture\Converted'
+    # inputs.deformedSparseMeshFolder = r'Z:\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    inputs.deformedSparseMeshFolder = r'Z:\2020_08_27_KateyBodyModel\Deformed_Weight1'
+    # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\TPose'
+    # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\All'
+    inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Rolling'
+    # inputs.preprocessOutFolder = r'Z:\shareZ\2020_08_27_KateyBodyModel\TPose'
+
+    # inputs.outFolderAll = r'Z:\2020_08_27_KateyBodyModel\Backbend'
+    # inputs.preprocessOutFolder = r'Z:\2020_08_27_KateyBodyModel\Backbend'
+
+    inputs.preprocessOutFolder = inputs.outFolderAll
+    inputs.laplacianMatFile = r'SmplshRestposeLapMat_Katey.npy'
+
+    inputs.camParamF = r'Z:\2020_01_01_KateyCapture\CameraParameters2_k1k2k3p1p2\cam_params.json'
+    # frameNames = [str(i).zfill(5) for i in range(8274, 10873)]
+    # frameNames = [str(i).zfill(5) for i in range(14946 , 17745)]
+    # frameNames = [str(i).zfill(5) for i in range(16270 , 17745)]
+    # frameNames = [str(i).zfill(5) for i in range(16659 , 17745)]
+    frameNames = [str(i).zfill(5) for i in range(17126 , 17127)] # back rolling, showing the sole
+
+    # frameNames = [str(i).zfill(5) for i in range(18410 , 18414)]
+    # frameNames = ['16755']
+    # frameNames = ['16755']
+    # frameNames = [str(i).zfill(5) for i in range(9745, 10874)]
+    # frameNames = [str(i).zfill(5) for i in range(8646 + 464, 10873)]
+    cfg = Config()
+    cfg.toSparseFittingCfg.learnrate_ph = 0.05
     cfg.toSparseFittingCfg.lrDecayStep = 200
     cfg.toSparseFittingCfg.lrDecayRate = 0.96
     cfg.toSparseFittingCfg.numIterFitting = 6000
     cfg.toSparseFittingCfg.noBodyKeyJoint = True
     cfg.toSparseFittingCfg.betaRegularizerWeightToKP = 1000
     cfg.toSparseFittingCfg.outputErrs = True
+    cfg.toSparseFittingCfg.terminateLossStep = 1e-8
+    cfg.toSparseFittingCfg.withFaceKp = True
 
+    cfg.saveDistRgb = True
     cfg.kpReconCfg.openposeModelDir = r"C:\Code\Project\Openpose\models"
+    cfg.kpReconCfg.numMostConfidentToPick =2
+    # cfg.kpReconCfg.debugFolder =
+    # cfg.kpReconCfg.drawResults = False
     # cfg.kpReconCfg.drawResults = True
-    cfg.kpReconCfg.debugFolder = join(inputs.preprocessOutFolder, 'Preprocessed', 'Debug')
+    cfg.kpReconCfg.detecHead = True
+    cfg.kpReconCfg.rescale = True
+    cfg.kpReconCfg.reprojectErrThreshold = 10
+    # cfg.kpReconCfg.openposeModelDir = r"Z:\Anka\OpenPose\models"
 
-    # camFolders = sortedGlob(join(dataFolder, '*'))
-    # imgFolders = sortedGlob(r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\*')
-    #
-    # for imgFolder in imgFolders[:-3]:
-    #     imgFs = sortedGlob(join(imgFolder, '*.pgm'))
-    #
-    #     for imgF, camFolder in zip(imgFs, camFolders):
-    #         shutil.copy(imgF, join(camFolder, os.path.basename(imgF)))
-    # # preprocess
+    # preprocess
     preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
 
     # to sparse fitting
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    toSparseFittingSelectedFrame(inputs, frameNames, cfg)
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    inputs.inputKpFolder = join(inputs.outFolderAll, 'Keypoints')
+    # toSparseFittingSelectedFrame(inputs, frameNames, cfg)
 
     # intepolate to sparse mesh
-    interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+    # interpolateToSparseMeshSelectedFrame(inputs, frameNames)
+
+"""Preprocessing:  21%|██        | 464/2227 [1:56:13<7:21:35, 15.03s/it]
+Traceback (most recent call last):
+  File "Z:/Anka/BodyTracking2/BodyTracking/AC_FitPipeline/S01_ToSparseFittingSelectedFrames_DataChewer.py", line 50, in <module>
+    preprocessSelectedFrame(inputs.dataFolder, frameNames, inputs.camParamF, inputs.preprocessOutFolder, cfg)
+  File "Z:\Anka\BodyTracking2\BodyTracking\AC_FitPipeline\S01_ToSparseFittingSelectedFrames.py", line 50, in preprocessSelectedFrame
+    M02_ReconstructionJointFromRealImagesMultiFolder.reconstructKeypoints2(rgbUndistFrameFiles, outKpFile, camParamF, cfg.kpReconCfg, )
+  File "Z:\Anka\BodyTracking2\BodyTracking\AC_FitPipeline\M02_ReconstructionJointFromRealImagesMultiFolder.py", line 549, in reconstructKeypoints2
+    if len(handKeyPointsRight) and handKeyPointsRight.shape[0] == numHandpts:
+TypeError: len() of unsized object"""

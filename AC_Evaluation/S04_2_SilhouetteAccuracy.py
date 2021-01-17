@@ -15,8 +15,9 @@ if __name__ == '__main__':
     silhouettesFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Silhouettes'
 
     # frames = [str(i) for i in range(10459, 10459 + 50)]
-    # frames = [str(i) for i in range(10459, 10459 + 230)]
-    frames = [str(i) for i in range(10459, 10459 + 200)]
+    frames = [str(i) for i in range(10459, 10459 + 230)]
+    # frames = [str(i) for i in range(10459, 10459 + 200)]
+    # frames = [str(i) for i in range(10459, 10459 + 20)]
 
     folders = [ ToTrackingPointsFolder, ToKpAndDensefolder, InterpolatedFolder, ImageBasedFittingFolder]
 
@@ -27,6 +28,14 @@ if __name__ == '__main__':
 
     statistics = [IOUToTP, IOUToDense, IOUInterpo, IOUFinal]
     Gen = False
+    # Gen = True
+
+    dataNames = ['LBSToTrackingPoints_'+ frames[0] + '_' + frames[-1] +'.npy',
+                 'LBSToDense_' + frames[0] + '_' + frames[-1] + '.npy',
+                 'Interpolated_' + frames[0] + '_' + frames[-1] + '.npy',
+                 'AfterDiffRenderer' + frames[0] + '_' + frames[-1] + '.npy',
+                 ]
+
     if Gen:
         for frameName in tqdm.tqdm(frames):
             refSilsFodler = join(silhouettesFolder, frameName, 'FinalSils')
@@ -50,25 +59,30 @@ if __name__ == '__main__':
 
         dataOutFolder = 'Data'
 
-        np.save(join(dataOutFolder, 'LBSToTrackingPoints.npy'), np.array(IOUToTP), )
-        np.save(join(dataOutFolder, 'LBSToDense.npy'), np.array(IOUToDense), )
-        np.save(join(dataOutFolder, 'Interpolated.npy'), np.array(IOUInterpo), )
-        np.save(join(dataOutFolder, 'AfterDiffRenderer.npy'), np.array(IOUFinal), )
+        np.save(join(dataOutFolder, dataNames[0]), np.array(IOUToTP), )
+        np.save(join(dataOutFolder, dataNames[1]), np.array(IOUToDense), )
+        np.save(join(dataOutFolder, dataNames[2]), np.array(IOUInterpo), )
+        np.save(join(dataOutFolder, dataNames[3]), np.array(IOUFinal), )
     else:
         dataOutFolder = 'Data'
-        IOUToTP = np.load(join(dataOutFolder, 'LBSToTrackingPoints.npy'))
-        IOUToDense = np.load(join(dataOutFolder, 'LBSToDense.npy') )
-        IOUInterpo = np.load(join(dataOutFolder, 'Interpolated.npy'))
-        IOUFinal = np.load(join(dataOutFolder, 'AfterDiffRenderer.npy'), )
+        IOUToTP = np.load(join(dataOutFolder, dataNames[0]))
+        IOUToDense = np.load(join(dataOutFolder, dataNames[1]) )
+        IOUInterpo = np.load(join(dataOutFolder, dataNames[2]))
+        IOUFinal = np.load(join(dataOutFolder, dataNames[3]), )
 
     t = list(range(0,len(frames)))
     # t = list(range(20))
+    figure = plt.figure('SillouettesAccuracy')
     plt.plot(t, np.array(IOUToTP), label='Pure LBS - Keypoinits + Tracking Points')
     plt.plot(t, np.array(IOUToDense), label='Pure LBS   - Keypoinits + OpenMVS Point Clouds ')
     plt.plot(t, np.array(IOUInterpo), label='DTI - Keypoinits + Tracking Points')
     plt.plot(t, np.array(IOUFinal), label='DTI + DTF - Keypoinits + Tracking Points')
     plt.legend()
-    plt.savefig('SillouettesAccuracy.pdf')
+    plt.xlabel('Frames')
+    plt.ylabel('IoU')
+    figure.set_size_inches(10, 4.5)
+    # plt.savefig("sample.png", dpi=100)
+    plt.savefig('SillouettesAccuracy.png', dpi=300)
     plt.show()
-    plt.waitforbuttonpress()
+    # plt.waitforbuttonpress()
 
