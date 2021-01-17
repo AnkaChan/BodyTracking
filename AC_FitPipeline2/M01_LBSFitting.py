@@ -20,8 +20,12 @@ class Config:
         self.mapToRestPose = True
         self.detailRecover = True
 
-        self.removeOutliers = False
         self.addGround = False
+
+        # outlier filtering
+        self.removeOutliers = False
+        self.outlierFilterThreshold = 100
+
 
         # for initial & temporal smoothing fit
         ## for initial fit
@@ -46,6 +50,7 @@ class Config:
         self.spatialLap = True
         self.spatialBiLap = True
         self.spatialLapFromSkelData = False
+        self.restposeMeshForVis = None # the rest pose mesh
 
         # visualization
         self.visualizeTargets = True
@@ -75,12 +80,15 @@ def removeOutliers(inChunkFile, newChunkFile, outliers):
     return newChunkFile
 
 def getFitName(cfg):
-    fitName = ('SLap_' + 'SBiLap_' + str(cfg.spatialBiLap) + '_') if cfg.spatialLap else ''
+    # fitName = ('SLap_' + 'SBiLap_' + str(cfg.spatialBiLap) + '_') if cfg.spatialLap else ''
 
-    fitName = fitName + 'TLap_' + str(cfg.tw)
+    fitName = 'TLap_' + str(cfg.tw)
 
-    fitName = fitName + "_JTW_" + str(cfg.jointTCW) + '_JBiLap_' + str(cfg.jointBiLap) \
+    # fitName = fitName + "_JR_" + str(cfg.poseChangeRegularizerWeight) +"_JTW_" + str(cfg.jointTCW) + '_JBiLap_' + str(cfg.jointBiLap) \
+    #           + '_Step' + str(cfg.interpolationSegLength) + '_Overlap' + str(cfg.interpolationOverlappingLength)
+    fitName = fitName + "_JR_" + str(cfg.poseChangeRegularizerWeight) +"_JTW_" + str(cfg.jointTCW) \
               + '_Step' + str(cfg.interpolationSegLength) + '_Overlap' + str(cfg.interpolationOverlappingLength)
+
     if cfg.removeOutliers:
         fitName = fitName + '_' + 'cleaned'
 
@@ -90,11 +98,6 @@ def getFitName(cfg):
     return fitName
 
 def lbsFitting(inChunkFile, outputDataFolder, inSkelDataFile, cfg = Config()):
-
-    if cfg.removeOutliers:
-        outlierRemoveChunkFile = inChunkFile + '.cleaned.json'
-        inChunkFile = removeOutliers(inChunkFile, outlierRemoveChunkFile, cfg.outlierIds)
-
     if cfg.nameOutFolerUsingParams:
         fitName = getFitName(cfg)
         outputDataFolder = join(outputDataFolder, fitName)
@@ -105,6 +108,36 @@ def lbsFitting(inChunkFile, outputDataFolder, inSkelDataFile, cfg = Config()):
     os.makedirs(outputDataFolder, exist_ok=True)
     os.makedirs(fittingDataFolder, exist_ok=True)
     os.makedirs(fittingTCFolder, exist_ok=True)
+
+    if cfg.removeOutliers:
+        ourlierFittingFolder = join(outputDataFolder, 'OurlierFiltering')
+        os.makedirs(ourlierFittingFolder, exist_ok=True)
+
+        fitCmd = ["FitToPointCloudDynamic", inChunkFile, ourlierFittingFolder, '-s', inSkelDataFile,
+                  '-r', str(cfg.robustifierThreshold), '--outputSkipStep', '100', '-c', '--outputChunkFile',
+                  '--followingFunctionTolerance', str(cfg.followingFunctionTolerance), '--outputFittedModels', '0']
+
+        # inChunkFile = removeOutliers(inChunkFile, outlierRemoveChunkFile, cfg.outlierIds)
+        subprocess.call(fitCmd)
+        outlierRemoveChunkFile = inChunkFile + '.cleaned.json'
+
+        chunkedErrsFile = join(ourlierFittingFolder, 'Errs', 'Errors.json')
+        chunkedTargetData = json.load(open(inChunkFile))
+
+        ptsAll = chunkedTargetData["Pts"]
+        errsAll = json.load(open(chunkedErrsFile))
+
+        newPts = []
+        for pts, errs in zip(ptsAll, errsAll):
+            pts = np.array(pts)
+            errs = np.array(errs)
+            pts[np.where(errs > cfg.outlierFilterThreshold)[0], :] = np.array([0, 0, -1])
+            newPts.append(pts.tolist())
+
+        chunkedTargetData["Pts"] = newPts
+        json.dump(chunkedTargetData, open(outlierRemoveChunkFile, 'w'), indent=2)
+
+        inChunkFile = outlierRemoveChunkFile
 
     # save the parameters for fitting
     outCfgFile = join(outputDataFolder, 'Config.json')
@@ -135,6 +168,24 @@ def lbsFitting(inChunkFile, outputDataFolder, inSkelDataFile, cfg = Config()):
 
         print(*fitCmd)
         subprocess.call(fitCmd)
+
+    initialParamJsonFile = join(fittingDataFolder, 'Params', 'Params.json')
+    if cfg.optimizeJointAngleTemporalCoherence:
+        if cfg.optimizeJointAngleTemporalCoherence:
+            print("Run temporal coherence optimization")
+            tpcCmd = ['CornersFitReducedBatchedQuaternionTCWithInit2', inChunkFile, initialParamJsonFile,
+                      fittingTCFolder,
+                      '-s',
+                      inSkelDataFile, '-j', str(cfg.jointTCW), '-c', '--BiLap', str(cfg.jointBiLap)]
+
+            if cfg.externalTLWeight is not None:
+                tpcCmd.extend(['--externalTLWeightFile', str(cfg.posePreservingTerm)])
+
+            if cfg.posePreservingTerm:
+                tpcCmd.extend(['--posePreservingTerm', '--posePresevingWeight', str(cfg.posePreservingWeight)])
+
+            print(*tpcCmd)
+            subprocess.call(tpcCmd)
 
 def mapBackToRestpose(targetPCs, inSkelDataFile, fileNames, outFolder, qs, ts):
     vRestpose, J, weights, poseBlendShape, kintreeTable, parent, faces = readSkeletonData(inSkelDataFile)
@@ -198,7 +249,8 @@ def detailInterpolation(inChunkFile, outputDataFolder, inSkelDataFile, inPoseBat
                                                                                 quaternions=qs,
                                                                                 spatialBiLap=cfg.spatialBiLap,
                                                                                 spatialLapFromSkelData=cfg.spatialLapFromSkelData,
-                                                                                inputExt='ply'
+                                                                                inputExt='ply',
+                                                                                restposeMeshForVis=cfg.restposeMeshForVis
                                                                                 )
 
     # map interpolated points back to deformed configuration
@@ -206,20 +258,25 @@ def detailInterpolation(inChunkFile, outputDataFolder, inSkelDataFile, inPoseBat
 
 def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(restPoseTarget, inSkelDataFile, inFaceMeshPath, outFolder, interpolationOverlappingLength = 30,
                                                         interpolationSegLength=100, tw=1, interval=[], inputExt = 'obj', chunkedInput=False, blendOverlapping=True, spatialLap=True,
-                                                        poseBlendShape=None, quaternions=None, spatialBiLap = False, spatialLapFromSkelData=True):
+                                                        poseBlendShape=None, quaternions=None, spatialBiLap = False, spatialLapFromSkelData=True, restposeMeshForVis=None):
     os.makedirs(outFolder, exist_ok=True)
 
     # shutil.copy(inSkelDataFile, join(outFolder, 'SkelData.json'))
 
+    # if numVertsToInterpolate is less than dimension of actual mesh, we will only interpoalte numVertsToInterpolate
     skelData = json.load(open(inSkelDataFile))
-    restPosePts = (np.array(skelData['VTemplate']).transpose())[:,:3]
+    restPosePtsOrg = (np.array(skelData['VTemplate']).transpose())[:,:3]
+    mesh = pv.PolyData(inFaceMeshPath)
+    numVertsToInterpolate = mesh.points.shape[0]
+
+    numMeshVertsDims = numVertsToInterpolate
+    restPosePts = restPosePtsOrg[:numMeshVertsDims, :]
 
     if poseBlendShape is not None:
         restposeWithBSFolder = join(outFolder, 'RestposeWithPoseBS')
         os.makedirs(restposeWithBSFolder, exist_ok=True)
 
     meshFilename, meshFileExtension = os.path.splitext(inFaceMeshPath)
-    triVids = np.array(json.load(open(inSkelDataFile))["TriVidsNp"])
 
     V = igl.eigen.MatrixXd()
     N = igl.eigen.MatrixXd()
@@ -245,6 +302,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
     LSBlock = -e2p(L)
 
+
     allCapturePts = []
     # Load Data
     if not chunkedInput:
@@ -253,7 +311,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
             objFiles = objFiles[interval[0]:interval[1]]
         for f in tqdm.tqdm(objFiles, desc="Load Data"):
             mesh = pv.PolyData(f)
-            allCapturePts.append(mesh.points)
+            allCapturePts.append(mesh.points[:numVertsToInterpolate, :])
 
     else:
         scanData = json.load(open(restPoseTarget))
@@ -265,7 +323,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
     numFrames = len(allCapturePts)
     numCaptureDataDims = allCapturePts[0].shape[0]
-    numMeshVertsDims = restPosePts.shape[0]
+
 
     # pad every point cloud in allCapturePts to have numMeshVertsDims vertices, treat the padded points as never observed points
     for i in range(len(allCapturePts)):
@@ -273,6 +331,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
         paddedPts[:numCaptureDataDims,:] = allCapturePts[i]
         paddedPts[numCaptureDataDims:, 2] = -1
         allCapturePts[i] = paddedPts
+
 
     allCapturePts = np.vstack(allCapturePts)
 
@@ -282,7 +341,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
     maxVal = np.max(np.abs(LSBlock.toarray()))
     print("Max value in Spatial Laplacian:", maxVal )
-    assert maxVal < 200
+    # assert maxVal < 200
 
     if spatialBiLap:
         print("Using BiLaplcian")
@@ -313,8 +372,6 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
         LAll = tw * TL
 
     interpoStep = interpolationSegLength - interpolationOverlappingLength
-
-    mesh = pv.PolyData(inFaceMeshPath)
 
     # Rest pose verts better come from Skel data
 
@@ -409,6 +466,9 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
         blendWeights = [i / interpolationOverlappingLength for i in range(1, interpolationOverlappingLength + 1)]
 
+        if restposeMeshForVis is not None:
+            mesh = pv.PolyData(restposeMeshForVis)
+        mesh.points = restPosePtsOrg
         if blendOverlapping and iStep != 0 and iStep != numSteps-1:
             for iF in range(interpoStep):
                 fid = iStep * interpoStep + iF
@@ -417,11 +477,11 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                     break
 
                 if iF < interpolationOverlappingLength:
-                    mesh.points = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
+                    mesh.points[:numMeshVertsDims] = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
                                   (1 - blendWeights[iF]) * xInterpoLast[(iF + interpoStep) * numMeshVertsDims:(iF + interpoStep + 1) * numMeshVertsDims,:]
 
                 else:
-                    mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
+                    mesh.points[:numMeshVertsDims] = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                 mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)
         elif blendOverlapping and iStep == numSteps-1:
             if iStep != 0:
@@ -432,11 +492,11 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
 
                     objFp = Path(objFiles[fid])
                     if iF < interpolationOverlappingLength:
-                        mesh.points = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
+                        mesh.points[:numMeshVertsDims] = blendWeights[iF] * xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims,:] + \
                                       (1 - blendWeights[iF]) * xInterpoLast[(iF + interpoStep) * numMeshVertsDims:(iF + interpoStep + 1) * numMeshVertsDims,:]
 
                     else:
-                        mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
+                        mesh.points[:numMeshVertsDims] = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                     mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)
             else:
                 # only 1 step in this case
@@ -445,7 +505,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                     if fid >= numFrames:
                         break
                     objFp = Path(objFiles[fid])
-                    mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
+                    mesh.points[:numMeshVertsDims] = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                     mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)
         else:
             for iF in range(interpoStep):
@@ -453,7 +513,7 @@ def interpolateRestPoseDeformationWithTemporalCoherence3RegularLapDifferentMesh(
                 if fid >= numFrames:
                     break
                 objFp = Path(objFiles[fid])
-                mesh.points = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
+                mesh.points[:numMeshVertsDims] = xInterpo[iF * numMeshVertsDims:(iF + 1) * numMeshVertsDims, :]
                 mesh.save(outFolder + '\\' + objFp.stem + '.ply', binary=False)
 
 

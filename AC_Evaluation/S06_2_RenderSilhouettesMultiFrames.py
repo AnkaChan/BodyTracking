@@ -22,6 +22,7 @@ if __name__ == '__main__':
 
     cfg.numCams = 16
     cfg.batchSize = 8
+    cfg.cull_BackFaces = True
 
     fittingFolder = r'F:\WorkingCopy2\2020_07_28_TexturedFitting_Lada\Evaluation'
 
@@ -32,7 +33,8 @@ if __name__ == '__main__':
 
     # frames = [str(i) for i in range(10459 , 10459 + 300)]
     # frames = [str(i) for i in range(10459 , 10459 + 10)]
-    frames = [str(i).zfill(5) for i in range(8564 , 8564 + 100)]
+    # frames = [str(i).zfill(5) for i in range(8564 , 8564 + 100)]
+    frames = [str(i).zfill(5) for i in range(8564 , 8564 + 1)]
 
     folders = [ToKpAndDensefolder, ToTrackingPointsFolder, InterpolatedFolder, ImageBasedFittingFolder]
     convertToMs = [ True,True, True, False]
