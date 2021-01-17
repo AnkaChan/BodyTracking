@@ -41,7 +41,9 @@ if __name__ == '__main__':
 
     t = list(range(len(flowFilesLBS)))
 
-    plt.plot(t, avgFlowMagsLBS, 'r')
-    plt.plot(t, avgFlowMagsIntpl, 'g')
-    plt.plot(t, avgFlowMagsFinal, 'b')
+    plt.plot(t, avgFlowMagsLBS, 'r', label='LBS')
+    plt.plot(t, avgFlowMagsIntpl, 'g', label='InterpolateToSparseCloud')
+    plt.plot(t, avgFlowMagsFinal, 'b', label='AfterDiffRenderer')
+    plt.legend()
+    plt.savefig('OpticalFlowComparison.png')
     plt.show()
