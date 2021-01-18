@@ -167,9 +167,9 @@ if __name__ == '__main__':
     # inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052'
     # camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
 
-    inFolder = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\00_FiducialMarkerTrackingPipeline\Data'
-    camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
+    inFolder = r'X:\MocapProj\2019_12_13_Lada_Capture\CleanPlateExtracted\gray\distorted'
+    camParamF = r'F:\WorkingCopy2\2019_12_13_Lada_Capture\CameraParameters\cam_params.json'
 
     outFolder = join(inFolder, 'RgbUndist')
 
-    undistortMultiCamsFolder(inFolder, outFolder, camParamF)
+    undistortMultiCamsFolder(inFolder, outFolder, camParamF, extname='png')

@@ -5,8 +5,8 @@ import pyvista as pv
 from os.path import join
 import json
 
-# vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_tri.obj'
-vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad.obj'
+vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_tri.obj'
+# vt_path = r'..\Data\BuildSmplsh\SMPLWithSocks_Quad.obj'
 
 vts = []
 fs = []
@@ -137,35 +137,38 @@ if __name__ == '__main__':
     # obj_dir = r'C:\Code\MyRepo\03_capture\BodyTracking\Data\KateyBodyModel\BodyMesh\Initial'
     # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\Vis\ObjWithUV'
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
-    obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
+    # obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
+    obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LBS'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
 
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', 'ply'))
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', 'ply'))
-    objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', 'ply'))
 
-    # facesFile = 'FacesOnlySuit.json'
-    # facesOnSuit = set(json.load(open(facesFile)))
-    # facesOnSuit = None
-    #
+    facesFile = 'FacesOnlySuit.json'
+    facesOnSuit = set(json.load(open(facesFile)))
+    # # facesOnSuit = None
+
     # ext = 'obj'
-    # # withMtl = True
+    ext = 'ply'
+    withMtl = True
     # withMtl = False
-    # rename = False
-    # plyFiles = glob.glob(join(obj_dir, '*.' + ext))
-    # if rename:
-    #     for plyF in plyFiles:
-    #         fName = os.path.basename(plyF)
-    #         if fName[0] != 'A':
-    #             newFileName = join(obj_dir, 'A'+fName)
-    #             os.rename(plyF, newFileName)
-    #             # print(plyF, newFileName)
-    #
-    # out_dir = os.path.join(obj_dir, 'WithTextureCoord')
-    # converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture, facesOnSuit=facesOnSuit)
-    #
+    rename = False
+    plyFiles = glob.glob(join(obj_dir, '*.' + ext))
+    if rename:
+        for plyF in plyFiles:
+            fName = os.path.basename(plyF)
+            if fName[0] != 'A':
+                newFileName = join(obj_dir, 'A'+fName)
+                os.rename(plyF, newFileName)
+                # print(plyF, newFileName)
+
+    out_dir = os.path.join(obj_dir, 'WithTextureCoord')
+    converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture, facesOnSuit=facesOnSuit)
+
     # objFilesToPly(out_dir, join(obj_dir, 'PlyWithTextureCoord'))
 
     # inFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\InterpolatedWithSparse.ply'
     # outFile = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\InitialSilhouetteFitting\3052\Final\FinalMesh.obj'
     # convertObjFile(inFile, outFile)
+
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\Katey', 'ply'))
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaGround', 'ply'))
+    # objFilesToPly(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', join(r'E:\Dropbox\mcproj\2021_01_05_MoreAnimationSeqs\LadaStand', 'ply'))
