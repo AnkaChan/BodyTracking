@@ -3,7 +3,7 @@ from FlowNet2Wrapper import Flownet2Controller
 import cv2
 from Utility import *
 
-def genOpticalFlow(inRenderedImgFolder, outFlowFolder, refImgFolder, frameNames=None):
+def genOpticalFlow(inRenderedImgFolder, outFlowFolder, refImgFolder, frameNames=None, magAmplify=400):
     inRenderedImgCamFolders = sortedGlob(join(inRenderedImgFolder, '*'))
     camNames = [os.path.basename(camFolder) for camFolder in inRenderedImgCamFolders]
 
@@ -26,8 +26,9 @@ def genOpticalFlow(inRenderedImgFolder, outFlowFolder, refImgFolder, frameNames=
             refImgFile = join(refImgCamFolder,  camName + fileName + '.png')
             im1 = cv2.imread(renderedImgF)
             im2 = cv2.imread(refImgFile)
+
             flow = flow_controller.predict(im1, im2)
-            flow_image = flow_controller.convert_flow_to_image(flow, magAmplify=80)
+            flow_image = flow_controller.convert_flow_to_image(flow, magAmplify=magAmplify)
 
             outFlowFile = join(outFlowCamFolder, fileName + '.npy')
             outFlowImgFile = join(outFlowImgCamFolder, fileName + '.png')
@@ -69,18 +70,22 @@ if __name__ == '__main__':
     # flow_controller.convert_video_to_flow("cp77cinematic.mp4", "output", downsample_res=(320, 320))
 
     frameNames = [
-        str(i).zfill(5) for i in range(8564, 8708)][:122]
+        str(i).zfill(5) for i in range(8564, 8564 + 200)]
 
-    inLBSMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/PureLBS/Rendered'
-    outLBSMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/PureLBS/OpticalFlow'
+    inLBSMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/ToTrackingPoints/Rendered'
+    outLBSMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/ToTrackingPoints/OpticalFlow'
     referenceImageFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered'
+    genOpticalFlow(inLBSMeshRenderingFolder, outLBSMeshOpticalFlowFolder, referenceImageFolder, frameNames)
 
-    # genOpticalFlow(inLBSMeshRenderingFolder, outLBSMeshOpticalFlowFolder, referenceImageFolder, frameNames)
+    inLBSMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/ToDense/Rendered'
+    outLBSMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/ToDense/OpticalFlow'
+    referenceImageFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered'
+    genOpticalFlow(inLBSMeshRenderingFolder, outLBSMeshOpticalFlowFolder, referenceImageFolder, frameNames)
 
-    inInterpolatedMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/Interpolated/Rendered'
-    outInterpolateMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/Interpolated/OpticalFlow'
+    # inInterpolatedMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/Interpolated/Rendered'
+    # outInterpolateMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/Evaluation/Interpolated/OpticalFlow'
     # genOpticalFlow(inInterpolatedMeshRenderingFolder, outInterpolateMeshOpticalFlowFolder, referenceImageFolder, frameNames)
 
-    inFinalMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered/'
-    outFinalMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered/OpticalFlow'
-    genOpticalFlow(inFinalMeshRenderingFolder, outFinalMeshOpticalFlowFolder, referenceImageFolder, frameNames)
+    # inFinalMeshRenderingFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered/'
+    # outFinalMeshOpticalFlowFolder = r'/media/Data001/MocapProj/2020_08_24_TexturedFitting_Lada_Rendering/DiffRenderered/OpticalFlow'
+    # genOpticalFlow(inFinalMeshRenderingFolder, outFinalMeshOpticalFlowFolder, referenceImageFolder, frameNames)
