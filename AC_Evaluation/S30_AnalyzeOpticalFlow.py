@@ -94,11 +94,11 @@ if __name__ == '__main__':
     calibrationDataFile = r'F:\WorkingCopy2\2019_12_13_Lada_Capture\CameraParameters\cam_params.json'
     flowFolder = r'X:\MocapProj\2021_01_16_OpticalFlows2\Lada_Ground\Flow'
     synthImgsFolder = r'G:\2021_01_17_SyntheticImages_LadaGround\LadaGround'
-    outputFolder = r'output/S30_OpticalFlowAnalysis/LadaGround'
+    outputFolder = r'E:\WorkingCopy\2021_01_18_OpticalFlowAnalysis\LadaGround'
 
     resizeLvl = 0.5
     # frames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000)]
-    frames = [str(iFrame).zfill(5) for iFrame in range(6141+600, 6141+2000)]
+    frames = [str(iFrame).zfill(5) for iFrame in range(7032, 6141+2000)]
 
     # what to report
     # 1. average optical flow norms on each frame each camera
@@ -113,8 +113,7 @@ if __name__ == '__main__':
 
     camProjMats = getProjMats(camParams)
 
-    avgOpticalFlowNorms = [] # nFrames x nCams
-    opticalFlowErrs = [] # nFrames x nCams x nVerts
+
 
     for iF, frame in tqdm.tqdm(enumerate(frames)):
         corrFile = join(inCorrsFolder, 'A' + frame.zfill(8) + '.json')
@@ -125,8 +124,8 @@ if __name__ == '__main__':
         triangulationFile = join(inTriangulationFolder, 'A' + frame.zfill(8) + '.obj')
         triangulation = pv.PolyData(triangulationFile)
 
-        avgOpticalFlowNorms.append([])
-        opticalFlowErrs.append([])
+        avgOpticalFlowNorms = []  # nFrames x nCams
+        opticalFlowErrs = []  # nFrames x nCams x nVerts
 
         for camId in camIds:
             cName = camNames[camId]
@@ -147,19 +146,18 @@ if __name__ == '__main__':
             # plt.show()
 
             avgFlowNorm = computeOpticalFlowNorm(flow, sil[:,:,3])
-            avgOpticalFlowNorms[-1].append(avgFlowNorm)
+            avgOpticalFlowNorms.append(avgFlowNorm)
 
             for iV in range(pts2D.shape[0]):
                 if camId in camIdsObserved[iV]:
                     # print(flow[int(pts2D[iV, 1] * resizeLvl), int(pts2D[iV, 0] * resizeLvl), :])
                     flowErr = bilinear_interpolate(flow, pts2D[iV, 0] * resizeLvl, pts2D[iV, 1] * resizeLvl)
                     # print(flowErr)
-                    opticalFlowErrs[-1].append(flowErr)
+                    opticalFlowErrs.append(flowErr)
                 else:
-                    opticalFlowErrs[-1].append([0,0])
+                    opticalFlowErrs.append([0,0])
 
     # print(opticalFlowErrs)
     # print(avgOpticalFlowNorms)
-        if not iF % 100:
-            np.save(join(outputFolder, 'opticalFlowErrs'+'_' + frames[0] + '_' + frames[-1] +'.npy'), np.array(opticalFlowErrs))
-            np.save(join(outputFolder, 'avgOpticalFlowNorms'+'_' + frames[0] + '_' + frames[-1] +'.npy'), np.array(avgOpticalFlowNorms))
+        np.save(join(outputFolder, 'opticalFlowErrs'+'_' + frame +'.npy'), np.array(opticalFlowErrs))
+        np.save(join(outputFolder, 'avgOpticalFlowNorms'+'_' + frame +'.npy'), np.array(avgOpticalFlowNorms))
