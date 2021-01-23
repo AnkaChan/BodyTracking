@@ -223,7 +223,9 @@ if __name__ == '__main__':
     # convertObjFile(inFile, outFile)
 
     from SkelFit.Data import getIsolatedVerts
-    inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Interpolated\Test'
+    # inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Interpolated\Test'
+    inFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Transition\Transition\ARAP_Obj'
+    inExt = 'obj'
     headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
     handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
     exampleQuadMesh = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\Complete_withHeadHand_XYZOnly.obj'
@@ -232,4 +234,4 @@ if __name__ == '__main__':
     isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
     vertsToRemove = set(headVIds + handVIds + isolatedPoints)
 
-    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh)
+    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh, inExtName=inExt, removeVerts=False)

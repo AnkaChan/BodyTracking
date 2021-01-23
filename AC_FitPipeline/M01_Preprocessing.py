@@ -167,9 +167,15 @@ if __name__ == '__main__':
     # inFolder = r'F:\WorkingCopy2\2020_05_21_AC_FramesDataToFitTo\Copied\03052'
     # camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
 
-    inFolder = r'X:\MocapProj\2019_12_13_Lada_Capture\CleanPlateExtracted\gray\distorted'
+    # inFolder = r'X:\MocapProj\2019_12_13_Lada_Capture\CleanPlateExtracted\gray\distorted'
+    # inFolder = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\27_NewTeaserImage\Data\Lada\Images'
+    inFolder = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\26_OpticalFLowGeneration\CompareImage'
     camParamF = r'F:\WorkingCopy2\2019_12_13_Lada_Capture\CameraParameters\cam_params.json'
+
+    # inFolder = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\27_NewTeaserImage\Data\Katey\Images'
+    # camParamF = r'F:\WorkingCopy2\2020_01_01_KateyCapture\CameraParameters\cam_params.json'
+    inExtname = 'pgm'
 
     outFolder = join(inFolder, 'RgbUndist')
 
-    undistortMultiCamsFolder(inFolder, outFolder, camParamF, extname='png')
+    undistortMultiCamsFolder(inFolder, outFolder, camParamF, extname=inExtname)

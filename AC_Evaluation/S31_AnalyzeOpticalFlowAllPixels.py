@@ -1,7 +1,7 @@
 from S29_3DReconstructedPointsOpticalFlow import *
 from matplotlib import pyplot as plt
 
-def computeOpticalFlowNorm(flow, sil):
+def computeOpticalFlowErrorAllPixels(flow, sil):
     foregroundPixels = np.where(sil)
 
     # flowImg = convert_flow_to_image(flow, )
@@ -10,9 +10,9 @@ def computeOpticalFlowNorm(flow, sil):
     # cv2.waitKey()
 
     flowMag = np.sqrt(flow[:, :, 0] ** 2 + flow[:, :, 1] ** 2)
-    avgFlowNorm = np.mean(flowMag[foregroundPixels])
+    # avgFlowNorm = np.mean(flowMag[foregroundPixels])
 
-    return avgFlowNorm
+    return flowMag[foregroundPixels]
 
 def readOpticalFlows(flowFiles, masks=None):
     flows = []
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # frames = [str(iFrame).zfill(5) for iFrame in range(7032, 6141+2000)]
     # frames = [str(iFrame).zfill(5) for iFrame in range(7032, 6141+2000)]
 
-    frames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+200)]
+    frames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000, 10)]
 
 
     # what to report
@@ -112,10 +112,7 @@ if __name__ == '__main__':
     os.makedirs(outputFolder, exist_ok=True)
 
     camIds = [0, 4, 8, 12]
-    camParams, camNames = Camera.loadCamParams(calibrationDataFile)
     camNames = 'ABCDEFGHIJKLMNOP'
-
-    camProjMats = getProjMats(camParams)
 
 
     for iF, frame in tqdm.tqdm(enumerate(frames)):
@@ -128,41 +125,32 @@ if __name__ == '__main__':
         triangulation = pv.PolyData(triangulationFile)
 
         avgOpticalFlowNorms = []  # nFrames x nCams
-        opticalFlowErrs = []  # nFrames x nCams x nVerts
 
         for camId in camIds:
             cName = camNames[camId]
-            projMat = camProjMats[camId]
-            pts2D = project3DKeypoints(projMat, triangulation.points, )
 
             flow = np.load(join(flowFolder, cName + frame + '.npy'))
             silFile = join(synthImgsFolder, cName + frame + '.png')
             sil = cv2.imread(silFile, cv2.IMREAD_UNCHANGED)
 
-            flowImg = convert_flow_to_image(flow, )
-            fig, ax = plt.subplots()
-            ax.imshow(sil[:,:,3], vmin=0, vmax=255, interpolation='nearest')
+            # flowImg = convert_flow_to_image(flow, )
+            # fig, ax = plt.subplots()
+            # ax.imshow(sil[:,:,3], vmin=0, vmax=255, interpolation='nearest')
 
-            ax.plot(pts2D[:, 0] * resizeLvl, pts2D[:, 1] * resizeLvl, 'x', color='green', markeredgewidth=1,
-                    markersize=5)
-            ax.axis('off')
-            plt.show()
+            allErrs = computeOpticalFlowErrorAllPixels(flow, sil[:,:,3])
+            avgOpticalFlowNorms.append(allErrs)
 
-            avgFlowNorm = computeOpticalFlowNorm(flow, sil[:,:,3])
-            avgOpticalFlowNorms.append(avgFlowNorm)
-
-            for iV in range(pts2D.shape[0]):
-                if camId in camIdsObserved[iV]:
-                    # print(flow[int(pts2D[iV, 1] * resizeLvl), int(pts2D[iV, 0] * resizeLvl), :])
-                    flowErr = bilinear_interpolate(flow, pts2D[iV, 0] * resizeLvl, pts2D[iV, 1] * resizeLvl)
-                    # print(flowErr)
-                    opticalFlowErrs.append(flowErr)
-                else:
-                    opticalFlowErrs.append([0,0])
+            # for iV in range(pts2D.shape[0]):
+            #     if camId in camIdsObserved[iV]:
+            #         # print(flow[int(pts2D[iV, 1] * resizeLvl), int(pts2D[iV, 0] * resizeLvl), :])
+            #         flowErr = bilinear_interpolate(flow, pts2D[iV, 0] * resizeLvl, pts2D[iV, 1] * resizeLvl)
+            #         # print(flowErr)
+            #         opticalFlowErrs.append(flowErr)
+            #     else:
+            #         opticalFlowErrs.append([0,0])
 
     # print(opticalFlowErrs)
     # print(avgOpticalFlowNorms)
-        np.save(join(outputFolder, 'opticalFlowErrs'+'_' + frame +'.npy'), np.array(opticalFlowErrs))
-        np.save(join(outputFolder, 'opticalFlowErrsAllPixels'+'_' + frame +'.npy'), np.array(opticalFlowErrs))
-        np.save(join(outputFolder, 'avgOpticalFlowNorms'+'_' + frame +'.npy'), np.array(avgOpticalFlowNorms))
+        np.save(join(outputFolder, 'opticalFlowErrsAllPixels'+'_' + frame +'.npy'), np.array(allErrs))
+        # np.save(join(outputFolder, 'avgOpticalFlowNorms'+'_' + frame +'.npy'), np.array(avgOpticalFlowNorms))
 

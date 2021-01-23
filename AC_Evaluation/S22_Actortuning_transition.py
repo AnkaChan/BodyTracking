@@ -4,6 +4,31 @@ from shutil import copy
 from SkelFit.SkeletonModel import *
 from SkelFit.Data  import *
 from S23_ActorTuning_CompareSeq import visualizeFitting
+from S23_ActorTuning_CompareSeq import visualizeErrs
+
+
+def computeFitingErrs(inDeformedMeshFolder, triangulationFile):
+    outFolder = join(inDeformedMeshFolder, 'errs')
+    os.makedirs(outFolder, exist_ok=True)
+
+    inMeshes = sortedGlob(join(inDeformedMeshFolder, '*.ply'))
+    errs = []
+    loop = tqdm.tqdm(inMeshes)
+    for inMesh in loop:
+        deformedMesh = pv.PolyData(inMesh)
+        targetPC = pv.PolyData(triangulationFile)
+
+        diff = np.zeros(deformedMesh.points.shape)
+        diff[:targetPC.points.shape[0], :] = deformedMesh.points[:targetPC.points.shape[0], :] - targetPC.points
+
+        dis = np.sqrt(diff[:, 0]**2+diff[:, 1]**2+diff[:, 2]**2)
+
+        dis[np.where(targetPC.points[:, 2]==-1)[0]] = -1
+        dis[targetPC.points.shape[0]:] = -1
+
+        json.dump(dis.tolist(), open(join(outFolder, Path(inMesh).stem+'.json'), 'w'))
+
+        loop.set_description("AvgErr:" + str(np.mean(dis[np.where(targetPC.points[:, 2]!=-1)[0]])))
 
 if __name__ == '__main__':
     # restposeTransitionFolder = r'C:\Code\MyRepo\03_capture\BodyTracking\AC_Evaluation\Data\S_22Actorcalibration\RestposeChange'
@@ -82,4 +107,8 @@ if __name__ == '__main__':
         # elif iV in rightFootVIds:
         #     corrs.append([int(iV), iInvalidTarget])
 
-    visualizeFitting(skelTransitionOutFolder, join(skelTransitionOutFolder, 'complete'), ARAP=True, completeMeshFile=completeObjMeshFile, corrs=corrs, ext='obj')
+    # visualizeFitting(skelTransitionOutFolder, join(skelTransitionOutFolder, 'complete'), ARAP=True, completeMeshFile=completeObjMeshFile, corrs=corrs, ext='obj')
+    inFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Transition\Transition\ARAP_Obj\clean'
+    inTargetFile = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose\Triangulation_RThres1.5_HardRThres_1.5\vis\A00004799.ply'
+    computeFitingErrs(inFolder, inTargetFile, )
+    visualizeErrs(inFolder, inFolder + r'\Errs')

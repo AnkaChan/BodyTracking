@@ -222,13 +222,19 @@ if __name__ == '__main__':
     # convertObjFile(inFile, outFile)
 
     from SkelFit.Data import getIsolatedVerts
-    inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Interpolated\Test'
+    # inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Interpolated\Test'
+    # inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Interpolation\TLap_100_JR_600_JTW_200_Step150_Overlap50_cleaned\RestPoseTarget\InterpolationDisplacement'
+    # outFolder = join(inFolder, 'RestPoseInterpolated')
+
+
+
     headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
     handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
     exampleQuadMesh = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\Complete_withHeadHand_XYZOnly.obj'
+
     headVIds = json.load(open(headVIdsFile))
     handVIds = json.load(open(handVIdsFile))
     isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
     vertsToRemove = set(headVIds + handVIds + isolatedPoints)
 
-    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh)
+    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)

@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Lada_Stand.json'
     # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Stand'
     #
-    skelDataFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\S02_Combined_Lada_HandHead_OriginalRestpose.json'
+    # skelDataFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\S02_Combined_Lada_HandHead_OriginalRestpose.json'
 
     # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Stand_3500_5000.json'
     # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Stand_54_1554.json'
@@ -28,11 +28,18 @@ if __name__ == '__main__':
     # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Rolling_3440_3762.json'
     # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Rolling'
 
+    # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Ballet_5422_5423.json' # Katey_Ballet_5422_5423
+    # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Ballet'
+    #
+    inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_Interpolation_ReduceFlickering.json' # Katey_Ballet_5422_5423
+    outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Interpolation'
+
+
     # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Katey_SquatSpin.json'
     # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_SquatSpin'
 
-    inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Lada_Yoga_9613_10142.json'
-    outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Yoga'
+    # inChunkedFile = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Inputs\Lada_Yoga_9613_10142.json'
+    # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Lada_Yoga'
 
     # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Stand'
     # outputFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Stand_Initial_SkelModel'
@@ -40,7 +47,7 @@ if __name__ == '__main__':
     # outputFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Evaluation\Training_Initial'
     # outputFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Evaluation\Test_Initial' # for testing the intial model
 
-    # skelDataFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487_Katey\S01_Combined_Katey_HandHead_OriginalRestpose.json'
+    skelDataFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487_Katey\S01_Combined_Katey_HandHead_OriginalRestpose.json'
     # outputFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Evaluation\Training_Final'
     # outputFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Evaluation\Test_Final' # for testing the optimized model
 
@@ -69,9 +76,10 @@ if __name__ == '__main__':
     cfgSkelFit.poseChangeRegularizerWeight = 600
     cfgSkelFit.jointTCW = 200
 
-    # cfgSkelFit.interpolationSegLength = 150
     cfgSkelFit.interpolationSegLength = 150
     cfgSkelFit.interpolationOverlappingLength = 50
+    # cfgSkelFit.interpolationSegLength = 500
+    # cfgSkelFit.interpolationOverlappingLength = 100
     # cfgSkelFit.interpolationSegLength = 322 # for Katey rolling
     # cfgSkelFit.interpolationSegLength = 299 # for Katey rolling
     # cfgSkelFit.interpolationOverlappingLength = 0
@@ -81,19 +89,20 @@ if __name__ == '__main__':
     # cfgSkelFit.poseChangeRegularizerWeight = 800 # for katey's squat spin
     cfgSkelFit.tw = 100
     cfgSkelFit.removeOutliers =True
+    # cfgSkelFit.removeOutliers =False
     cfgSkelFit.outlierFilterThreshold = 50
     # cfgSkelFit.smoothingSoftConstraintWeight = 20
     cfgSkelFit.smoothingSoftConstraintWeight = 1
     # cfgSkelFit.detailRecover = False
 
-    M01_LBSFitting.lbsFitting(inChunkedFile, outputFolder, skelDataFile, cfgSkelFit)
+    # M01_LBSFitting.lbsFitting(inChunkedFile, outputFolder, skelDataFile, cfgSkelFit)
 
     outputFolder = join(outputFolder, M01_LBSFitting.getFitName(cfgSkelFit))
     # paramFile = join(outputFolder, 'Init', 'Params', 'Params.json')
     paramFile = join(outputFolder, 'LBSWithTC', 'Params', 'Params.json')
     if cfgSkelFit.removeOutliers:
         inChunkedFile = inChunkedFile + '.cleaned.json'
-    M01_LBSFitting.detailInterpolation(inChunkedFile, outputFolder, skelDataFile, paramFile, cfgSkelFit)
+    # M01_LBSFitting.detailInterpolation(inChunkedFile, outputFolder, skelDataFile, paramFile, cfgSkelFit)
 
     headVIds = json.load(open(headVIdsFile))
     handVIds = json.load(open(handVIdsFile))
@@ -101,8 +110,9 @@ if __name__ == '__main__':
     # isolatedPoints = getIsolatedVerts(cfgSkelFit.inOriginalRestPoseMesh)
     # vertsToRemove = set(headVIds + handVIds + isolatedPoints)
 
-    temporalSmoothingPointTrajectory(join(outputFolder, 'Interpolated'), join(outputFolder, 'Smoothed'), softConstraintWeight=cfgSkelFit.smoothingSoftConstraintWeight)
-    removeVertsFromMeshFolder(join(outputFolder, 'Smoothed'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh)
+    # temporalSmoothingPointTrajectory(join(outputFolder, 'Interpolated'), join(outputFolder, 'Smoothed'), softConstraintWeight=cfgSkelFit.smoothingSoftConstraintWeight)
+    # removeVertsFromMeshFolder(join(outputFolder, 'Smoothed'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
+    removeVertsFromMeshFolder(join(outputFolder, 'Interpolated'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
 
     # temporalSmoothingPointTrajectory(join(outputFolder, 'Interpolated'), join(outputFolder, 'Smoothed'))
     # fittingToVtk(join(outputFolder, 'Smoothed'), outVTKFolder=join(outputFolder, 'Smoothed', 'clean'), meshWithFaces=exampleQuadMesh, removeUnobservedFaces=False, extName='ply', outExtName='ply')

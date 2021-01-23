@@ -2,7 +2,6 @@ from Utility import *
 import pyvista as pv
 from M01_ARAPDeformation import *
 from SkelFit.Data import *
-from SkelFit.Visualization import *
 from M02_ObjConverter import removeVertsFromMeshFolder
 
 def visualizeFitting(inFittingFolder, outFolder, ARAP=False, completeMeshFile=None, corrs=None, ext='ply'):
@@ -65,18 +64,6 @@ def computeFitingErrs(inDeformedMeshFolder, triangulationFolder, frameNames, out
 
         loop.set_description("AvgErr:" + str(np.mean(dis[np.where(targetPC.points[:, 2]!=-1)[0]])))
 
-def visualizeErrs(inFolder, errFoler):
-    outFolder = join(inFolder, 'WithErrs')
-    os.makedirs(outFolder, exist_ok=True)
-
-    inFiles = sortedGlob(join(inFolder, '*.ply'))
-
-    for inFile in tqdm.tqdm(inFiles):
-        mesh = pv.PolyData(inFile)
-        errs = json.load(open(join(errFoler, Path(inFile).stem + '.json')))
-        mesh.point_arrays['Errs'] = errs
-        mesh.save(join(outFolder, Path(inFile).stem + '.vtk'))
-
 if __name__ == '__main__':
     inInitialModelFitFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Stand_Initial_SkelModel\SLap_SBiLap_True_TLap_1_JTW_0.5_JBiLap_0_Step1_Overlap0\Init'
     inInitialModelMeshFile = r'C:\Code\MyRepo\ChbCapture\06_Deformation\CeresSkelFit\PrepareData1487\014_SkelDataKateyXPose.json.vtk'
@@ -122,9 +109,6 @@ if __name__ == '__main__':
     #
     # visualizeFitting(inFinalModelFitFolder, outFinalModelFitFolder, ARAP=False)
 
-    # computeFitingErrs(outInitialModelFitFolder, triangulationFolder, frameNames, join(outInitialModelFitFolder, 'Errs'))
-    # computeFitingErrs(outFinalModelFitFolder, triangulationFolder, frameNames, join(outFinalModelFitFolder, 'Errs'))
-
-    # write errors to the mesh file
-    # visualizeErrs(outInitialModelFitFolder,  join(outInitialModelFitFolder, 'Errs'))
-    # visualizeErrs(outFinalModelFitFolder,  join(outFinalModelFitFolder, 'Errs'))
+    computeFitingErrs(outInitialModelFitFolder, triangulationFolder, frameNames, join(outInitialModelFitFolder, 'Errs'))
+    computeFitingErrs(outFinalModelFitFolder, triangulationFolder, frameNames, join(outFinalModelFitFolder, 'Errs'))
+    # compute fiting errors

@@ -78,12 +78,7 @@ if __name__ == '__main__':
     matplotlib.rc('font', **font)
     # n_bins = 1000
     #
-    # hist, bins, _ = plt.hist(allErrs, bins=n_bins)
-    #
-    # if log_x:
-    #     plt.figure()
-    #     logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
-    #     plt.hist(allErrs, bins=logbins)
+
     #
     # # plt.xscale('log')
     # plt.yscale('log')
@@ -91,23 +86,29 @@ if __name__ == '__main__':
     # plt.ylabel('Number of Points (in pixel)')
     # plt.show()
 
-    kwargs = dict(alpha=0.5, bins=200, stacked=True)
+    # kwargs = dict(alpha=0.5, bins=200, stacked=True)
+    kwargs = dict(alpha=0.5, stacked=True)
     # fig = plt.figure(constrained_layout=True, tight_layout=True)
     plt.rcParams["figure.figsize"] = (6, 2.5)  # (w, h)
     fig = plt.figure(constrained_layout=True, tight_layout=True)
     gs = GridSpec(1, 1, figure=fig)
 
     # linear
-    plt.hist(errsWithoutConsis, **kwargs, color='b', label='Without outlier filtering', rwidth=1)
+    hist, bins, _ = plt.hist(errsWithoutConsis, bins=500)
+
+    plt.figure()
+    logbins = np.logspace(np.log10(bins[0]+1e-4), np.log10(bins[-1]), len(bins))
+
+    plt.hist(errsWithoutConsis, **kwargs, color='b', label='Without outlier filtering', rwidth=1, bins=logbins)
     # plt.hist(errsWithConsis, **kwargs, color='b', label='With Consistency Check')
-    plt.hist(errsConsisRansac, **kwargs, color='r', label='With outlier filtering', rwidth=5)
+    plt.hist(errsConsisRansac, **kwargs, color='r', label='With outlier filtering', rwidth=1, bins=logbins)
     plt.yscale('log')
-    # plt.xscale('log')
+    plt.xscale('log')
     plt.gca().set(ylabel='Bin count', xlabel='(a) Reprojection error of 3D reconstruction [pixels]')
     plt.ylim([0, 1e5])
-    plt.xlim([0, 300])
+    # plt.xlim([0, 300])
     plt.legend();
-    plt.savefig(join(outputFolder, 'ReprojErrsCompr.png'), dpi=400, bbox_inches="tight")
+    plt.savefig(join(outputFolder, 'ReprojErrsCompr_xlog.png'), dpi=400, bbox_inches="tight")
     plt.show()
 
     errsConsisRansacCutoff = []
