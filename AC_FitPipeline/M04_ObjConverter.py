@@ -1,4 +1,4 @@
-import glob
+import glob, tqdm
 import os
 from pathlib import Path
 import pyvista as pv
@@ -43,7 +43,7 @@ def converObjsInFolder(obj_dir, out_dir, ext='obj', convertToMM=False, addA=Fals
     os.makedirs(out_dir, exist_ok=True)
 
     in_paths = glob.glob(obj_dir + '/*.' + ext)
-    for in_path in in_paths:
+    for in_path in tqdm.tqdm(in_paths):
         obj_name = Path(in_path).stem
         if addA:
             out_path = out_dir + '/A{}.obj'.format(obj_name)
@@ -116,8 +116,8 @@ map_Kd '''
                 f.write(' {}'.format(fi))
             f.write('\n')
         f.close()
-    print(outFile)
-    print(len(vs))
+    # print(outFile)
+    # print(len(vs))
 
 def objFilesToPly(inFolder, outFolder):
     os.makedirs(outFolder, exist_ok=True)
@@ -138,13 +138,18 @@ if __name__ == '__main__':
     # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\FitOnlyBody\Vis\ObjWithUV'
     # obj_dir = r'C:\Code\MyRepo\03_capture\Mocap-CVPR-Paper-Figures\12_TeaserImage\Mesh'
     # obj_dir = r'F:\WorkingCopy2\2020_07_15_NewInitialFitting\CompleteTexture\Meshes'
-    obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LBS'
+    # obj_dir = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LBS'
+    # texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
     texture = r'texturemap_learned_LapW0.2_MaskTrue_L1.png'
 
+    # obj_dir = r'F:\WorkingCopy2\2021_02_15_TestIsometricDeformation\Input'
+    obj_dir = r'G:\My Drive\mocap\2020_11_11_TestSMPLSHCeresFit\Interpolated'
+
+    out_dir = r'F:\WorkingCopy2\2021_05_12_ReverseRenderingAnimation\Meshes'
 
     facesFile = 'FacesOnlySuit.json'
     facesOnSuit = set(json.load(open(facesFile)))
-    # # facesOnSuit = None
+    # facesOnSuit = None
 
     # ext = 'obj'
     ext = 'ply'
@@ -160,7 +165,7 @@ if __name__ == '__main__':
                 os.rename(plyF, newFileName)
                 # print(plyF, newFileName)
 
-    out_dir = os.path.join(obj_dir, 'WithTextureCoord')
+    # out_dir = os.path.join(obj_dir, 'WithTextureCoord')
     converObjsInFolder(obj_dir, out_dir, ext=ext, addA=False, withMtl=withMtl, textureFile=texture, facesOnSuit=facesOnSuit)
 
     # objFilesToPly(out_dir, join(obj_dir, 'PlyWithTextureCoord'))

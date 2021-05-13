@@ -4,7 +4,7 @@ import M02_ObjConverter
 from Utility import *
 import json
 from SkelFit.Data import getIsolatedVerts
-from SkelFit.Visualization import fittingToVtk
+from SkelFit.Visualization import fittingToVtk, unpackChunkData
 from M03_TemporalSmoothing import temporalSmoothingPointTrajectory
 if __name__ == '__main__':
     cfgSkelFit = M01_LBSFitting.Config()
@@ -110,9 +110,16 @@ if __name__ == '__main__':
     # isolatedPoints = getIsolatedVerts(cfgSkelFit.inOriginalRestPoseMesh)
     # vertsToRemove = set(headVIds + handVIds + isolatedPoints)
 
+    # unpackChunkData(inChunkedFile, join(outputFolder, 'Target'), outputType='ply')
+
+
     # temporalSmoothingPointTrajectory(join(outputFolder, 'Interpolated'), join(outputFolder, 'Smoothed'), softConstraintWeight=cfgSkelFit.smoothingSoftConstraintWeight)
     # removeVertsFromMeshFolder(join(outputFolder, 'Smoothed'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
     removeVertsFromMeshFolder(join(outputFolder, 'Interpolated'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
+    # removeVertsFromMeshFolder(join(outputFolder, 'LBSWithTC'), join(outputFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
+
+    # removeVertsFromMeshFolder(r'C:\Code\MyRepo\03_capture\BodyTracking\Data\2020_12_27_betterCoarseMesh\Mesh1487_Katey', r'C:\Code\MyRepo\03_capture\BodyTracking\Data\2020_12_27_betterCoarseMesh\Mesh1487_Katey\Cleaned'
+    #                           , vertsToRemove, exampleQuadMesh, removeVerts=False, inExtName='obj')
 
     # temporalSmoothingPointTrajectory(join(outputFolder, 'Interpolated'), join(outputFolder, 'Smoothed'))
     # fittingToVtk(join(outputFolder, 'Smoothed'), outVTKFolder=join(outputFolder, 'Smoothed', 'clean'), meshWithFaces=exampleQuadMesh, removeUnobservedFaces=False, extName='ply', outExtName='ply')

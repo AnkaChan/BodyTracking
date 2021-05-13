@@ -1,4 +1,7 @@
 from S17_EvaluateCornerdet import *
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 suit_dict = {'1':0, '2':1, '3':2, '4':3, '5':4, '6':5, '7':6, 'A':7, 'B':8, 'C':9, 'D':10, 'E':11, 'F':12, 'G':13, 'J':14,
            'K':15, 'L':16, 'M':17, 'P':18, 'Q':19, 'R':20, 'T':21, 'U':22, 'V':23, 'Y':24}
 inv_suit_dict = {v: k for k, v in suit_dict.items()}
@@ -40,7 +43,9 @@ def runRecognizerBatched(sess_recognizer, data, batch_size = 6000):
     return codes
 if __name__ == '__main__':
     dataFolder = r'E:\Dropbox\Mocap_Networks\code_recog'
-    recognizer_sess = join(quadpropDir, 'nets_recognizer/CNN_100_gen7_and_synth.ckpt')
+    # recognizer_sess = join(quadpropDir, 'nets_recognizer/CNN_100_gen7_and_synth.ckpt')
+    # trained w/o synth data
+    recognizer_sess = r'E:\Dropbox\Mocap_Networks\code_recog\nets\CNN_97_gen7_renamed.ckpt'
 
     img_data = np.load(join(dataFolder, 'data_aug7/subImgSet.npy'))
     lab_data1 = np.load(join(dataFolder, 'data_aug7/labels1Set.npy'))
@@ -54,13 +59,16 @@ if __name__ == '__main__':
     print(synth_data.shape)
     print(synth_labels.shape)
 
-    test_images = np.load(join(dataFolder, 'test_annot_02/simgs.npy'))
-    test_labels = np.load(join(dataFolder, 'test_annot_02/labels.npy'))
+    # test_images = np.load(join(dataFolder, 'test_annot_02/simgs.npy'))
+    # test_labels = np.load(join(dataFolder, 'test_annot_02/labels.npy'))
 
-    test2_images = np.load(join(dataFolder, 'test_annot_05/simgs.npy'))
-    test2_labels = np.load(join(dataFolder, 'test_annot_05/labels.npy'))
-    test_images = np.vstack([test_images, test2_images])
-    test_labels = np.vstack([test_labels, test2_labels])
+    # test2_images = np.load(join(dataFolder, 'test_annot_05/simgs.npy'))
+    # test2_labels = np.load(join(dataFolder, 'test_annot_05/labels.npy'))
+    # test_images = np.vstack([test_images, test2_images])
+    # test_labels = np.vstack([test_labels, test2_labels])
+
+    test_images = np.load(r'NewSuit/TestData/imgs_RecogNet.npy')
+    test_labels = np.load(r'NewSuit/TestData/labels_RecogNet.npy')
 
     print(test_images.shape)
     print(test_labels.shape)
@@ -70,16 +78,16 @@ if __name__ == '__main__':
     saver3.restore(sess_recognizer, recognizer_sess)
 
 
-    trainStrs = labelsToCode(lab_data1, lab_data2)
-    code_strs = runRecognizerBatched(sess_recognizer, img_data, )
-    trainPredAcc = recogAccuracy(trainStrs, code_strs)
-
-    print('Prediction accuracy on real training set:', trainPredAcc)
-
-    synthStrs = labelsToCode(synth_labels[:,0], synth_labels[:,1])
-    code_strs = runRecognizerBatched(sess_recognizer, synth_data, )
-    testPredAcc = recogAccuracy(synthStrs , code_strs)
-    print('Prediction accuracy on synthetic training set:', testPredAcc)
+    # trainStrs = labelsToCode(lab_data1, lab_data2)
+    # code_strs = runRecognizerBatched(sess_recognizer, img_data, )
+    # trainPredAcc = recogAccuracy(trainStrs, code_strs)
+    #
+    # print('Prediction accuracy on real training set:', trainPredAcc)
+    #
+    # synthStrs = labelsToCode(synth_labels[:,0], synth_labels[:,1])
+    # code_strs = runRecognizerBatched(sess_recognizer, synth_data, )
+    # testPredAcc = recogAccuracy(synthStrs , code_strs)
+    # print('Prediction accuracy on synthetic training set:', testPredAcc)
 
     testStrs = labelsToCode(test_labels[:,0], test_labels[:,1])
     code_strs = runRecognizerBatched(sess_recognizer, test_images, )

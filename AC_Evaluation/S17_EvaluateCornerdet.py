@@ -7,6 +7,7 @@ import tensorflow as tf
 from os.path import join
 import numpy as np
 import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 from matplotlib import pyplot as plt
 
@@ -67,8 +68,13 @@ if __name__ == '__main__':
 
     trainingImgs = np.load(join(inDataFolder, 'train_imgs.npy'))
     trainingLabels = np.load(join(inDataFolder, 'train_labels.npy'))
-    testgImgs = np.load(join(inDataFolder, 'test_imgs.npy'))
-    testLabels = np.load(join(inDataFolder, 'test_labels.npy'))
+
+    # testgImgs = np.load(join(inDataFolder, 'test_imgs.npy'))
+    # testLabels = np.load(join(inDataFolder, 'test_labels.npy'))
+
+    testgImgs = np.load(join(inDataFolder, 'test_imgs_2.npy'))
+    testLabels = np.load(join(inDataFolder, 'test_labels_2.npy'))
+
 
     tf.reset_default_graph()
 

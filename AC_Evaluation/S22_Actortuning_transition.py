@@ -110,5 +110,31 @@ if __name__ == '__main__':
     # visualizeFitting(skelTransitionOutFolder, join(skelTransitionOutFolder, 'complete'), ARAP=True, completeMeshFile=completeObjMeshFile, corrs=corrs, ext='obj')
     inFolder = r'F:\WorkingCopy2\2021_01_09_ActorTuningVis\Transition\Transition\ARAP_Obj\clean'
     inTargetFile = r'F:\WorkingCopy2\2020_03_19_Katey_WholeSeq\TPose\Triangulation_RThres1.5_HardRThres_1.5\vis\A00004799.ply'
-    computeFitingErrs(inFolder, inTargetFile, )
-    visualizeErrs(inFolder, inFolder + r'\Errs')
+
+    # break first and second iteration in half
+    meshFiles = sortedGlob(join(inFolder, '*.ply'))
+
+    meshes = [pv.PolyData(meshFile ) for meshFile in meshFiles]
+    newMeshes1 = pv.PolyData(meshFiles[0])
+    newMeshes1_2 = pv.PolyData(meshFiles[0])
+    newMeshes1_3 = pv.PolyData(meshFiles[0])
+    newMeshes1.points = meshes[0].points*0.75 + meshes[1].points*0.25
+    newMeshes1_2.points = meshes[0].points*0.5 + meshes[1].points*0.5
+    newMeshes1_3.points = meshes[0].points*0.25 + meshes[1].points*0.75
+
+    newMeshes2 = pv.PolyData(meshFiles[0])
+    newMeshes2.points = meshes[1].points*0.5 + meshes[2].points*0.5
+
+    meshes.insert(1, newMeshes1)
+    meshes.insert(2, newMeshes1_2)
+    meshes.insert(3, newMeshes1_3)
+
+    meshes.insert(5, newMeshes2)
+
+    outFolder = join(inFolder, 'WithExtraFrames')
+    os.makedirs(outFolder, exist_ok=True)
+    for i, mesh in enumerate(meshes):
+        mesh.save(join(outFolder, 'Mesh'+str(i).zfill(3)+'.ply'))
+
+    computeFitingErrs(outFolder, inTargetFile, )
+    visualizeErrs(outFolder, outFolder + r'\Errs')

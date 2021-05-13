@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # frames = [str(iFrame).zfill(5) for iFrame in range(7032, 6141+2000)]
     # frames = [str(iFrame).zfill(5) for iFrame in range(7032, 6141+2000)]
 
-    frames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000, 10)]
+    frames = [str(iFrame).zfill(5) for iFrame in range(6141, 6141+2000, 1)]
 
 
     # what to report
@@ -115,7 +115,8 @@ if __name__ == '__main__':
     camNames = 'ABCDEFGHIJKLMNOP'
 
 
-    for iF, frame in tqdm.tqdm(enumerate(frames)):
+    for iF in tqdm.tqdm(range(len(frames))):
+        frame = frames[iF]
         corrFile = join(inCorrsFolder, 'A' + frame.zfill(8) + '.json')
         corrs = json.load(open(corrFile))
 

@@ -31,8 +31,11 @@ if __name__ == '__main__':
     posImgs = np.load(join(dataFolder, 'pos_augmented.npy'))
     negImgs = np.load(join(dataFolder, 'neg_augmented.npy'))
 
-    testImgs = np.load(join(dataFolder, 'test_imgs.npy'))
-    testLabels = np.load(join(dataFolder, 'test_labels.npy'))
+    # testImgs = np.load(join(dataFolder, 'test_imgs.npy'))
+    # testLabels = np.load(join(dataFolder, 'test_labels.npy'))
+
+    testImgs = np.load(r'NewSuit/TestData/imgs_RejectorNet.npy')
+    testLabels = np.load(r'NewSuit/TestData/labels_RejectorNet.npy')
 
     # prepare the rejector net
     rejector_sess = join(quadpropDir, 'Rejector2/20200114_14h07m.ckpt')

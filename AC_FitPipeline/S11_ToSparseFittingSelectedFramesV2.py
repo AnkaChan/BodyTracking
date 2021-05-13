@@ -173,7 +173,8 @@ if __name__ == '__main__':
     # Lada ground
     inputs.dataFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround'
     inputs.outFolderAll = inputs.dataFolder
-    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    # inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\LadaGround'
+    inputs.deformedSparseMeshFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaGround'
     inputs.camParamF = r'F:\WorkingCopy2\2020_05_31_DifferentiableRendererRealData\CameraParams\cam_params.json'
     inputs.inputKpFolder = r'F:\WorkingCopy2\2020_08_26_TexturedFitting_LadaGround\Keypoints'
     inputs.outFolderAll = join(inputs.dataFolder, 'FitOnlyBody')

@@ -81,6 +81,7 @@ def removeVertsFromMeshFolder(inFolder,  outFolder, vertIdsToRemove, exampleMesh
 
         removeVertsFromMesh(inFile, outFile, vertIds, exampleMesh, newFaces=newFaces)
 
+
 def removeVertsFromMesh(inMesh, outMesh, vertIdsToKeep, exampleMesh, newFaces=None, removeVerts=True):
     inMesh = pv.PolyData(inMesh)
 
@@ -226,7 +227,11 @@ if __name__ == '__main__':
     # inFolder = r'F:\WorkingCopy2\2021_01_04_NewModelFitting\Output\Katey_Interpolation\TLap_100_JR_600_JTW_200_Step150_Overlap50_cleaned\RestPoseTarget\InterpolationDisplacement'
     # outFolder = join(inFolder, 'RestPoseInterpolated')
 
+    # inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaGround'
+    # outFolder = r'F:\WorkingCopy2\2021_01_21_DataToSubmit\FinalResult\Male_1'
 
+    inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaStand'
+    outFolder = r'F:\WorkingCopy2\2021_01_21_DataToSubmit\FinalResult\Male_2'
 
     headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
     handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
@@ -237,4 +242,4 @@ if __name__ == '__main__':
     isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
     vertsToRemove = set(headVIds + handVIds + isolatedPoints)
 
-    removeVertsFromMeshFolder(join(inFolder), join(inFolder, 'clean'), vertsToRemove, exampleQuadMesh, removeVerts=False)
+    removeVertsFromMeshFolder(join(inFolder), outFolder, vertsToRemove, exampleQuadMesh, removeVerts=True)

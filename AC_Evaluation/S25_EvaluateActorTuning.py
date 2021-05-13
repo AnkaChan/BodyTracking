@@ -37,9 +37,9 @@ if __name__ == '__main__':
     # gs = GridSpec(1, 1, figure=fig)
 
     # linear
-    plt.hist(intialErrs, **kwargs, color='b', label='Before actor tuning', )
+    plt.hist(intialErrs, **kwargs, color='b', label='Initial (STAR) model', )
     # plt.hist(errsWithConsis, **kwargs, color='b', label='With Consistency Check')
-    plt.hist(finalErrs, **kwargs, color='r', label='After actor tuning', )
+    plt.hist(finalErrs, **kwargs, color='r', label='Refined body model', )
     plt.yscale('log')
     # plt.xscale('log')
     # plt.gca().set(ylabel='Bin count', xlabel='(a) Fitting error on the training set[mm]')
