@@ -230,16 +230,29 @@ if __name__ == '__main__':
     # inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaGround'
     # outFolder = r'F:\WorkingCopy2\2021_01_21_DataToSubmit\FinalResult\Male_1'
 
-    inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaStand'
-    outFolder = r'F:\WorkingCopy2\2021_01_21_DataToSubmit\FinalResult\Male_2'
+    # inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\LongSequences\LadaStand'
+    # outFolder = r'F:\WorkingCopy2\2021_01_21_DataToSubmit\FinalResult\Male_2'
 
-    headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
-    handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
-    exampleQuadMesh = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\Complete_withHeadHand_XYZOnly.obj'
+    # inFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\TeaserSequence\Katey_BackBend'
+    # outFolder = r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\TeaserSequence\Katey_BackBend\Filtered'
 
-    headVIds = json.load(open(headVIdsFile))
-    handVIds = json.load(open(handVIdsFile))
-    isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
-    vertsToRemove = set(headVIds + handVIds + isolatedPoints)
+    inFolders = glob.glob(join(r'F:\WorkingCopy2\2021_01_14_AnimatinoSeqs\TeaserSequence', '*'))
 
-    removeVertsFromMeshFolder(join(inFolder), outFolder, vertsToRemove, exampleQuadMesh, removeVerts=True)
+    for inFolder in inFolders:
+        outFolder = join(inFolder, 'Filtered')
+
+        headVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HeadVIdsWithNeck.Json'
+        handVIdsFile = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\HandVIds.json'
+        # exampleQuadMesh = r'..\Data\2020_12_27_betterCoarseMesh\Mesh1487\Complete_withHeadHand_XYZOnly.obj'
+
+        exampleQuadMesh = glob.glob(join(outFolder, '*.ply'))[0]
+
+        # headVIds = json.load(open(headVIdsFile))
+        # handVIds = json.load(open(handVIdsFile))
+        # isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
+        # vertsToRemove = set(headVIds + handVIds + isolatedPoints)
+
+        isolatedPoints = getIsolatedVerts(pv.PolyData(exampleQuadMesh)).tolist()
+        vertsToRemove = set(isolatedPoints)
+
+        removeVertsFromMeshFolder(join(inFolder), outFolder, vertsToRemove, exampleQuadMesh, removeVerts=True)
