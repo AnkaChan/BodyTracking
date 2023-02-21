@@ -38,14 +38,15 @@ if __name__ == '__main__':
     inputCoarseMeshChunkFile = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Inputs\Katey_Stand.json'
     smplshSkelDataFile =  r'..\Data\KateyBodyModel\SmplshSkelData\01_SmplshSkelData_Katey.json'
     smplshFitOutputFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Fit\Katey_Stand'
+    # smplshFitOutputFolder = r'F:\WorkingCopy2\2020_11_26_SMPLSHFit\Fit\Katey_Stand2'
 
     deformedWithPBSFolder = join(smplshFitOutputFolder, 'WithPBS')
     os.makedirs(smplshFitOutputFolder, exist_ok=True)
     os.makedirs(deformedWithPBSFolder, exist_ok=True)
 
-    # run C++ smplsh fitting code
-    subprocess.call(
-        ['Bin\\SMPLSHFitToPointCloudDynamicAccelerated', inputCoarseMeshChunkFile, smplshFitOutputFolder, '-s', smplshSkelDataFile, '-c'])
+    # # run C++ smplsh fitting code
+    # subprocess.call(
+    #     ['Bin\\SMPLSHFitToPointCloudDynamicAccelerated', inputCoarseMeshChunkFile, smplshFitOutputFolder, '-s', smplshSkelDataFile, '-c'])
 
     inputParamsFolder = join(smplshFitOutputFolder, r'Params')
 
@@ -72,5 +73,7 @@ if __name__ == '__main__':
 
         outFile = join(deformedWithPBSFolder, fileName + '.ply')
         exampleMesh.save(outFile)
+
+
 
 
